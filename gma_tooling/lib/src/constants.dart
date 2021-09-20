@@ -19,16 +19,16 @@ abstract class Dir {
 
   static int defaultConcurency = 6;
 }
-abstract class Validation{
-  static RegExp isValidPackageName = RegExp(r'^[a-z][a-z\d_-]*$', caseSensitive: false);
-  
+
+abstract class Validation {
+  static RegExp isValidPackageName =
+      RegExp(r'^[a-z][a-z\d_-]*$', caseSensitive: false);
 }
 
-class Utils{
+class Utils {
   static YamlMap? loadSettingsSync(Directory directory) {
     final file = File(path.join(directory.path, Dir.settingsTpl));
     if (!file.existsSync()) return null;
-
     return loadYaml(file.readAsStringSync()) as YamlMap;
   }
 }

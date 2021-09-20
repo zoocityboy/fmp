@@ -6,27 +6,25 @@ import 'package:gmat/src/models/package.dart';
 import 'package:gmat/src/processor/i_abstract_processor.dart';
 
 /// Init processor
-class InitProcessor extends AbstractProcessor<List<Package>>{
-  
-  InitProcessor({required this.workspace, required this.logger, this.filter = const []});
+class InitProcessor extends AbstractProcessor<List<Package>> {
+  InitProcessor(
+      {required this.workspace, required this.logger, this.filter = const []});
   final Directory workspace;
   @override
   final Logger logger;
-  
+
   final List<String> filter;
   @override
   void kill() {}
-  
+
   FutureOr<List<Package>> execute() async {
     final allPubspecs = await workspace
         .list(recursive: true, followLinks: false)
         .where((file) =>
-                (file.path.endsWith('${Platform.pathSeparator}pubspec.yaml') ||
-                    file.path
-                        .endsWith('${Platform.pathSeparator}pubspec.yml')) &&
-                !file.path.contains(
-                    '${Platform.pathSeparator}example${Platform.pathSeparator}') 
-            )
+            (file.path.endsWith('${Platform.pathSeparator}pubspec.yaml') ||
+                file.path.endsWith('${Platform.pathSeparator}pubspec.yml')) &&
+            !file.path.contains(
+                '${Platform.pathSeparator}example${Platform.pathSeparator}'))
         .toList();
     final _result = await Future.wait<Package>(allPubspecs.map((file) async {
       final _package = Package(file);
@@ -38,7 +36,6 @@ class InitProcessor extends AbstractProcessor<List<Package>>{
 
   @override
   Future<Process> run() {
-    // TODO: implement run
     throw UnimplementedError();
   }
 }

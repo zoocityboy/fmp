@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cli_util/cli_logging.dart';
 import 'package:gmat/src/processor/i_abstract_processor.dart';
 
 /// Version processor
@@ -10,19 +11,18 @@ import 'package:gmat/src/processor/i_abstract_processor.dart';
 ///
 class VersionProcessor extends AbstractProcessor<String> {
   @override
-  void kill() {
-    // TODO: implement kill
-  }
+  void kill() {}
 
   @override
   FutureOr<String> execute() async {
-    // TODO: implement execute
     throw UnimplementedError();
   }
 
   @override
   Future<Process> run() {
-    // TODO: implement run
     throw UnimplementedError();
   }
+
+  @override
+  Logger get logger => throw UnimplementedError();
 }
