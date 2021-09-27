@@ -24,6 +24,7 @@ abstract class GmaCommand extends Command<void> {
   late GmaManager gmaManager;
   final failures = <Package, int>{};
   late Pool pool;
+  bool shouldUseFilter = true;
 
   String? command;
   Set<String> arguments = {};
@@ -85,5 +86,73 @@ abstract class GmaCommand extends Command<void> {
             '         -> ${AnsiStyles.dim.bold(package.name)} ${AnsiStyles.dim('$commnadName ${arguments.join(' ')} running ...')}');
       }
     }
+  }
+}
+
+
+abstract class GmaMultipleCommand extends GmaCommand {
+  List<MapEntry<String?, List<String>>> commands = [];
+
+  @override
+  FutureOr<void> run() async {
+    pool = Pool(
+      max(2, concurrency),
+      timeout: Duration(seconds: 30),
+    );
+
+    final _filter = globalResults?.wasParsed('filter') == true
+        ? globalResults!['filter']
+        : null;
+    final _directory = globalResults?['root'] ?? Directory.current.path;
+    print('+root: ${globalResults?['root']}');
+    print('+filter: $_filter');
+    print('+directory: $_directory');
+    gmaManager = GmaManager(directory: Directory(_directory), logger: logger);
+    await gmaManager.init();
+    if (shouldUseFilter) {
+      gmaManager.applyPackage(
+          packageFolderName: 'capp_shard', filterPatter: _filter);
+    }
+  }
+
+  @override
+  Future<void> executeOnSelected() async {
+    for (final item in commands) {
+      command = item.key;
+      arguments = item.value.toSet();
+      await executeCommandOnSelected();
+    }
+  }
+
+  Future<void> executeCommandOnSelected() async {
+    return await pool.forEach<Package, void>(gmaManager.filtered,
+        (package) async {
+      if (isFastFail && failures.isNotEmpty) {
+        return Future.value();
+      }
+
+      final commnadName = command ??
+          (package.packageType == PackageType.flutter ? 'flutter' : 'dart');
+      loggerProgress(commnadName, package);
+
+      final process = await package.process(commnadName, arguments.toList());
+
+      if (await process.exitCode > 0) {
+        failures[package] = await process.exitCode;
+        if (!isVerbose) {
+          gmaManager.log('\n');
+        }
+        await process.stderr.transform(utf8.decoder).forEach((value) {
+          gmaManager.log(
+              '         -> ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}');
+        });
+        await process.stdout.transform(utf8.decoder).forEach((value) {
+          if (value.startsWith('info •') || value.startsWith('warning •')) {
+            gmaManager.log(
+                '            ${AnsiStyles.dim.italic(value.stdOutFiltred())}');
+          }
+        });
+      }
+    }).drain<void>();
   }
 }

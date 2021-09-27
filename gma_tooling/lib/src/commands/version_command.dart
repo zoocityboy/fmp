@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:args/args.dart';
-
 import 'i_command.dart';
 
 class VersionCommand extends GmaCommand {

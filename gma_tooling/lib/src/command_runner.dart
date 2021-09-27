@@ -4,7 +4,7 @@ import 'package:gmat/src/commands/quality/quality_command.dart';
 import 'package:gmat/src/commands/test_command.dart';
 import 'package:gmat/src/commands/translate_command.dart';
 import 'commands/bootstrap/bootstrap_command.dart';
-import 'commands/pub_command.dart';
+import 'commands/pub/pub_command.dart';
 
 class KtCommandRunner extends CommandRunner<void> {
   KtCommandRunner() : super('gma', 'Manage GMA multi-package project') {
