@@ -18,14 +18,15 @@ extension DirectoryX on Directory {
   }
 
   String get directoryName => path
-      .substring(path.lastIndexOf('${Platform.pathSeparator}') + 1)
+      .substring(path.lastIndexOf(Platform.pathSeparator) + 1)
       .replaceAll('_core', '');
   String get pascalDirectoryName => directoryName.toPascalCase();
   String get pascalDirectoryFullName => path
-      .substring(path.lastIndexOf('${Platform.pathSeparator}') + 1)
+      .substring(path.lastIndexOf(Platform.pathSeparator) + 1)
       .toPascalCase();
 }
-extension KtExists on Directory{
+
+extension KtExists on Directory {
   // Future<bool> isBootstraped() async {
   //   Directory.current.
   // }

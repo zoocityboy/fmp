@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
-import 'package:glob/glob.dart';
 import 'package:gmat/gmat.dart';
 import 'package:gmat/src/extensions/directory_ext.dart';
 import 'package:gmat/src/processor/shell_processor.dart';
@@ -17,7 +16,7 @@ extension PackageTypeX on PackageType {
 }
 
 abstract class IEntity {
-  FileSystemEntity get pubspecPath;  
+  FileSystemEntity get pubspecPath;
   String? name;
   PackageType packageType = PackageType.flutter;
   Version? version;
@@ -27,24 +26,22 @@ abstract class IEntity {
   Future<Process> process(String command, List<String> args);
   Future<bool> loadPubspec();
   Directory get directory;
-  
+  bool hasFlavor = false;
 }
 
 class Entity extends IEntity {
-  Entity(this.pubspecPath): directory = pubspecPath.parent;
+  Entity(this.pubspecPath) : directory = pubspecPath.parent;
   @override
   FileSystemEntity pubspecPath;
   @override
   Directory directory;
-  
+
   String get directoryName => directory.directoryName;
   @override
   Future<bool> loadPubspec() async {
     final _exists =
-        await File(path.join(directory.path,'pubspec.yaml'))
-                .exists() ||
-            await File(path.join(directory.path,'pubspec.yml'))
-                .exists();
+        await File(path.join(directory.path, 'pubspec.yaml')).exists() ||
+            await File(path.join(directory.path, 'pubspec.yml')).exists();
     if (_exists) {
       var pubspec = await PubSpec.load(directory);
       name = pubspec.name ?? directory.directoryName;
@@ -53,6 +50,7 @@ class Entity extends IEntity {
       devDependencies = pubspec.devDependencies;
       dependencyOverrides = pubspec.dependencyOverrides;
       packageType = parsePackageType(pubspec);
+      hasFlavor = containsFlavor(pubspec);
       return true;
     } else {
       print('$directoryName pubspec.yaml not exists');
@@ -69,30 +67,35 @@ class Entity extends IEntity {
     return PackageType.plugin;
   }
 
+  bool containsFlavor(PubSpec pubSpec) {
+    final contain = pubSpec.unParsedYaml?.containsKey('koyal_flavor') ?? false;
+    if (contain) {
+      print(pubSpec.unParsedYaml);
+    }
+    return contain;
+  }
+
   @override
   String toString() {
-    return '[${packageType.value}][$directoryName][$version]';
+    return '[${packageType.value}][$directoryName][$version][$hasFlavor]';
   }
 
   @override
   Future<Process> process(String command, List<String> args) {
-    return AsyncShellProcessor(
-      command,
-      args,
-      workingDirectory: directory.path,
-      logger: Logger.verbose()
-    ).run();
+    return AsyncShellProcessor(command, args,
+            workingDirectory: directory.path, logger: Logger.verbose())
+        .run();
   }
 }
 
 class App extends Entity {
-  App(FileSystemEntity pubspecPath): super(pubspecPath);
+  App(FileSystemEntity pubspecPath) : super(pubspecPath);
 }
 
 class Package extends Entity {
- Package(FileSystemEntity pubspecPath): super(pubspecPath);
+  Package(FileSystemEntity pubspecPath) : super(pubspecPath);
 }
 
 class Plugin extends Entity {
-  Plugin(FileSystemEntity pubspecPath): super(pubspecPath);
+  Plugin(FileSystemEntity pubspecPath) : super(pubspecPath);
 }

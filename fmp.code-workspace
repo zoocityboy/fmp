@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "gma_extension"
+		},
+		{
+			"path": "gma_tooling"
+		},
+		{
+			"path": "../../hci/self-care-mobile"
+		}
+	],
+	"settings": {}
+}

@@ -1,0 +1,19 @@
+targets:
+  $default:
+    builders:
+      source_gen|combining_builder:
+        options:
+          ignore_for_file:
+            - implicit_dynamic_parameter
+            - non_constant_identifier_names
+            - type_annotate_public_apis
+            - omit_local_variable_types
+            - unnecessary_this
+
+      json_serializable:
+        options:
+          any_map: true
+          create_to_json: true
+          disallow_unrecognized_keys: false
+          explicit_to_json: true
+          include_if_null: false

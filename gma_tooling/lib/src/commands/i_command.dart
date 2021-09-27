@@ -35,19 +35,24 @@ abstract class GmaCommand extends Command<void> {
       max(2, concurrency),
       timeout: Duration(seconds: 30),
     );
-    
-    final _filter =
-        globalResults?.wasParsed('filter') == true ? globalResults!['filter'] : null;
+
+    final _filter = globalResults?.wasParsed('filter') == true
+        ? globalResults!['filter']
+        : null;
     final _directory = globalResults?['root'] ?? Directory.current.path;
     print('+filter: $_filter');
     print('+directory: $_directory');
     gmaManager = GmaManager(directory: Directory(_directory), logger: logger);
     await gmaManager.init();
-    gmaManager.applyPackage(packageFolderName: 'capp_shard', filterPatter: _filter);
+    if (shouldUseFilter) {
+      gmaManager.applyPackage(
+          packageFolderName: 'capp_shard', filterPatter: _filter);
+    }
   }
 
   Future<void> executeOnSelected() async {
-    return await pool.forEach<Package, void>(gmaManager.filtered, (package) async {
+    return await pool.forEach<Package, void>(gmaManager.filtered,
+        (package) async {
       if (isFastFail && failures.isNotEmpty) {
         return Future.value();
       }
@@ -88,7 +93,6 @@ abstract class GmaCommand extends Command<void> {
     }
   }
 }
-
 
 abstract class GmaMultipleCommand extends GmaCommand {
   List<MapEntry<String?, List<String>>> commands = [];

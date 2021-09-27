@@ -1,5 +1,7 @@
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
+import 'package:gmat/src/commands/ci/ci_command.dart';
+import 'package:gmat/src/commands/flavor_command.dart';
 import 'package:gmat/src/commands/quality/quality_command.dart';
 import 'package:gmat/src/commands/test_command.dart';
 import 'package:gmat/src/commands/translate_command.dart';
@@ -31,6 +33,8 @@ class KtCommandRunner extends CommandRunner<void> {
     addCommand(TranslateCommand());
     addCommand(TestCommand());
     addCommand(QualityCommand());
+    addCommand(CiCommand());
+    addCommand(FlavorCommand());
   }
   @override
   Future<void> runCommand(ArgResults topLevelResults) async {
