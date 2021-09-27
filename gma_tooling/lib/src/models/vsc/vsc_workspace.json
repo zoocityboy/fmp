@@ -2,7 +2,7 @@
     "folders": [
         {
             "name": "Application",
-            "path": "capp",
+            "path": "capp"
         },
         {
             "name": "Packages",
