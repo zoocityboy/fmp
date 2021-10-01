@@ -1,8 +1,9 @@
 name: gmat
 description: Multi-package repo tools.
 version: 1.0.0
+publish_to: none
 environment:
-  sdk: ">=2.12.0 <3.0.0"
+  sdk: ">=2.13.0 <3.0.0"
 
 dependencies:
   ansi_styles: ^0.3.0
@@ -10,17 +11,18 @@ dependencies:
   collection: ^1.15.0-nullsafety.4
   dart_console: ^1.0.0
   pool: ^1.5.0
-  cli_util: ^0.3.3
+  cli_util: ^0.3.4
   pubspec: ^2.0.1
   yaml: ^3.1.0
   glob: ^2.0.1
   json_annotation: ^4.0.1
+  json2yaml: ^2.0.0
 dev_dependencies:
-  pedantic: ^1.10.0
   nock: ^1.2.0
   test: ^1.17.5
   lints: ^1.0.1
   build_runner: ^2.1.2
-  json_serializable: ^5.0.2
+  json_serializable: ">=5.0.2 <=6.0.0"
+
 executables:
   gmat:

@@ -1,57 +1,65 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:gmat/gmat.dart';
-import 'package:gmat/src/manager.dart';
+import 'package:gmat/src/constants.dart';
+import 'package:gmat/src/models/logger/gmat_logger.dart';
 import 'package:gmat/src/models/package.dart';
+import 'package:gmat/src/workspace.dart';
 import 'package:pool/pool.dart';
-
+final cleanFiles = [
+  '**/coverage/',
+  '**/build/',
+  '**/.dart_tool/',
+  '**/.flavor',
+  '**/.packages',
+  '**/.metadata',
+  '**/.flutter-plugins',
+  '**/.flutter-plugins-dependencies'
+];
 abstract class ICommand<T> extends Command<T> {
   Directory? directory;
   bool checkRoot = true;
 }
-
-abstract class GmaCommand extends Command<void> {
-  int get concurrency => int.parse(globalResults?['concurrency']);
-  bool get isVerbose => globalResults?['verbose'] == true;
-  bool get isFastFail => globalResults?['fast-fail'] == true;
-  Logger get logger => isVerbose ? Logger.verbose() : Logger.standard();
-  late GmaManager gmaManager;
+abstract class SimpleGmaCommand<T> extends Command<T> {
+  int get concurrency => int.parse(globalResults?[Constants.argConcurrency]);
+  bool get isVerbose => globalResults?[Constants.argVerbose] == true;
+  bool get isFastFail => globalResults?[Constants.argFastFail] == true;
+  bool get isDryRun => globalResults?[Constants.argDryRun] == true;
+  Logger get logger => isVerbose ? GmatVerboseLogger() : GmatStandardLogger();
   final failures = <Package, int>{};
-  late Pool pool;
-  bool shouldUseFilter = true;
-
+  @override
+  String? get usageFooter => TextConstants.footerUsageKey;
   String? command;
-  Set<String> arguments = {};
+  Set<String> get arguments => customArgs;
+  Set<String> customArgs = {};
+}
+
+abstract class GmaCommand extends SimpleGmaCommand<void> {
+  bool get shouldUseFilter => true;
+  late Pool pool;
+  late GmaWorkspace workspace;
+
+  @override
+  String? get usageFooter => TextConstants.footerUsageKey;
 
   @override
   FutureOr<void> run() async {
-    pool = Pool(
-      max(2, concurrency),
-      timeout: Duration(seconds: 30),
-    );
-
-    final _filter = globalResults?.wasParsed('filter') == true
-        ? globalResults!['filter']
-        : null;
-    final _directory = globalResults?['root'] ?? Directory.current.path;
-    print('+filter: $_filter');
-    print('+directory: $_directory');
-    gmaManager = GmaManager(directory: Directory(_directory), logger: logger);
-    await gmaManager.init();
+    workspace = GmaWorkspace.fromArgResults(globalResults!);
+    pool = workspace.manager.createPool;
+    await workspace.manager.init();
     if (shouldUseFilter) {
-      gmaManager.applyPackage(
-          packageFolderName: 'capp_shard', filterPatter: _filter);
+      final _patterns = globalResults?[Constants.argFilter] as String?;
+      workspace.manager.applyPackage(filterPatterns: _patterns?.split(','));
     }
   }
 
   Future<void> executeOnSelected() async {
-    return await pool.forEach<Package, void>(gmaManager.filtered,
+    return await pool.forEach<Package, void>(workspace.manager.filtered,
         (package) async {
       if (isFastFail && failures.isNotEmpty) {
         return Future.value();
@@ -59,21 +67,21 @@ abstract class GmaCommand extends Command<void> {
       final commnadName = command ??
           (package.packageType == PackageType.flutter ? 'flutter' : 'dart');
       loggerProgress(commnadName, package);
-
-      final process = await package.process(commnadName, arguments.toList());
+      final process = await package.process(commnadName, arguments.toList(),
+          dryRun: workspace.manager.isDryRun);
 
       if (await process.exitCode > 0) {
         failures[package] = await process.exitCode;
         if (!isVerbose) {
-          gmaManager.log('\n');
+          workspace.manager.log('\n');
         }
         await process.stderr.transform(utf8.decoder).forEach((value) {
-          gmaManager.log(
-              '         -> ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}');
+          workspace.manager.log(
+              '         ⌙ ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}');
         });
         await process.stdout.transform(utf8.decoder).forEach((value) {
           if (value.startsWith('info •') || value.startsWith('warning •')) {
-            gmaManager.log(
+            workspace.manager.log(
                 '            ${AnsiStyles.dim.italic(value.stdOutFiltred())}');
           }
         });
@@ -84,11 +92,11 @@ abstract class GmaCommand extends Command<void> {
   void loggerProgress(String commnadName, Package package) {
     if (isVerbose) {
       if (package.name != package.directoryName) {
-        gmaManager.log(
-            '         -> ${AnsiStyles.dim.bold(package.name)} ${AnsiStyles.dim('in folder')} ${AnsiStyles.dim.italic(package.directoryName)} ${AnsiStyles.dim('$commnadName ${arguments.join(' ')} running ...')}');
+        workspace.manager.log(
+            '         ⌙ ${AnsiStyles.dim.bold(package.name)} ${AnsiStyles.dim('in folder')} ${AnsiStyles.dim.italic(package.directoryName)} ${AnsiStyles.dim('$commnadName ${arguments.join(' ')} running ...')}');
       } else {
-        gmaManager.log(
-            '         -> ${AnsiStyles.dim.bold(package.name)} ${AnsiStyles.dim('$commnadName ${arguments.join(' ')} running ...')}');
+        workspace.manager.log(
+            '         ⌙ ${AnsiStyles.dim.bold(package.name)} ${AnsiStyles.dim('$commnadName ${arguments.join(' ')} running ...')}');
       }
     }
   }
@@ -99,64 +107,15 @@ abstract class GmaMultipleCommand extends GmaCommand {
 
   @override
   FutureOr<void> run() async {
-    pool = Pool(
-      max(2, concurrency),
-      timeout: Duration(seconds: 30),
-    );
-
-    final _filter = globalResults?.wasParsed('filter') == true
-        ? globalResults!['filter']
-        : null;
-    final _directory = globalResults?['root'] ?? Directory.current.path;
-    print('+root: ${globalResults?['root']}');
-    print('+filter: $_filter');
-    print('+directory: $_directory');
-    gmaManager = GmaManager(directory: Directory(_directory), logger: logger);
-    await gmaManager.init();
-    if (shouldUseFilter) {
-      gmaManager.applyPackage(
-          packageFolderName: 'capp_shard', filterPatter: _filter);
-    }
+    await super.run();
   }
 
   @override
   Future<void> executeOnSelected() async {
     for (final item in commands) {
       command = item.key;
-      arguments = item.value.toSet();
-      await executeCommandOnSelected();
+      customArgs = item.value.toSet();
+      await super.executeOnSelected();
     }
-  }
-
-  Future<void> executeCommandOnSelected() async {
-    return await pool.forEach<Package, void>(gmaManager.filtered,
-        (package) async {
-      if (isFastFail && failures.isNotEmpty) {
-        return Future.value();
-      }
-
-      final commnadName = command ??
-          (package.packageType == PackageType.flutter ? 'flutter' : 'dart');
-      loggerProgress(commnadName, package);
-
-      final process = await package.process(commnadName, arguments.toList());
-
-      if (await process.exitCode > 0) {
-        failures[package] = await process.exitCode;
-        if (!isVerbose) {
-          gmaManager.log('\n');
-        }
-        await process.stderr.transform(utf8.decoder).forEach((value) {
-          gmaManager.log(
-              '         -> ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}');
-        });
-        await process.stdout.transform(utf8.decoder).forEach((value) {
-          if (value.startsWith('info •') || value.startsWith('warning •')) {
-            gmaManager.log(
-                '            ${AnsiStyles.dim.italic(value.stdOutFiltred())}');
-          }
-        });
-      }
-    }).drain<void>();
   }
 }

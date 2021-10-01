@@ -11,18 +11,13 @@ class AnalyzeSubCommand extends GmaCommand with LoggerMixin {
 
   @override
   String get name => 'analyze';
-  @override
-  String? get command => 'flutter';
+  
   @override
   Set<String> arguments = {'analyze'};
-  AnalyzeSubCommand(){
-    argParser.addOption('package', abbr: 'p');
-    argParser.addOption('filter', abbr: 'f');
-  }
+  
   @override
   FutureOr<void> run() async {
     await super.run();
-    
     final progress = loggerCommandStart();
     await executeOnSelected();
     if (failures.isNotEmpty) {

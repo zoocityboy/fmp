@@ -22,7 +22,7 @@
         },
         {
             "name": "Root",
-            "path": "./"
+            "path": "."
         }
     ],
     "extensions": {
@@ -45,7 +45,21 @@
     "settings": {
         "window.zoomLevel": 0,
         "files.autoSave": "afterDelay",
+        "conventionalCommits.scopes": [
+            "merchant",
+            "customer",
+            "ui",
+            "system",
+            "feature",
+            "bug"
+        ],
+        "dart.runPubGetOnPubspecChanges": false,
+        "dart.promptToGetPackages": false,
         "files.exclude": {
+            "**/.git": true,
+            "**/.DS_Store": true,
+            "**/Thumbs.db": true,
+            "**/localizations_processor": true,
             "**/build/**": true,
             "**/.git/**": true,
             "**/.idea/**": true,
@@ -56,16 +70,20 @@
             "**/.packages": true,
             "**/.metadata": true,
             "**/*.lock": true,
-            "**/capp*/": false,
-            "**/mapp*/": true,
-            "**/koyal*/": false
+            "**/*.freezed.dart": true,
+            "**/*.g.dart": true,
+            "capp_*/": false,
+            "mapp_*/": true,
+            "koyal_*/": false
         },
         "files.watcherExclude": {
             "**/.git/objects/**": true,
             "**/.git/subtree-cache/**": true,
             "**/node_modules/*/**": true,
             "**/.hg/store/**": true,
-            "**/build/**": true
+            "**/build/**": true,
+            "**/*.freezed.dart": true,
+            "**/*.g.dart": true
         },
         "gma.flavor.countries": [
             {
@@ -105,22 +123,22 @@
             {
                 "label": "Customer",
                 "key": "capp",
-                "picked": true,
                 "exclude": {
-                    "**/capp*/": false,
-                    "**/mapp*/": true,
-                    "**/koyal*/": false
-                }
+                    "capp_*/": false,
+                    "mapp_*/": true,
+                    "koyal_*/": false
+                },
+                "picked": true
             },
             {
                 "label": "Merchant",
                 "key": "mapp",
-                "picked": false,
                 "exclude": {
-                    "**/capp*/": true,
-                    "**/mapp*/": false,
-                    "**/koyal*/": false
-                }
+                    "capp_*/": true,
+                    "mapp_*/": false,
+                    "koyal_*/": false
+                },
+                "picked": false
             }
         ]
     },
@@ -171,6 +189,10 @@
     "tasks": {
         "version": "2.0.0",
         "tasks": [
+            {
+                "label": "GMA: Restart",
+                "command": "${command:dart.restartAnalysisServer}",
+            },
             {
                 "label": "flavor:capp:prodvn",
                 "type": "shell",

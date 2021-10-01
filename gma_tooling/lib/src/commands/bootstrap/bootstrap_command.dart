@@ -1,24 +1,25 @@
 import 'dart:async';
 
-import 'package:gmat/src/monitoring/monitoring_mixin.dart';
 import '../i_command.dart';
 import 'bootstrap_init_command.dart';
 import 'bootstrap_update_command.dart';
 
-class BootstrapCommand extends GmaCommand with CommandMonitoring {
+class BootstrapCommand extends GmaCommand {
   @override
   final name = 'bootstrap';
   @override
   final description = 'Bootstrap Koyal tools';
-
   @override
   String? get command => null;
-  BootstrapCommand() {
+  BootstrapCommand() : super() {
     addSubcommand(BootstrapInitSubcommand());
     addSubcommand(BootstrapUpdateSubcommand());
+    
   }
   @override
-  FutureOr<void> run() {
+  FutureOr<void> run() async {
+    await super.run();
+    printUsage();
     return Future(() => null);
   }
 }

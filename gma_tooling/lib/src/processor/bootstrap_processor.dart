@@ -3,8 +3,11 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:cli_util/cli_logging.dart';
+import 'package:path/path.dart' as path;
+
 import 'package:gmat/src/constants.dart';
 import 'package:gmat/src/processor/shell_processor.dart';
+
 import 'i_abstract_processor.dart';
 
 class BootstrapProcessor extends AbstractExecutor<void> {
@@ -27,83 +30,80 @@ class BootstrapProcessor extends AbstractExecutor<void> {
   /// Check if installation exists
   Future<bool> check() async {
     final directory =
-        Directory(_root.path + Platform.pathSeparator + Dir.toolingFolder);
+        Directory(path.join(_root.path, Constants.toolingFolder));
     final _exists = directory.exists();
     return _exists;
   }
 
   Future<void> clear() async {
-    await Directory(_root.path + Platform.pathSeparator + Dir.settingsTpl)
+    await Directory(path.join(_root.path, Constants.settingsTpl))
         .delete()
-        .then((value) {}, onError: (e) {})
-        .catchError((onError) => print(onError));
-    await Directory(_root.path + Platform.pathSeparator + Dir.workspaceTpl)
+        .then((value) {}, onError: (e) => logger.stderr(e.toString()));
+    await Directory(path.join(_root.path, Constants.workspaceTpl))
         .delete()
-        .then((value) {}, onError: (e) {})
-        .catchError((onError) => print(onError));
-    await Directory(_root.path + Platform.pathSeparator + Dir.toolingFolder)
+        .then((value) {}, onError: (e) => logger.stderr(e.toString()));
+    await Directory(path.join(_root.path, Constants.toolingFolder))
         .delete(recursive: true)
-        .then((value) {}, onError: (e) {})
-        .catchError((onError) => print(onError));
+        .then((value) {}, onError: (e) => logger.stderr(e.toString()));
   }
 
   Future<void> create() async {
     final packageRootPath = await getPackageRoot();
     logger.stdout('package: $packageRootPath');
-    final workspaceFileName = Dir.workspaceTpl;
-    final settingsFileName = Dir.settingsTpl;
+    final workspaceFileName = Constants.workspaceTpl;
+    final settingsFileName = Constants.settingsTpl;
     final dir = await Directory(_root.path).create();
-    await File(packageRootPath +
-            Platform.pathSeparator +
-            Dir.templatesFolder +
-            Platform.pathSeparator +
-            Dir.workspaceTpl)
+    await File(path.join(
+            packageRootPath, Constants.templatesFolder, Constants.workspaceTpl))
         .copy(dir.path + Platform.pathSeparator + workspaceFileName)
         .then((value) => logger.stdout('$workspaceFileName created: $value'),
             onError: (_) {
       logger.stdout('$workspaceFileName create failed: $_');
     });
-    await File(packageRootPath +
-            Platform.pathSeparator +
-            Dir.templatesFolder +
-            Platform.pathSeparator +
-            Dir.settingsTpl)
+    await File(path.join(
+            packageRootPath, Constants.templatesFolder, Constants.settingsTpl))
         .copy(dir.path + Platform.pathSeparator + settingsFileName)
         .then((value) => logger.stdout('$settingsFileName created: $value'),
             onError: (_) {
       logger.stdout('$settingsFileName failed: $_');
     });
-    await Directory(_root.path + Platform.pathSeparator + Dir.appsFolder)
+    await Directory(path.join(_root.path, Constants.appsFolder))
         .create()
-        .then((value) => logger.stdout('${Dir.appsFolder} created: $value'),
+        .then(
+        (value) => logger.stdout('${Constants.appsFolder} created: $value'),
             onError: (_) {
-      logger.stdout('${Dir.appsFolder} failed: $_');
+      logger.stdout('${Constants.appsFolder} failed: $_');
     });
-    await Directory(_root.path + Platform.pathSeparator + Dir.packagesFolder)
+    await Directory(path.join(_root.path, Constants.packagesFolder))
         .create()
-        .then((value) => logger.stdout('${Dir.packagesFolder} created: $value'),
+        .then(
+            (value) =>
+                logger.stdout('${Constants.packagesFolder} created: $value'),
             onError: (_) {
-      logger.stdout('${Dir.packagesFolder} failed: $_');
+      logger.stdout('${Constants.packagesFolder} failed: $_');
     });
-    await Directory(_root.path + Platform.pathSeparator + Dir.pluginsFolder)
+    await Directory(path.join(_root.path, Constants.pluginsFolder))
         .create()
-        .then((value) => logger.stdout('${Dir.pluginsFolder} created: $value'),
+        .then(
+            (value) =>
+                logger.stdout('${Constants.pluginsFolder} created: $value'),
             onError: (_) {
-      logger.stdout('${Dir.pluginsFolder} failed: $_');
+      logger.stdout('${Constants.pluginsFolder} failed: $_');
     });
-    await Directory(_root.path + Platform.pathSeparator + Dir.docsFolder)
+    await Directory(path.join(_root.path, Constants.docsFolder))
         .create()
-        .then((value) => logger.stdout('${Dir.docsFolder} created: $value'),
+        .then(
+        (value) => logger.stdout('${Constants.docsFolder} created: $value'),
             onError: (_) {
-      logger.stdout('${Dir.docsFolder} failed: $_');
+      logger.stdout('${Constants.docsFolder} failed: $_');
     });
-    await File(_root.path + Platform.pathSeparator + 'CHANGELOG.md')
+    await File(path.join(_root.path, 'CHANGELOG.md'))
         .create()
         .then((value) => logger.stdout('CHANGELOG created: $value'),
             onError: (_) {
       logger.stdout('CHANGELOG failed: $_');
     });
-    await File(_root.path + Platform.pathSeparator + 'README.md').create().then(
+    await File(path.join(_root.path, 'README.md')).create().then(
         (value) => logger.stdout('README.md created: $value'), onError: (_) {
       logger.stdout('README.md failed: $_');
     });
@@ -116,14 +116,17 @@ class BootstrapProcessor extends AbstractExecutor<void> {
 
   Future<void> installExtensions() async {
     final packageRootPath = await getPackageRoot();
-    final _extensions = Directory(
-            packageRootPath + Platform.pathSeparator + Dir.extensionsFolder)
+    final _extensions =
+        Directory(path.join(packageRootPath, Constants.extensionsFolder))
         .listSync(followLinks: false, recursive: false)
         .where((element) => element.path.toLowerCase().endsWith('.vsix'));
     logger.stdout(_extensions.join(','));
     for (final ext in _extensions) {
-      ShellProcessor('code', ['--install-extension', '$ext'],
-          workingDirectory: ext.path, logger: logger,);
+      await AsyncShellProcessor(
+        'code',
+        ['--install-extension', ext.path],
+        logger: logger,
+      ).run();
     }
   }
 

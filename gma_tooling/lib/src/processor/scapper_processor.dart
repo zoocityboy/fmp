@@ -4,12 +4,12 @@ import 'dart:io';
 import 'package:cli_util/cli_logging.dart';
 import 'package:gmat/src/processor/i_abstract_processor.dart';
 
-/// Version processor
+/// Scarpper processor
 ///
 /// Get all dependencies from `IEntity` and sync same version of package
 /// a cross all packages
 ///
-class VersionProcessor extends AbstractProcessor<String> {
+class ScarapperProcessor extends AbstractProcessor<String> {
   @override
   void kill() {}
 

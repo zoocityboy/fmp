@@ -8,19 +8,15 @@ export class FlavorTasks {
     get onDidChanged(): vscode.Event<TaskChangeEvent> {
         return this._onDidChanged.event;
     }
-    public changeFlavor(flavor: string, force: boolean = false) {
+    public changeFlavor(flavor: string, app: string, force: boolean = false) {
         let task = new vscode.Task(
-            { type: 'gma.flavor' },
+            { type: 'gma.flavor', name: 'change_flavor' },
             vscode.TaskScope.Workspace,
             "flavor_update",
-            "dart",
-            // new vscode.ShellExecution(
-            //     "koyal_flavor",
-            //     ["-f", flavor,]
-            // ),
+            "dart ",
             new vscode.ProcessExecution(
-                "koyal_flavor",
-                ["-f", flavor, '-r']
+                "dart",
+                ['/Users/zoocityboy/Develop/fmp/gma_tooling/bin/gmat.dart', 'flavor', '--flavor', flavor, '-app', app],
             ),
             "$dart-build_runner",
 
@@ -34,8 +30,10 @@ export class FlavorTasks {
         } as vscode.TaskPresentationOptions;
         task.isBackground = true;
 
-        this.message('Preparing flavor...');
-        vscode.tasks.executeTask(task);
+        // this.message('Preparing flavor...');
+        vscode.tasks.executeTask(task).then((value) => {
+            console.log(`executeTask: %s`, value);
+        });
         // vscode.tasks.onDidStartTask((value) => {
         //     this.message("Change flavor started.");
         // });
@@ -43,14 +41,19 @@ export class FlavorTasks {
         //     this.message("Change flavor finished.");
         // });
         vscode.tasks.onDidStartTaskProcess((value) => {
+            console.log('onDidStartTaskProcess: %s : %s : %s', value.processId, value.execution.task.definition.type, value.execution.task.definition.name);
             this.message("Change flavor started.", undefined, ProgressState.loading);
         });
         vscode.tasks.onDidEndTaskProcess((value) => {
-
-            console.log('finished: %s : %s', value.exitCode, value.execution);
+            console.log('onDidEndTaskProcess: %s : %s', value.execution.task.definition.type, value.execution.task.definition.name);
             this.message("Change flavor finished.", undefined, ProgressState.complete);
+
         });
     }
+    private restartAnalyzer() {
+
+    }
+
     private message(
         message?: string | undefined,
         error: Error | unknown | undefined = undefined,

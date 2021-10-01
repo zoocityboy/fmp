@@ -12,13 +12,14 @@ class PubCommand extends GmaCommand {
   @override
   String? get command => null;
 
-  PubCommand() {
+  PubCommand() : super() {
     addSubcommand(CleanSubcommand());
     addSubcommand(GetSubcommand());
   }
 
   @override
-  FutureOr<void> run() {
+  FutureOr<void> run() async {
+    await super.run();
     printUsage();
     return Future.value(null);
   }

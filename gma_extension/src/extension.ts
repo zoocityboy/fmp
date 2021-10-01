@@ -1,20 +1,17 @@
-import { privateEncrypt } from 'crypto';
 import path = require('path');
-import { config } from 'process';
 import * as vscode from 'vscode';
-import { QuickInputButton, QuickPickItem, Uri } from 'vscode';
 import { WorkspaceConfigurator } from './configuration';
-import { FlavorTaskProvider } from './flavor_task_provider';
-import * as models from './models';
 import { ProgressState } from './models';
 import { FlavorTasks } from './tasks';
+import { BoardPanel } from './panel/board_panel';
+import { Constants } from './constants';
+import { NodeDependenciesProvider } from './panel/tree';
 let statusBarItem: vscode.StatusBarItem;
-let configuration: vscode.WorkspaceConfiguration;
 let flavorConfig: WorkspaceConfigurator;
 let flaverTask: FlavorTasks;
 
-let flavorTaskProvider: vscode.Disposable | undefined;
 const wait = (ms: number) => new Promise(res => setTimeout(res, ms));
+
 function showMessageWithDelay(message: string, ms: number = 1500) {
 	vscode.window.withProgress({
 		location: vscode.ProgressLocation.Notification,
@@ -28,6 +25,7 @@ function showMessageWithDelay(message: string, ms: number = 1500) {
 	});
 }
 export function activate(context: vscode.ExtensionContext) {
+
 	flaverTask = new FlavorTasks();
 	flaverTask.onDidChanged((value) => {
 		console.log(`FlavorTasks: ${value.message} ${value.state} ${value.failed}`);
@@ -62,29 +60,39 @@ export function activate(context: vscode.ExtensionContext) {
 
 	});
 	registerChangeFlavor(context);
-
+	registerBoardPanel(context);
 }
-
 export function deactivate() {
 	statusBarItem.hide();
 }
+export async function registerBoardPanel(context: vscode.ExtensionContext) {
+	context.subscriptions.push(
+		vscode.commands.registerCommand(Constants.showBoardCommandId, () => {
+			BoardPanel.show(context.extensionUri);
+		})
+	);
+}
+export async function registerTreePanel(context: vscode.ExtensionContext) {
+	const folder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.applicationFolder)!;
+	vscode.window.registerTreeDataProvider(
+		'nodeDependencies',
+		new NodeDependenciesProvider(folder?.uri.path)
+	);
+}
 
 export async function registerChangeFlavor(context: vscode.ExtensionContext) {
-	const changeFlavorCommandId = 'kt.flavor.changeFlavor';
-	const changeAppCommandId = 'kt.flavor.changeApp';
-	const changeCountryCommandId = 'kt.flavor.changeCountry';
-	const changeStageCommandId = 'kt.flavor.changeStage';
-	let disposableCommand = vscode.commands.registerCommand(changeFlavorCommandId, () => {
-		changeFlavroFlow();
+
+	let disposableCommand = vscode.commands.registerCommand(Constants.changeFlavorCommandId, () => {
+		changeFlavorFlow();
 	});
 
-	vscode.commands.registerCommand(changeAppCommandId, () => {
+	vscode.commands.registerCommand(Constants.changeAppCommandId, () => {
 		showSelect('Select app', flavorConfig.apps).then((value) => flavorConfig.apply());
 	});
-	vscode.commands.registerCommand(changeCountryCommandId, () => {
+	vscode.commands.registerCommand(Constants.changeCountryCommandId, () => {
 		showSelect('Select country', flavorConfig.countries).then((value) => flavorConfig.apply());
 	});
-	vscode.commands.registerCommand(changeStageCommandId, () => {
+	vscode.commands.registerCommand(Constants.changeStageCommandId, () => {
 		showSelect('Select stage', flavorConfig.stages).then((value) => flavorConfig.apply());
 
 	});
@@ -94,7 +102,7 @@ export async function registerChangeFlavor(context: vscode.ExtensionContext) {
 		console.log(value.affectsConfiguration.name);
 	});
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-	statusBarItem.command = changeFlavorCommandId;
+	statusBarItem.command = Constants.changeFlavorCommandId;
 	flavorConfig.apply();
 }
 
@@ -109,24 +117,26 @@ export async function showSelect<T extends vscode.QuickPickItem>(placeholder: st
 		}
 	});
 }
-export async function changeFlavroFlow() {
+export async function changeFlavorFlow() {
 	await showSelect('Select country', flavorConfig.countries);
 	await showSelect('Select app', flavorConfig.apps);
 	await showSelect('Select stage', flavorConfig.stages);
-	flavorConfig.apply();
+	await flavorConfig.apply();
 	const shortTag = flavorConfig.getFlavorShortTag();
-	if (shortTag) {
-		flaverTask.changeFlavor(shortTag);
+	const app = flavorConfig.getApp();
+	if (shortTag !== undefined && app !== undefined) {
+		flaverTask.changeFlavor(shortTag, app.key);
 	}
-
 	updateStatusBarItem();
+
+
 }
 async function updateStatusBarItem() {
 	statusBarItem.text = '....';
 	let app = flavorConfig.getApp();
 	let stage = flavorConfig.getStage();
 	let country = flavorConfig.getCountry();
-	statusBarItem.text = `$(mark-github) ${country?.label ?? ''} ${app?.label ?? ''} app in ${stage?.label ?? ''}`;
+	statusBarItem.text = `$(notebook-execute) ${country?.label ?? ''} ${app?.label ?? ''} app in ${stage?.label ?? ''}`;
 	statusBarItem.show();
 
 }

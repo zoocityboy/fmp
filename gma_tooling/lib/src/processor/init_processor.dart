@@ -8,12 +8,10 @@ import 'package:gmat/src/processor/i_abstract_processor.dart';
 /// Init processor
 class InitProcessor extends AbstractProcessor<List<Package>> {
   InitProcessor(
-      {required this.workspace, required this.logger, this.filter = const []});
+      {required this.workspace, required this.logger});
   final Directory workspace;
   @override
   final Logger logger;
-
-  final List<String> filter;
   @override
   void kill() {}
 
@@ -21,10 +19,8 @@ class InitProcessor extends AbstractProcessor<List<Package>> {
     final allPubspecs = await workspace
         .list(recursive: true, followLinks: false)
         .where((file) =>
-            (file.path.endsWith('${Platform.pathSeparator}pubspec.yaml') ||
-                file.path.endsWith('${Platform.pathSeparator}pubspec.yml')) &&
-            !file.path.contains(
-                '${Platform.pathSeparator}example${Platform.pathSeparator}'))
+            file.path.endsWith('${Platform.pathSeparator}pubspec.yaml') ||
+            file.path.endsWith('${Platform.pathSeparator}pubspec.yml'))
         .toList();
     final _result = await Future.wait<Package>(allPubspecs.map((file) async {
       final _package = Package(file);

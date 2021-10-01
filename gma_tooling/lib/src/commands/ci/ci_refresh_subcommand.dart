@@ -19,7 +19,6 @@ class RefreshSubcommand extends GmaMultipleCommand with LoggerMixin {
         MapEntry<String?, List<String>>('flutter', ['clean']),
         MapEntry<String?, List<String>>(null, ['pub', 'get']),
       ];
-
   @override
   FutureOr<void> run() async {
     await super.run();

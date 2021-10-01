@@ -1,25 +1,35 @@
 import 'dart:async';
 
+import 'package:args/args.dart';
 import 'package:gmat/src/commands/ci/ci_refresh_subcommand.dart';
 import 'package:gmat/src/commands/i_command.dart';
 
-class CiCommand extends ICommand {
+class CiCommand extends GmaCommand {
   @override
   final name = 'ci';
   @override
   final description = 'Continious integration';
+  
+  @override
+  bool shouldUseFilter = false;
 
-  CiCommand() {
+  @override
+  ArgParser argParser = ArgParser(
+    usageLineLength: 80,
+    allowTrailingOptions: true,
+  );
+
+  CiCommand() : super() {
+
     addSubcommand(RefreshSubcommand());
   }
 
   // [run] may also return a Future.
   @override
-  FutureOr<void> run() {
+  FutureOr<void> run() async {
+    await super.run();
+    print(argParser.usage);
     printUsage();
-    return Future.value(null);
+    
   }
-
-  @override
-  bool get checkRoot => true;
 }

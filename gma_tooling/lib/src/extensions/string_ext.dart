@@ -6,6 +6,8 @@ extension StringPascal on String {
   String toPascalCase() {
     return split('_').map(_upperCaseFirstLetter).toList().join();
   }
+
+  
 }
 
 extension ProcessResultString on String {

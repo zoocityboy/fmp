@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'dart:io';
-
-import 'package:cli_util/cli_logging.dart';
 import 'package:gmat/gmat.dart';
 import 'package:gmat/src/extensions/directory_ext.dart';
+import 'package:gmat/src/models/flavor/pubspec_flavor.dart';
+import 'package:gmat/src/models/logger/gmat_logger.dart';
 import 'package:gmat/src/processor/shell_processor.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:path/path.dart' as path;
 import 'package:pub_semver/pub_semver.dart';
+import 'package:yaml/yaml.dart';
+
+import 'flavor/flavors.dart';
 
 enum PackageType { flutter, dart, plugin }
 
@@ -27,30 +30,38 @@ abstract class IEntity {
   Future<bool> loadPubspec();
   Directory get directory;
   bool hasFlavor = false;
+  bool hasTranslation = false;
+  Map<FlavorType, Flavor>? flavors;
+  late PubSpec pubSpec;
 }
 
 class Entity extends IEntity {
   Entity(this.pubspecPath) : directory = pubspecPath.parent;
+  
   @override
   FileSystemEntity pubspecPath;
+  
   @override
   Directory directory;
 
   String get directoryName => directory.directoryName;
+  
   @override
   Future<bool> loadPubspec() async {
     final _exists =
         await File(path.join(directory.path, 'pubspec.yaml')).exists() ||
             await File(path.join(directory.path, 'pubspec.yml')).exists();
     if (_exists) {
-      var pubspec = await PubSpec.load(directory);
-      name = pubspec.name ?? directory.directoryName;
-      version = pubspec.version;
-      dependencies = pubspec.dependencies;
-      devDependencies = pubspec.devDependencies;
-      dependencyOverrides = pubspec.dependencyOverrides;
-      packageType = parsePackageType(pubspec);
-      hasFlavor = containsFlavor(pubspec);
+      pubSpec = await PubSpec.load(directory);
+      name = pubSpec.name ?? directory.directoryName;
+      version = pubSpec.version;
+      dependencies = pubSpec.dependencies;
+      devDependencies = pubSpec.devDependencies;
+      dependencyOverrides = pubSpec.dependencyOverrides;
+      packageType = parsePackageType(pubSpec);
+      hasTranslation = containsGenLang(pubSpec);
+      hasFlavor = containsFlavor(pubSpec);
+      flavors = parseFlavors(pubSpec);
       return true;
     } else {
       print('$directoryName pubspec.yaml not exists');
@@ -66,24 +77,64 @@ class Entity extends IEntity {
     }
     return PackageType.plugin;
   }
-
-  bool containsFlavor(PubSpec pubSpec) {
-    final contain = pubSpec.unParsedYaml?.containsKey('koyal_flavor') ?? false;
-    if (contain) {
-      print(pubSpec.unParsedYaml);
+  
+  Map<FlavorType, Flavor>? parseFlavors(PubSpec pubSpec) {
+    final _hasFlavor = containsFlavor(pubSpec);
+    if (_hasFlavor) {
+      final items = <FlavorType, Flavor>{};
+      YamlMap data = pubSpec.unParsedYaml?['koyal_flavor'];
+      for (var item in data.keys) {
+        final _value = data[item];
+        if (_value != null) {
+          items.addAll({
+            FlavorTypeConverter.fromJson(item as String):
+                Flavor.fromJson(_value),
+          });
+        }
+      }
+      return items;
     }
-    return contain;
+    return null;
+  }
+
+  bool containsFlavor(PubSpec pubSpec) =>
+      pubSpec.unParsedYaml?.containsKey('koyal_flavor') ?? false;
+  bool containsGenLang(PubSpec pubSpec) =>
+      pubSpec.allDependencies.containsKey('gen_lang');
+
+  Future<void> changeFlavor(FlavorType type) async {
+    final currentFlavors = flavors;
+    if (currentFlavors != null) {
+      List<String> keys = [];
+      currentFlavors.values.map((e) => e.dependencies).forEach((e) {
+        keys = [...keys, ...e!.keys.toList()];
+      });
+      final newFlavorDependencies = currentFlavors[type]!.dependencies;
+      final keysx = keys.toSet().toList();
+      pubSpec.dependencies
+        ..removeWhere((key, value) => keysx.any((element) => element == key))
+        ..addAll(newFlavorDependencies!);
+      await pubSpec.save(pubspecPath.parent);
+    } else {}
+    
+    
   }
 
   @override
   String toString() {
-    return '[${packageType.value}][$directoryName][$version][$hasFlavor]';
+    return '$name:$version(type: ${packageType.value},dir: $directoryName, koyal_flavor: $hasFlavor)';
   }
 
   @override
-  Future<Process> process(String command, List<String> args) {
+  Future<Process> process(String command, List<String> args,
+      {bool dryRun = false}) {
+    if (dryRun) {
+      return AsyncShellProcessor(Platform.isWindows ? 'dir' : 'ls', [],
+              workingDirectory: directory.path, logger: GmatVerboseLogger())
+          .run();
+    }
     return AsyncShellProcessor(command, args,
-            workingDirectory: directory.path, logger: Logger.verbose())
+            workingDirectory: directory.path, logger: GmatVerboseLogger())
         .run();
   }
 }

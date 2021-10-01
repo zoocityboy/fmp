@@ -9,7 +9,7 @@ interface FlavorBuildTaskDedfinition extends TaskDefinition {
 
 }
 export class FlavorTaskProvider implements TaskProvider {
-    static flavorTaskType = 'kt.flavor';
+    static flavorTaskType = 'gma.flavor';
     private tasks: Task[] | undefined;
     private sharedState: string | undefined;
 
@@ -37,7 +37,7 @@ export class FlavorTaskProvider implements TaskProvider {
         //     return;
         // }
         // let command = `dart tools/koyal.dart f ${flavor} ${app.key}`;
-        // let task = new vscode.Task({ type: 'kt.flavor' }, vscode.TaskScope.Workspace, "flavor:update", "dart", new vscode.ShellExecution("dart", ["tools/koyal.dart",
+        // let task = new vscode.Task({ type: 'gma.flavor' }, vscode.TaskScope.Workspace, "flavor:update", "dart", new vscode.ShellExecution("dart", ["tools/koyal.dart",
         //     "f",
         //     flavor,
         //     app.key]), "$dart-build_runner");

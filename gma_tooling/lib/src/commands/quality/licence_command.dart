@@ -1,39 +1,31 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:ansi_styles/ansi_styles.dart';
-import 'package:gmat/gmat.dart';
+import 'package:gmat/src/commands/i_command.dart';
+import 'package:gmat/src/constants.dart';
 import 'package:gmat/src/mixins/logger_mixin.dart';
 import 'package:gmat/src/models/package.dart';
+import 'package:gmat/gmat.dart';
 
-import 'i_command.dart';
-
-class TranslateCommand extends GmaCommand with LoggerMixin {
+class LicenceSubCommand extends GmaCommand with LoggerMixin {
   @override
-  final name = 'translate';
-  @override
-  final description = 'Translate package';
+  String get description => 'Scrape and save licences of all packages';
 
   @override
-  String? get command => 'flutter';
-  @override
-  bool get shouldUseFilter => true;
+  String get name => 'licence';
 
   @override
-  Set<String> arguments = {
-    'pub',
-    'run',
-    'gen_lang:generate',
-    '--source-dir',
-    'lib${Platform.pathSeparator}l10n${Platform.pathSeparator}strings',
-    '--output-dir',
-    'lib${Platform.pathSeparator}l10n',
-  };
+  Set<String> arguments = {'analyze'};
+
+  LicenceSubCommand() {
+    argParser.addOption(Constants.argApp, allowed: ['self_care', 'mapp']);
+  }
 
   @override
   FutureOr<void> run() async {
     await super.run();
-    workspace.manager.applyDependencies(dependsOn: ['gen_lang']);
     final progress = loggerCommandStart();
     await executeOnSelected();
     if (failures.isNotEmpty) {
@@ -54,13 +46,7 @@ class TranslateCommand extends GmaCommand with LoggerMixin {
       final commnadName = command ??
           (package.packageType == PackageType.flutter ? 'flutter' : 'dart');
       loggerProgress(commnadName, package);
-      final process = await package.process(
-          commnadName,
-          [
-            ...arguments.toList(),
-            '--class-name',
-            'L10n${package.directoryName.toPascalCase()}'
-          ],
+      final process = await package.process(commnadName, arguments.toList(),
           dryRun: workspace.manager.isDryRun);
 
       if (await process.exitCode > 0) {

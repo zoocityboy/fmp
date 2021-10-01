@@ -3,9 +3,8 @@ import 'dart:io';
 
 import 'package:gmat/src/mixins/logger_mixin.dart';
 import 'package:gmat/src/commands/i_command.dart';
-import 'package:gmat/src/monitoring/monitoring_mixin.dart';
 
-class GetSubcommand extends GmaCommand with CommandMonitoring, LoggerMixin {
+class GetSubcommand extends GmaCommand with LoggerMixin {
   @override
   String get description => 'Update depdencies of packages.';
 
@@ -16,7 +15,7 @@ class GetSubcommand extends GmaCommand with CommandMonitoring, LoggerMixin {
 
   @override
   Set<String> arguments = {'pub', 'get'};
-
+  
   @override
   FutureOr<void> run() async {
     await super.run();

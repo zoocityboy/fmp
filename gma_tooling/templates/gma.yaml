@@ -1,10 +1,18 @@
-name: Name
-description: Yet another multi-package 
-
+name: GMA
+description: Multi-package settings
+stages:
+  - fake
+  - prod
+countries:
+  - in
+  - vn
+  - ph
+  - id
 apps:
-  - name: customer
+  - name: self_care
     folder: capp
-    description: Customer application
+    description: Customer application [CAPP]
+    flavor: fakein
     stages:
       - fake
       - prod
@@ -14,10 +22,12 @@ apps:
       - ph
       - id
     exclude_packages:
-      - mapp*
-  - name: merchant
+      - mapp_**
+    
+  - name: mapp
     folder: mapp
-    description: Merchant application
+    description: Merchant application  [MAPP]
+    flavor: fakein
     stages:
       - fake
       - prod
@@ -27,14 +37,15 @@ apps:
       - ph
       - id
     exclude_packages:
-      - capp*
+      - capp_**
   - name: widget_catalog
     folder: widget_catalog
     description: Widget catalog
   - name: dynamic_forms_playground
     folder: dynamic_forms_playground
-    description: Dynamic forms playground
-
+    description: Dynamic forms playground  
 packages:
   - packages/**
   - plugins/**
+
+runners:

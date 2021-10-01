@@ -2,8 +2,8 @@
 	"publisher": "aol27cuew27wkrbzzq6djpcii6wqib6ejy3y56y2lfp2yspeiyyq",
 	"private": true,
 	"name": "gma",
-	"displayName": "KT:Flavor",
-	"description": "Change flavor in Workspace",
+	"displayName": "GMA Extensions",
+	"description": "GMA Extensions",
 	"version": "0.0.1",
 	"icon": "images/koyal_icon.png",
 	"engines": {
@@ -13,7 +13,7 @@
 		"Other"
 	],
 	"activationEvents": [
-		"*"
+		"workspaceContains:**/gma.yaml"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -65,6 +65,11 @@
 		],
 		"commands": [
 			{
+				"command": "gma.flavor.showBoard",
+				"title": "Show Cat Codicons",
+				"category": "Cat Codicons"
+			},
+			{
 				"category": "GMA",
 				"command": "gma.flavor.changeApp",
 				"title": "Select application"
@@ -84,7 +89,7 @@
 			"activitybar": [
 				{
 					"id": "gma-activity",
-					"title": "Koyal tools",
+					"title": "GMA Tools",
 					"icon": "images/koyal_icon.svg"
 				}
 			]
@@ -102,7 +107,7 @@
 		"viewsWelcome": [
 			{
 				"view": "nodeDependencies",
-				"contents": "No node dependencies found [learn more](https://www.npmjs.com/).\n[Add Dependency](command:nodeDependencies.addEntry)"
+				"contents": "[Widget Catalog](command:gma.flavor.showBoard)"
 			}
 		]
 	},
@@ -121,6 +126,7 @@
 		"@types/vscode": "^1.46.0",
 		"@typescript-eslint/eslint-plugin": "^4.1.1",
 		"@typescript-eslint/parser": "^4.1.1",
+		"@vscode/codicons": "0.0.21",
 		"eslint": "^7.9.0",
 		"glob": "^7.1.6",
 		"mocha": "^8.1.3",
@@ -128,6 +134,6 @@
 		"vscode-test": "^1.4.0"
 	},
 	"dependencies": {
-		"@vscode/codicons": "^0.0.21"
+		"i18n-iso-countries": "^6.8.0"
 	}
 }

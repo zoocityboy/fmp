@@ -3,33 +3,37 @@ import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:yaml/yaml.dart';
 
-class ConfigApp {
+class GmaApp {
   String name;
   String folder;
+  String? flavor;
   String? description;
   List<String> stages;
   List<String> countries;
   List<String> exclude;
-  ConfigApp({
+  GmaApp({
     required this.name,
     required this.folder,
+    this.flavor,
     this.stages = const [],
     this.countries = const [],
     this.description,
     this.exclude = const [],
   });
 
-  ConfigApp copyWith({
+  GmaApp copyWith({
     String? name,
     String? folder,
+    String? flavor,
     String? description,
     List<String>? stages,
     List<String>? countries,
     List<String>? exclude,
   }) {
-    return ConfigApp(
+    return GmaApp(
       name: name ?? this.name,
       folder: folder ?? this.folder,
+      flavor: flavor ?? this.flavor,
       description: description ?? this.description,
       stages: stages ?? this.stages,
       countries: countries ?? this.countries,
@@ -48,11 +52,11 @@ class ConfigApp {
     };
   }
 
-  factory ConfigApp.fromMap(Map<String, dynamic> map) {
-    print(map);
-    return ConfigApp(
+  factory GmaApp.fromMap(Map<String, dynamic> map) {
+    return GmaApp(
       name: map['name'],
       folder: map['folder'],
+      flavor: map['flavor'],
       description: map['description'],
       stages: List<String>.from(map['stages'] ?? []),
       countries: List<String>.from(map['countries'] ?? []),
@@ -60,11 +64,11 @@ class ConfigApp {
     );
   }
 
-  factory ConfigApp.fromYaml(YamlMap map) {
-    print(map);
-    return ConfigApp(
+  factory GmaApp.fromYaml(YamlMap map) {
+    return GmaApp(
       name: map['name'],
       folder: map['folder'],
+      flavor: map['flavor'],
       description: map['description'],
       stages: List<String>.from(map['stages']),
       countries: List<String>.from(map['countries']),
@@ -74,12 +78,20 @@ class ConfigApp {
 
   String toJson() => json.encode(toMap());
 
-  factory ConfigApp.fromJson(String source) =>
-      ConfigApp.fromMap(json.decode(source));
+  factory GmaApp.fromJson(String source) => GmaApp.fromMap(json.decode(source));
 
   @override
   String toString() {
-    return 'ConfigApp(name: $name, folder: $folder, description: $description, stages: $stages, countries: $countries, exclude: $exclude)';
+    return '''
+    ConfigApp(
+      name: $name
+      folder: $folder
+      flavor: $flavor
+      description: $description
+      stages: $stages
+      countries: $countries 
+      exclude: $exclude
+    )''';
   }
 
   @override
@@ -87,9 +99,10 @@ class ConfigApp {
     if (identical(this, other)) return true;
     final listEquals = const DeepCollectionEquality().equals;
 
-    return other is ConfigApp &&
+    return other is GmaApp &&
         other.name == name &&
         other.folder == folder &&
+        other.flavor == flavor &&
         other.description == description &&
         listEquals(other.stages, stages) &&
         listEquals(other.countries, countries) &&
@@ -100,6 +113,7 @@ class ConfigApp {
   int get hashCode {
     return name.hashCode ^
         folder.hashCode ^
+        flavor.hashCode ^
         description.hashCode ^
         stages.hashCode ^
         countries.hashCode ^

@@ -1,6 +1,6 @@
 import { App, ConfiguratorChangeEvent, Country, LaunchConfiguration, ProgressState, Selectable, Stage } from "./models";
+import { Constants } from './constants';
 import * as vscode from 'vscode';
-import { config } from "process";
 
 export interface IWorkspaceConfigurator {
     // readonly onDidChangeSelection: vscode.Event<ConfiguratorChangeEvent[]>;
@@ -10,10 +10,6 @@ export interface IWorkspaceConfigurator {
  * 
  */
 export class WorkspaceConfigurator implements IWorkspaceConfigurator {
-    static applicationFolder: string = "Application";
-    static configKeyApps: string = "gma.flavor.apps";
-    static configKeyCountries: string = "gma.flavor.countries";
-    static configKeyStages: string = "gma.flavor.stages";
     private target: vscode.ConfigurationTarget = vscode.ConfigurationTarget.Workspace;
     private appWorkspaceFolder: vscode.WorkspaceFolder | undefined;
     private configuration: vscode.WorkspaceConfiguration;
@@ -35,7 +31,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     constructor() {
         this._onDidChanged = new vscode.EventEmitter<ConfiguratorChangeEvent>();
         this.configuration = vscode.workspace.getConfiguration();
-        this.appWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === WorkspaceConfigurator.applicationFolder);
+        this.appWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.applicationFolder);
         this.loadConfig();
     }
     get onDidChanged(): vscode.Event<ConfiguratorChangeEvent> {
@@ -51,7 +47,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     private loadApps(): App[] {
         try {
             return this.configuration
-                .get(WorkspaceConfigurator.configKeyApps, [])
+                .get(Constants.configKeyApps, [])
                 .map((item) => App.toModel(item));
         } catch (e) {
             return [];
@@ -61,7 +57,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     private loadStages(): Stage[] {
         try {
             return this.configuration
-                .get(WorkspaceConfigurator.configKeyStages, [])
+                .get(Constants.configKeyStages, [])
                 .map((item) => Stage.toModel(item));
         } catch (e) {
             return [];
@@ -70,7 +66,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     private loadCountries(): Country[] {
         try {
             return this.configuration
-                .get(WorkspaceConfigurator.configKeyCountries, [])
+                .get(Constants.configKeyCountries, [])
                 .map((item) => Country.toModel(item));
         } catch (e) {
             return [];
@@ -99,13 +95,13 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     private getSettingsKey<T extends Selectable>(item: T): string {
         switch (true) {
             case item instanceof App:
-                return WorkspaceConfigurator.configKeyApps;
+                return Constants.configKeyApps;
             case item instanceof Country:
-                return WorkspaceConfigurator.configKeyCountries;
+                return Constants.configKeyCountries;
             case item instanceof Stage:
-                return WorkspaceConfigurator.configKeyStages;
+                return Constants.configKeyStages;
             default:
-                return 'kt.flavor.uups';
+                return 'gma.flavor.uups';
         }
     }
 
@@ -197,7 +193,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         }
         return vscode.workspace.updateWorkspaceFolders(0, 1, {
             uri: vscode.Uri.joinPath(folder.uri, `../${app.key}`),
-            name: WorkspaceConfigurator.applicationFolder
+            name: Constants.applicationFolder
         });
     }
     public async apply(): Promise<boolean> {
