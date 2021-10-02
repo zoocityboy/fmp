@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:gmat/src/commands/i_command.dart';
+import 'package:gmat/src/constants.dart';
 import 'package:gmat/src/mixins/logger_mixin.dart';
 
 class DcmSubCommand extends GmaCommand with LoggerMixin {
@@ -19,14 +20,12 @@ class DcmSubCommand extends GmaCommand with LoggerMixin {
   @override
   FutureOr<void> run() async {
     await super.run();
-    workspace.manager.applyDevDependencies(dependsOn: ['dart_code_metrics']);
+    workspace.manager.applyDevDependencies(dependsOn: [PubspecKeys.dcmKey]);
     final progress = loggerCommandStart();
     await executeOnSelected();
+    logCommandResults(failures: failures, progress: progress);
     if (failures.isNotEmpty) {
-      loggerCommandFailures(progress: progress);
       exitCode = 1;
-    } else {
-      loggerCommandSuccess(progress: progress);
     }
   }
 }

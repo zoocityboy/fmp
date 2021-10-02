@@ -109,7 +109,7 @@ class GmaManager {
   void applyDependencies({List<String> dependsOn = const <String>[]}) {
     filtered = filtered
         .where((element) =>
-            dependsOn.any((e) => element.devDependencies.keys.contains(e)))
+            dependsOn.any((e) => element.dependencies.keys.contains(e)))
         .toList();
     applySort();
   }

@@ -37,6 +37,7 @@ abstract class SimpleGmaCommand<T> extends Command<T> {
   String? command;
   Set<String> get arguments => customArgs;
   Set<String> customArgs = {};
+  Map<Package, Progress> taskProgres = {};
 }
 
 abstract class GmaCommand extends SimpleGmaCommand<void> {
@@ -57,24 +58,21 @@ abstract class GmaCommand extends SimpleGmaCommand<void> {
       workspace.manager.applyPackage(filterPatterns: _patterns?.split(','));
     }
   }
-
   Future<void> executeOnSelected() async {
     return await pool.forEach<Package, void>(workspace.manager.filtered,
         (package) async {
       if (isFastFail && failures.isNotEmpty) {
         return Future.value();
       }
-      final commnadName = command ??
-          (package.packageType == PackageType.flutter ? 'flutter' : 'dart');
+      final commnadName = command ??= (package.command ?? 'flutter');
       loggerProgress(commnadName, package);
+      
       final process = await package.process(commnadName, arguments.toList(),
           dryRun: workspace.manager.isDryRun);
-
-      if (await process.exitCode > 0) {
-        failures[package] = await process.exitCode;
-        if (!isVerbose) {
-          workspace.manager.log('\n');
-        }
+      final _exitCode = await process.exitCode;
+      if (_exitCode > 0) {
+        failures[package] = _exitCode;
+       
         await process.stderr.transform(utf8.decoder).forEach((value) {
           workspace.manager.log(
               '         ⌙ ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}');
@@ -85,8 +83,10 @@ abstract class GmaCommand extends SimpleGmaCommand<void> {
                 '            ${AnsiStyles.dim.italic(value.stdOutFiltred())}');
           }
         });
-      }
+        
+      } 
     }).drain<void>();
+    
   }
 
   void loggerProgress(String commnadName, Package package) {

@@ -26,7 +26,6 @@ class GmaWorkspace {
   factory GmaWorkspace.fromDirectory(Directory directory,
       {required GmaManager manager}) {
     final _yaml = Utils.loadSettingsSync(directory);
-    print((_yaml));
     return GmaWorkspace(directory,
         config: GmaConfig.fromJson(json.encode(_yaml)), manager: manager);
   }

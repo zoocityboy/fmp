@@ -99,8 +99,8 @@ class GmatProgress extends Progress {
     _timer = Timer.periodic(Duration(milliseconds: 80), (t) {
       _updateDisplay();
     });
-    _updateDisplay();
     io.stdout.write('$message...  '.padRight(40));
+    _updateDisplay();
   }
 
   @override

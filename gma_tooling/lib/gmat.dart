@@ -17,7 +17,7 @@ final currentDir = Directory.current;
 
 void execute(List<String> args) async {
   try {
-    await KtCommandRunner(args).init();
+    await KtCommandRunner().run(args);
   } on ArgParserException catch (error) {
     AnsiStyles.red(error.message);
   } on Exception catch (error) {

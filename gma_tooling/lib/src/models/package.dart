@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:gmat/gmat.dart';
+import 'package:gmat/src/constants.dart';
 import 'package:gmat/src/extensions/directory_ext.dart';
 import 'package:gmat/src/models/flavor/pubspec_flavor.dart';
 import 'package:gmat/src/models/logger/gmat_logger.dart';
@@ -33,6 +34,7 @@ abstract class IEntity {
   bool hasTranslation = false;
   Map<FlavorType, Flavor>? flavors;
   late PubSpec pubSpec;
+  String? command;
 }
 
 class Entity extends IEntity {
@@ -62,6 +64,8 @@ class Entity extends IEntity {
       hasTranslation = containsGenLang(pubSpec);
       hasFlavor = containsFlavor(pubSpec);
       flavors = parseFlavors(pubSpec);
+      command = packageType == PackageType.flutter ? 'flutter' : 'dart';
+
       return true;
     } else {
       print('$directoryName pubspec.yaml not exists');
@@ -71,18 +75,20 @@ class Entity extends IEntity {
   }
 
   PackageType parsePackageType(PubSpec pubSpec) {
-    final isFlutter = dependencies.keys.toList().contains('flutter');
-    if (isFlutter) {
+    
+    if (dependencies.keys.toList().contains('flutter')) {
       return PackageType.flutter;
     }
-    return PackageType.plugin;
+    return pubSpec.environment?.sdkConstraint != null
+        ? PackageType.dart
+        : PackageType.plugin;
   }
   
   Map<FlavorType, Flavor>? parseFlavors(PubSpec pubSpec) {
-    final _hasFlavor = containsFlavor(pubSpec);
-    if (_hasFlavor) {
+    final _containsFlavor = containsFlavor(pubSpec);
+    if (_containsFlavor) {
       final items = <FlavorType, Flavor>{};
-      YamlMap data = pubSpec.unParsedYaml?['koyal_flavor'];
+      YamlMap data = pubSpec.unParsedYaml?[PubspecKeys.flavorKey];
       for (var item in data.keys) {
         final _value = data[item];
         if (_value != null) {
@@ -98,9 +104,10 @@ class Entity extends IEntity {
   }
 
   bool containsFlavor(PubSpec pubSpec) =>
-      pubSpec.unParsedYaml?.containsKey('koyal_flavor') ?? false;
+      pubSpec.unParsedYaml?.containsKey(PubspecKeys.flavorKey) ?? false;
+      
   bool containsGenLang(PubSpec pubSpec) =>
-      pubSpec.allDependencies.containsKey('gen_lang');
+      pubSpec.allDependencies.containsKey(PubspecKeys.genLangKey);
 
   Future<void> changeFlavor(FlavorType type) async {
     final currentFlavors = flavors;
@@ -127,8 +134,9 @@ class Entity extends IEntity {
 
   @override
   Future<Process> process(String command, List<String> args,
-      {bool dryRun = false}) {
+      {bool dryRun = false}) async { 
     if (dryRun) {
+      await Future.delayed(Duration(milliseconds: 200));
       return AsyncShellProcessor(Platform.isWindows ? 'dir' : 'ls', [],
               workingDirectory: directory.path, logger: GmatVerboseLogger())
           .run();

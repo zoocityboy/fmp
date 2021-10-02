@@ -35,6 +35,8 @@ abstract class Constants {
 /// [PubspecKeys] defines special keys in pubspec
 abstract class PubspecKeys {
   static const String flavorKey = 'koyal_flavor';
+  static const String genLangKey = 'gen_lang';
+  static const String dcmKey = 'dart_code_metrics';
 }
 
 /// Basic Env variables used in GMA

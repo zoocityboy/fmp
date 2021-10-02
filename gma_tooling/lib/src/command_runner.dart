@@ -9,8 +9,7 @@ import 'commands/pub/pub_command.dart';
 import 'constants.dart';
 
 class KtCommandRunner extends CommandRunner<void> {
-  
-  KtCommandRunner(this.args)
+  KtCommandRunner()
       : super('gmat', 'Manage GMA multi-package project') {
     argParser.addFlag(
       Constants.argVerbose,
@@ -18,11 +17,13 @@ class KtCommandRunner extends CommandRunner<void> {
       negatable: false,
       help: 'Enable verbose logging.',
     );
+    
     argParser.addOption(
       Constants.argDirectory,
       abbr: 'd',
       help: 'Define custom root, default is current directory',
     );
+
     argParser.addOption(
       Constants.argConcurrency,
       abbr: 'c',
@@ -33,6 +34,7 @@ class KtCommandRunner extends CommandRunner<void> {
     argParser.addFlag(Constants.argFastFail,
         help: 'Fast fail allow finish on first fail',
         negatable: false);
+
     argParser.addFlag(
       Constants.argDryRun,
       help: 'Run current command with dry run',
@@ -45,10 +47,12 @@ class KtCommandRunner extends CommandRunner<void> {
       help: 'Filter package by name with Glob pattern',
       valueHelp: 'capp_a**',
     );
+
     argParser.addOption(Constants.argFilterDependency,
         help: 'Filter package by dependency with Glob pattern',
         valueHelp: 'capp_a**',
         aliases: ['fd']);
+
     argParser.addOption(Constants.argFilterDevDependency,
         help: 'Filter package by devDependency with Glob pattern',
         valueHelp: 'capp_a**',
@@ -62,10 +66,7 @@ class KtCommandRunner extends CommandRunner<void> {
     addCommand(FlavorCommand());
     
   }
-  Iterable<String> args;
-  Future<void> init() {
-    return run(args);
-  }
+  
   @override
   Future<void> runCommand(ArgResults topLevelResults) async {
     await super.runCommand(topLevelResults); 
