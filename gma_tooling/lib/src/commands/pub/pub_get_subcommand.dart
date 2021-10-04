@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:gmat/src/mixins/logger_mixin.dart';
 import 'package:gmat/src/commands/i_command.dart';
 
-class GetSubcommand extends GmaCommand with LoggerMixin {
+class PubGetSubcommand extends GmaCommand with LoggerMixin {
   @override
   String get description => 'Update depdencies of packages.';
 
@@ -22,11 +22,9 @@ class GetSubcommand extends GmaCommand with LoggerMixin {
 
     final progress = loggerCommandStart();
     await executeOnSelected();
+    loggerCommandResults(failures: failures, progress: progress);
     if (failures.isNotEmpty) {
-      loggerCommandFailures(progress: progress);
       exitCode = 1;
-    } else {
-      loggerCommandSuccess(progress: progress);
     }
   }
 }

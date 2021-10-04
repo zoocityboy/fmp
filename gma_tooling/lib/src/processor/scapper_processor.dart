@@ -10,9 +10,7 @@ import 'package:gmat/src/processor/i_abstract_processor.dart';
 /// a cross all packages
 ///
 class ScarapperProcessor extends AbstractProcessor<String> {
-  @override
-  void kill() {}
-
+  
   FutureOr<String> execute() async {
     throw UnimplementedError();
   }

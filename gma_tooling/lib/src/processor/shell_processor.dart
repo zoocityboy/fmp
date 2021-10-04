@@ -17,7 +17,6 @@ class ShellProcessor extends AbstractProcessor<void> {
   final String? workingDirectory;
   final List<String> args;
   final bool runInShell;
-  Process? process;
   @override
   final Logger logger;
 
@@ -30,8 +29,6 @@ class ShellProcessor extends AbstractProcessor<void> {
   @override
   String toString() => 'running: ${args.join(' ')}';
 
-  @override
-  void kill() => process?.kill();
 }
 
 class AsyncShellProcessor extends AbstractProcessor<ProcessResult> {
@@ -46,7 +43,6 @@ class AsyncShellProcessor extends AbstractProcessor<ProcessResult> {
   final String? workingDirectory;
   final List<String> args;
   final bool runInShell;
-  Process? process;
   @override
   final Logger logger;
 
@@ -59,6 +55,4 @@ class AsyncShellProcessor extends AbstractProcessor<ProcessResult> {
   @override
   String toString() => 'running: ${args.join(' ')}';
 
-  @override
-  void kill() => process?.kill();
 }

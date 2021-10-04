@@ -20,10 +20,10 @@ class DcmSubCommand extends GmaCommand with LoggerMixin {
   @override
   FutureOr<void> run() async {
     await super.run();
-    workspace.manager.applyDevDependencies(dependsOn: [PubspecKeys.dcmKey]);
+    manager.applyDevDependencies(dependsOn: [PubspecKeys.dcmKey]);
     final progress = loggerCommandStart();
     await executeOnSelected();
-    logCommandResults(failures: failures, progress: progress);
+    loggerCommandResults(failures: failures, progress: progress);
     if (failures.isNotEmpty) {
       exitCode = 1;
     }

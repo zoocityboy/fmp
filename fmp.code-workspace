@@ -5,12 +5,6 @@
 		},
 		{
 			"path": "gma_tooling"
-		},
-		{
-			"path": "../../hci/self-care-mobile"
-		},
-		{
-			"path": "../homecredit.eu/self-care-mobile"
 		}
 	],
 	"settings": {}

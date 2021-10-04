@@ -18,7 +18,7 @@ class BootstrapUpdateSubcommand extends GmaCommand {
     
     final _command = BootstrapProcessor(
         dir: Directory(globalResults?['root'] ?? Directory.current.path),
-      logger: workspace.manager.logger,
+      logger: manager.logger,
     );
     await _command.run();
     

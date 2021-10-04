@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'i_command.dart';
 
-class ExecCommand extends ICommand {
+class ExecCommand extends GmaCommand {
   @override
   final name = 'exec';
   @override

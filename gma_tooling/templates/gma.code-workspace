@@ -192,32 +192,6 @@
             {
                 "label": "GMA: Restart",
                 "command": "${command:dart.restartAnalysisServer}",
-            },
-            {
-                "label": "flavor:capp:prodvn",
-                "type": "shell",
-                "command": "dart",
-                "args": [
-                    "tools/koyal.dart",
-                    "f",
-                    "prodvn",
-                    "capp"
-                ],
-                "problemMatcher": [
-                    "$dart-build_runner"
-                ],
-                "options": {
-                    "cwd": "${workspaceFolder}"
-                },
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "clear": true,
-                    "showReuseMessage": false,
-                    "panel": "shared"
-                },
-                "promptOnClose": false,
-                "isBackground": false
             }
         ]
     }

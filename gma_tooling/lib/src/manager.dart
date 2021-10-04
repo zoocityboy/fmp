@@ -13,26 +13,33 @@ import 'package:gmat/src/processor/init_processor.dart';
 import 'models/package.dart';
 
 class GmaManager {
-  GmaManager({
+  GmaManager._({
     required this.directory,
     required this.logger,
-    this.filter = const [],
     this.isDryRun = false,
     this.isFastFail = false,
     this.isVerbose = false,
+    this.excludeExamples = true,
     this.concurrency = Constants.defaultConcurency,
+    this.filters,
+    this.dependsOn,
+    this.devDependsOn,
   });
   factory GmaManager.fromArgResults(ArgResults? results,
       {required Logger logger}) {
-    final _directory =
-        Directory(results?[Constants.argDirectory] ?? Directory.current.path);
-    return GmaManager(
+    final _directory = Directory.current;
+
+    return GmaManager._(
       directory: _directory,
       logger: logger,
       concurrency: int.parse(results?[Constants.argConcurrency]),
+      excludeExamples: results?[Constants.argExamples] == false,
       isVerbose: results?[Constants.argVerbose] == true,
       isFastFail: results?[Constants.argFastFail] == true,
       isDryRun: results?[Constants.argDryRun] == true,
+      filters: results?[Constants.argFilter],
+        dependsOn: results?[Constants.argFilterDependency],
+        devDependsOn: results?[Constants.argFilterDevDependency]
     );
   }
   final bool isDryRun;
@@ -40,55 +47,48 @@ class GmaManager {
   final bool isFastFail;
   final bool isVerbose;
   final int concurrency;
+  final bool excludeExamples;
   final Logger logger;
-  final List<Package> packages = [];
+  
   final Directory directory;
-  final List<String> filter;
-  List<Package> packagesGlob = [];
-  List<Package> filtered = [];
+  final String? filters;
+  final String? dependsOn;
+  final String? devDependsOn;
 
+  List<Package> packagesGlob = [];
+  List<Package> selectedPackages = [];
+  final List<Package> allPackages = [];
   /// Initialize manager
   ///
   /// will fetch all the necessary packages from root of project
-  /// [packages] and [filtered] are filled with content
-  Future<void> init() async {
+  /// [allPackages] and [selectedPackages] are filled with content
+  Future<void> init({bool shouldUseFilter = true}) async {
     final _packages = await InitProcessor(
-            workspace: directory, logger: logger)
+            workspace: directory, logger: logger, filters: filters?.split(','))
         .execute();
-    packages.addAll(_packages);
-    filtered = packages;
-  }
+    allPackages.addAll(_packages);
+    selectedPackages = allPackages;
 
-  /// Get max pool concurency jobs with min: `2`
-  /// and default concurency value is `6`
-  int get maxConcurrency => max(2, concurrency);
-  Pool get createPool => Pool(maxConcurrency, timeout: Duration(seconds: 30));
-
-  /// Apply filter for packages with `koyal_flavor` dependency in pubspec.yaml
-  void applyFlavorFilter({List<String>? apps}) {
-    filtered = packages.where((p) => p.hasFlavor == true).toList();
-    if (apps != null) {
-      filtered = filtered
-          .where((app) => apps.any((element) => element == app.name))
-          .toList();
+    applyExcludeExamples();
+    if (shouldUseFilter) {
+      applyDependencies(dependsOn: dependsOn?.split(','));
     }
     applySort();
   }
 
-  /// Apply package filters with glob pattern
-  ///
-  /// example: packages with `capp_` and starts with letters from `A` to `D`
-  /// ```
-  /// capp_[a-d]**
-  /// ```
-  void applyPackage({List<String>? filterPatterns}) {
-    if (filterPatterns == null || filterPatterns.isEmpty) {
-      filtered = packages;
-    } else {
-      filtered = packages
-          .where((element) => filterPatterns.any((pattern) =>
-              GlobCreate.create(pattern, currentDirectoryPath: directory.path)
-                  .matches(element.name?.trim() ?? '')))
+
+  void applyExcludeExamples() {
+    if (!excludeExamples) return;
+    selectedPackages = allPackages
+        .where((element) => !element.directory.path.contains('example'))
+        .toList();
+  }
+  /// Apply filter for packages with `koyal_flavor` dependency in pubspec.yaml
+  void applyFlavorFilter({List<String>? apps}) {
+    selectedPackages = allPackages.where((p) => p.hasFlavor == true).toList();
+    if (apps != null) {
+      selectedPackages = selectedPackages
+          .where((app) => apps.any((element) => element == app.name))
           .toList();
     }
     applySort();
@@ -96,38 +96,49 @@ class GmaManager {
 
   /// Apply package filter where package contains `dependsOn` in
   /// `dev_dependencies:`
-  void applyDevDependencies({List<String> dependsOn = const <String>[]}) {
-    filtered = filtered
+  void applyDevDependencies({List<String>? dependsOn}) {
+    if (dependsOn == null) return;
+    selectedPackages = selectedPackages
         .where((element) =>
-            dependsOn.any((e) => element.devDependencies.keys.contains(e)))
+            dependsOn.any((e) => element.devDependencies.containsKey(e)))
         .toList();
     applySort();
   }
 
   /// Apply package filter where package contains `dependsOn` in
   /// `dependencies:`
-  void applyDependencies({List<String> dependsOn = const <String>[]}) {
-    filtered = filtered
+  void applyDependencies({List<String>? dependsOn}) {
+    print('applyDependencies:${selectedPackages.length} $dependsOn');
+    if (dependsOn == null) return;
+    selectedPackages = selectedPackages
         .where((element) =>
-            dependsOn.any((e) => element.dependencies.keys.contains(e)))
+            dependsOn.any((e) => element.dependencies.containsKey(e)))
         .toList();
     applySort();
   }
 
   /// Apply package filter where package contains `dependsOn` in
   /// `dependencies:` or `dev_dependencies:`
-  void applyAllDependencies({List<String> dependsOn = const <String>[]}) {
-    filtered = filtered
+  void applyAllDependencies({List<String>? dependsOn}) {
+    print('applyAllDependencies:${selectedPackages.length} $dependsOn');
+    for (var item in selectedPackages) {
+      print(
+          '-> ${item.name} ${item.dependencies.containsKey('gen_lang')} : ${item.devDependencies.containsKey('gen_lang')}');
+    }
+    if (dependsOn == null) return;
+    selectedPackages = selectedPackages
         .where((element) => dependsOn.any((e) =>
-            element.dependencies.keys.contains(e) ||
-            element.devDependencies.keys.contains(e)))
+            element.dependencies.containsKey(e) ||
+            element.devDependencies.containsKey(e)))
         .toList();
+
     applySort();
+     print('applyAllDependencies: selected: ${selectedPackages.length}');
   }
 
   /// Sort filtred packages by name and path
   void applySort() {
-    filtered.sort((a, b) => a.directoryName.compareTo(b.directoryName));
+    selectedPackages.sort((a, b) => a.directoryName.compareTo(b.directoryName));
   }
 
   /// Clean all
@@ -149,11 +160,13 @@ class GmaManager {
         item.deleteSync();
       }
     }
+    
+    items.clear();
   }
 
   /// Simple logger of the [message] to the stdout
   void log(String messsage) {
-    logger.stdout(messsage);
+    logger.stdout('$hashCode $messsage');
   }
 
   /// Simple error logger of the [message] to the stderr
@@ -163,6 +176,6 @@ class GmaManager {
 
   @override
   String toString() {
-    return 'GmaManager[packages:${packages.length} filtred: ${filtered.length} concurrency: $concurrency, isDryRun: $isDryRun, isFastFail: $isFastFail, isVerbose: $isVerbose directory: $directory]';
-  }
+    return 'GmaManager[packages:${allPackages.length} filtred: ${selectedPackages.length} concurrency: $concurrency, isDryRun: $isDryRun, isFastFail: $isFastFail, isVerbose: $isVerbose directory: $directory]';
+  }  
 }

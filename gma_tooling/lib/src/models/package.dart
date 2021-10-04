@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:cli_util/cli_logging.dart';
 import 'package:gmat/gmat.dart';
 import 'package:gmat/src/constants.dart';
 import 'package:gmat/src/extensions/directory_ext.dart';
 import 'package:gmat/src/models/flavor/pubspec_flavor.dart';
-import 'package:gmat/src/models/logger/gmat_logger.dart';
 import 'package:gmat/src/processor/shell_processor.dart';
 import 'package:pubspec/pubspec.dart';
-import 'package:path/path.dart' as path;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
@@ -21,20 +20,25 @@ extension PackageTypeX on PackageType {
 
 abstract class IEntity {
   FileSystemEntity get pubspecPath;
-  String? name;
+  late String name;
   PackageType packageType = PackageType.flutter;
   Version? version;
   Map<String, DependencyReference> dependencies = {};
   Map<String, DependencyReference> devDependencies = {};
   Map<String, DependencyReference> dependencyOverrides = {};
-  Future<Process> process(String command, List<String> args);
+  Future<Process> process(
+    String command,
+    List<String> args, {
+    bool dryRun = false,
+    required Logger logger,
+  });
   Future<bool> loadPubspec();
   Directory get directory;
   bool hasFlavor = false;
   bool hasTranslation = false;
   Map<FlavorType, Flavor>? flavors;
   late PubSpec pubSpec;
-  String? command;
+  late String command;
 }
 
 class Entity extends IEntity {
@@ -50,10 +54,6 @@ class Entity extends IEntity {
   
   @override
   Future<bool> loadPubspec() async {
-    final _exists =
-        await File(path.join(directory.path, 'pubspec.yaml')).exists() ||
-            await File(path.join(directory.path, 'pubspec.yml')).exists();
-    if (_exists) {
       pubSpec = await PubSpec.load(directory);
       name = pubSpec.name ?? directory.directoryName;
       version = pubSpec.version;
@@ -65,13 +65,7 @@ class Entity extends IEntity {
       hasFlavor = containsFlavor(pubSpec);
       flavors = parseFlavors(pubSpec);
       command = packageType == PackageType.flutter ? 'flutter' : 'dart';
-
       return true;
-    } else {
-      print('$directoryName pubspec.yaml not exists');
-    }
-
-    return false;
   }
 
   PackageType parsePackageType(PubSpec pubSpec) {
@@ -134,16 +128,26 @@ class Entity extends IEntity {
 
   @override
   Future<Process> process(String command, List<String> args,
-      {bool dryRun = false}) async { 
+      {bool dryRun = false, required Logger logger}) async { 
     if (dryRun) {
       await Future.delayed(Duration(milliseconds: 200));
       return AsyncShellProcessor(Platform.isWindows ? 'dir' : 'ls', [],
-              workingDirectory: directory.path, logger: GmatVerboseLogger())
+              workingDirectory: directory.path, logger: logger)
           .run();
     }
     return AsyncShellProcessor(command, args,
-            workingDirectory: directory.path, logger: GmatVerboseLogger())
+            workingDirectory: directory.path, logger: logger)
         .run();
+  }
+  DependencyReference? getPackageVersion(String name) {
+    final allDependencies = [
+      ...dependencies.entries,
+      ...devDependencies.entries
+    ];
+    final _reference = allDependencies
+        .firstWhereOrNull((element) => element.key == name)
+        ?.value;
+    return _reference;
   }
 }
 

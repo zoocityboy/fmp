@@ -2,7 +2,7 @@
 
 ## standard installation of global package
 ```dart
-dart pub global activate gmat --source=$SMC
+dart pub global activate --source=path . --executable=gmat
 ```
 
 ## use without Installation

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:gmat/src/mixins/logger_mixin.dart';
 import 'package:gmat/src/commands/i_command.dart';
 
-class CleanSubcommand extends GmaCommand with LoggerMixin {
+class PubCleanSubcommand extends GmaCommand with LoggerMixin {
   @override
   String get description => 'Clean depdencies of packages.';
 
@@ -20,7 +20,7 @@ class CleanSubcommand extends GmaCommand with LoggerMixin {
   FutureOr<void> run() async {
     await super.run();
     final progress = loggerCommandStart();
-    workspace.manager.cleanStorage();
+    manager.cleanStorage();
     await executeOnSelected();
     if (failures.isNotEmpty) {
       loggerCommandFailures(progress: progress);

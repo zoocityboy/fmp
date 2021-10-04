@@ -13,11 +13,11 @@ extension StringPascal on String {
 extension ProcessResultString on String {
   String stdOutFiltred() {
     return split('\n')
-        .where(
-          (line) => !line.contains(
-            'Waiting for another flutter command to release the startup lock',
-          ),
-        )
+        // .where(
+        //   (line) => !line.contains(
+        //     'Waiting for another flutter command to release the startup lock',
+        //   ),
+        // )
         .where((line) => !line.contains('Cleaning Xcode'))
         .where((line) => line.trim().isNotEmpty)
         .toList()
@@ -26,15 +26,12 @@ extension ProcessResultString on String {
 
   String stdErrFiltred() {
     return split('\n')
-        // We filter these out as they can be quite spammy. This happens
-        // as we run multiple pub gets in parallel.
-        .where(
-          (line) => !line.contains(
-            'Waiting for another flutter command to release the startup lock',
-          ),
-        )
+        // .where(
+        //   (line) => !line.contains(
+        //     'Waiting for another flutter command to release the startup lock',
+        //   ),
+        // )
         .where((line) => !line.contains('Cleaning Xcode'))
-        // Remove empty lines to reduce logging.
         .where((line) => line.trim().isNotEmpty)
         .toList()
         .join('\n');

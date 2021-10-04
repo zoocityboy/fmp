@@ -27,6 +27,11 @@ abstract class Constants {
   static const String argFilterDependency = 'dependesOn';
   static const String argFilterDevDependency = 'devDependsOn';
   static const String argDirectory = 'dir';
+  static const String argExamples = 'examples';
+  static const String argSearch = 'search';
+
+  static const String argPackage = 'package';
+  static const String argVersion = 'version';
 
   static const String argFlavor = 'flavor';
   static const String argApp = 'app';

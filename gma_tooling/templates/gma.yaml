@@ -1,17 +1,13 @@
 name: GMA
-description: Multi-package settings
-stages:
-  - fake
-  - prod
-countries:
-  - in
-  - vn
-  - ph
-  - id
+description: | 
+  Multi-package settingsa adf asdf
+  asdfa
+  dynamic_forms_playgrounddfasdfasdf
+  
 apps:
   - name: self_care
     folder: capp
-    description: Customer application [CAPP]
+    description: Customer application
     flavor: fakein
     stages:
       - fake
@@ -26,7 +22,7 @@ apps:
     
   - name: mapp
     folder: mapp
-    description: Merchant application  [MAPP]
+    description: Merchant application
     flavor: fakein
     stages:
       - fake

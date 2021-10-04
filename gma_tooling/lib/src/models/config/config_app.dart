@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'dart:core';
 import 'package:collection/collection.dart';
 import 'package:yaml/yaml.dart';
 
@@ -20,6 +20,12 @@ class GmaApp {
     this.description,
     this.exclude = const [],
   });
+
+  List<String>? get flavors => stages
+      .map((e) => countries.map((e1) => '$e$e1'))
+      .expand((element) => element)
+      .toList();
+      
 
   GmaApp copyWith({
     String? name,

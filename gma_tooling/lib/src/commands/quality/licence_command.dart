@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:gmat/src/commands/command_runner.dart';
 import 'package:gmat/src/commands/i_command.dart';
 import 'package:gmat/src/constants.dart';
 import 'package:gmat/src/mixins/logger_mixin.dart';
@@ -20,7 +21,12 @@ class LicenceSubCommand extends GmaCommand with LoggerMixin {
   Set<String> arguments = {'analyze'};
 
   LicenceSubCommand() {
-    argParser.addOption(Constants.argApp, allowed: ['self_care', 'mapp']);
+     final _apps = workspace.config.apps
+        .where((element) =>
+            element.stages.isNotEmpty || element.countries.isNotEmpty)
+        .toList();
+    argParser.addOption(Constants.argApp,
+        allowed: _apps.map((e) => e.name).toList());
   }
 
   @override
@@ -38,29 +44,27 @@ class LicenceSubCommand extends GmaCommand with LoggerMixin {
 
   @override
   Future<void> executeOnSelected() async {
-    return await pool.forEach<Package, void>(workspace.manager.filtered,
+    return await pool.forEach<Package, void>(manager.selectedPackages,
         (package) async {
       if (isFastFail && failures.isNotEmpty) {
         return Future.value();
       }
-      final commnadName = command ??
-          (package.packageType == PackageType.flutter ? 'flutter' : 'dart');
-      loggerProgress(commnadName, package);
-      final process = await package.process(commnadName, arguments.toList(),
-          dryRun: workspace.manager.isDryRun);
+      loggerProgress(package.command, package);
+      final process = await package.process(package.command, arguments.toList(),
+          dryRun: manager.isDryRun, logger: manager.logger);
 
       if (await process.exitCode > 0) {
         failures[package] = await process.exitCode;
         if (!isVerbose) {
-          workspace.manager.log('\n');
+          manager.log('\n');
         }
         await process.stderr.transform(utf8.decoder).forEach((value) {
-          workspace.manager.log(
+          manager.log(
               '         ⌙ ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}');
         });
         await process.stdout.transform(utf8.decoder).forEach((value) {
           if (value.startsWith('info •') || value.startsWith('warning •')) {
-            workspace.manager.log(
+            manager.log(
                 '            ${AnsiStyles.dim.italic(value.stdOutFiltred())}');
           }
         });

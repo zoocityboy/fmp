@@ -71,8 +71,7 @@ class GmatStandardLogger implements Logger {
 }
 
 class GmatVerboseLogger extends VerboseLogger {
-  GmatVerboseLogger({Ansi? ansi, bool logTime = true})
-      : super(ansi: ansi, logTime: logTime);
+  GmatVerboseLogger() : super(logTime: true);
   @override
   Progress progress(String message) => GmatProgress(ansi, message);
 }

@@ -53,8 +53,8 @@ class GmaConfig {
     return GmaConfig(
       name: map['name'],
       description: map['description'],
-      stages: List<String>.from(map['stages']),
-      countries: List<String>.from(map['countries']),
+      stages: [],
+      countries: [],
       apps: List<GmaApp>.from(map['apps']?.map((x) => GmaApp.fromMap(x))),
       packages: List<String>.from(map['packages']),
     );

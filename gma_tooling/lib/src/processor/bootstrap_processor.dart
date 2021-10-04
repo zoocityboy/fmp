@@ -16,11 +16,8 @@ class BootstrapProcessor extends AbstractExecutor<void> {
   }
   @override
   late Logger logger;
-
   Directory _root = Directory.current;
-
-  @override
-  void kill() {}
+  
   Future<String> getPackageRoot() async {
     final packageFileUri =
         await Isolate.resolvePackageUri(Uri.parse('package:gmat/gmat.dart'));
@@ -50,30 +47,33 @@ class BootstrapProcessor extends AbstractExecutor<void> {
   Future<void> create() async {
     final packageRootPath = await getPackageRoot();
     logger.stdout('package: $packageRootPath');
-    final workspaceFileName = Constants.workspaceTpl;
-    final settingsFileName = Constants.settingsTpl;
+    // final workspaceFileName = Constants.workspaceTpl;
+    // final settingsFileName = Constants.settingsTpl;
     final dir = await Directory(_root.path).create();
     await File(path.join(
             packageRootPath, Constants.templatesFolder, Constants.workspaceTpl))
-        .copy(dir.path + Platform.pathSeparator + workspaceFileName)
-        .then((value) => logger.stdout('$workspaceFileName created: $value'),
+        .copy(dir.path + Platform.pathSeparator + Constants.workspaceTpl)
+        .then(
+            (value) => logger.stdout('$Constants.workspaceTpl created: $value'),
             onError: (_) {
-      logger.stdout('$workspaceFileName create failed: $_');
+      logger.stdout('${Constants.workspaceTpl} create failed: $_');
     });
     await File(path.join(
             packageRootPath, Constants.templatesFolder, Constants.settingsTpl))
-        .copy(dir.path + Platform.pathSeparator + settingsFileName)
-        .then((value) => logger.stdout('$settingsFileName created: $value'),
-            onError: (_) {
-      logger.stdout('$settingsFileName failed: $_');
-    });
-    await Directory(path.join(_root.path, Constants.appsFolder))
-        .create()
+        .copy(dir.path + Platform.pathSeparator + Constants.settingsTpl)
         .then(
-        (value) => logger.stdout('${Constants.appsFolder} created: $value'),
+            (value) =>
+                logger.stdout('${Constants.settingsTpl} created: $value'),
             onError: (_) {
-      logger.stdout('${Constants.appsFolder} failed: $_');
+      logger.stdout('${Constants.settingsTpl} failed: $_');
     });
+    // await Directory(path.join(_root.path, Constants.appsFolder))
+    //     .create()
+    //     .then(
+    //     (value) => logger.stdout('${Constants.appsFolder} created: $value'),
+    //         onError: (_) {
+    //   logger.stdout('${Constants.appsFolder} failed: $_');
+    // });
     await Directory(path.join(_root.path, Constants.packagesFolder))
         .create()
         .then(
@@ -109,7 +109,9 @@ class BootstrapProcessor extends AbstractExecutor<void> {
     });
 
     await installExtensions();
-    await ShellProcessor('open', [workspaceFileName],
+    await ShellProcessor(
+      'open',
+      [Constants.workspaceTpl],
             workingDirectory: _root.path, logger: logger,)
         .run();
   }

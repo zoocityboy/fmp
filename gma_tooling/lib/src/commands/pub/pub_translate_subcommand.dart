@@ -2,19 +2,20 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:ansi_styles/ansi_styles.dart';
-import 'package:gmat/gmat.dart';
 import 'package:gmat/src/commands/command_runner.dart';
 import 'package:gmat/src/constants.dart';
+import 'package:gmat/src/extensions/string_ext.dart';
 import 'package:gmat/src/mixins/logger_mixin.dart';
+import 'package:gmat/src/commands/i_command.dart';
 import 'package:gmat/src/models/package.dart';
 
-import 'i_command.dart';
-
-class TranslateCommand extends GmaCommand with LoggerMixin {
+class PubTranslateSubcommand extends GmaCommand with LoggerMixin {
   @override
   final name = 'translate';
   @override
-  final description = 'Translate package';
+  final description = '''Find all packages with dependency on
+  gen_lang package and generate new translations.
+  ''';
 
   @override
   String? get command => 'flutter';
@@ -52,6 +53,7 @@ class TranslateCommand extends GmaCommand with LoggerMixin {
       if (isFastFail && failures.isNotEmpty) {
         return Future.value();
       }
+
       loggerProgress(package.command, package);
       final process = await package.process(
           package.command,

@@ -2,42 +2,41 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:ansi_styles/ansi_styles.dart';
-import 'package:gmat/gmat.dart';
 import 'package:gmat/src/commands/command_runner.dart';
-import 'package:gmat/src/constants.dart';
+import 'package:gmat/src/extensions/string_ext.dart';
 import 'package:gmat/src/mixins/logger_mixin.dart';
+import 'package:gmat/src/models/config/config_app.dart';
+import 'package:gmat/src/models/flavor/flavors.dart';
 import 'package:gmat/src/models/package.dart';
+import 'package:gmat/src/processor/flavor_processor.dart';
+import '../i_command.dart';
 
-import 'i_command.dart';
-
-class TranslateCommand extends GmaCommand with LoggerMixin {
-  @override
-  final name = 'translate';
-  @override
-  final description = 'Translate package';
+class FlavorAppCommand extends GmaCommand with LoggerMixin {
+  final String customName, customDescription;
 
   @override
-  String? get command => 'flutter';
+  String get description => customDescription;
+
+  @override
+  String get name => customName;
 
   @override
   bool get shouldUseFilter => false;
 
-  @override
-  Set<String> arguments = {
-    'pub',
-    'run',
-    'gen_lang:generate',
-    '--source-dir',
-    'lib${Platform.pathSeparator}l10n${Platform.pathSeparator}strings',
-    '--output-dir',
-    'lib${Platform.pathSeparator}l10n',
-  };
-
+  FlavorAppCommand(GmaApp app,
+      {required this.customName, required this.customDescription}) {
+    argParser.addOption(
+      'choose',
+      allowed: app.flavors,
+    );
+  }
   @override
   FutureOr<void> run() async {
     await super.run();
-    manager.applyAllDependencies(dependsOn: [PubspecKeys.genLangKey]);
+
+    manager.applyFlavorFilter(apps: [customName]);
     final progress = loggerCommandStart();
+
     await executeOnSelected();
     loggerCommandResults(failures: failures, progress: progress);
     if (failures.isNotEmpty) {
@@ -47,27 +46,22 @@ class TranslateCommand extends GmaCommand with LoggerMixin {
 
   @override
   Future<void> executeOnSelected() async {
-    return await pool.forEach<Package, void>(manager.selectedPackages,
+    FlavorType flavorType = FlavorTypeConverter.fromJson(argResults!['choose']);
+    await pool.forEach<Package, void>(manager.selectedPackages,
         (package) async {
       if (isFastFail && failures.isNotEmpty) {
         return Future.value();
       }
-      loggerProgress(package.command, package);
-      final process = await package.process(
-          package.command,
-          [
-            ...arguments.toList(),
-            '--class-name',
-            'L10n${package.directoryName.toPascalCase()}'
-          ],
-          dryRun: manager.isDryRun,
-          logger: manager.logger);
+      loggerProgress(
+          'changing flavor to ${AnsiStyles.white.bold(flavorType.value)}',
+          package);
+      final process = await FlavorProcessor(
+              flavorType: flavorType, package: package, logger: logger)
+          .run();
+      final _exitCode = await process.exitCode;
+      if (_exitCode > 0) {
+        failures[package] = _exitCode;
 
-      if (await process.exitCode > 0) {
-        failures[package] = await process.exitCode;
-        if (!isVerbose) {
-          manager.log('\n');
-        }
         await process.stderr.transform(utf8.decoder).forEach((value) {
           manager.log(
               '         ⌙ ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}');
