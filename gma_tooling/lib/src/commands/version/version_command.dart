@@ -16,7 +16,8 @@ class VersionCommand extends GmaCommand with LoggerMixin {
 
   @override
   bool get shouldUseFilter => false;
-  // bool get allowTrailingOptions => true;
+  
+
   VersionCommand() {
     argParser.addOption(
       Constants.argSearch,
@@ -32,6 +33,7 @@ class VersionCommand extends GmaCommand with LoggerMixin {
     try {
       await super.run();
       final _query = argResults?[Constants.argSearch];
+      print('query: $_query');
       if (argResults?.wasParsed(Constants.argSearch) == true &&
           _query != null) {
         await super.run();
@@ -48,6 +50,7 @@ class VersionCommand extends GmaCommand with LoggerMixin {
       print(e);
       print(s);
     }
+    printUsage();
   }
 
   Future<void> executeSelected(String query) async {

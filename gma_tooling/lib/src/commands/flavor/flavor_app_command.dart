@@ -36,7 +36,7 @@ class FlavorAppCommand extends GmaCommand with LoggerMixin {
 
     manager.applyFlavorFilter(apps: [customName]);
     final progress = loggerCommandStart();
-
+    
     await executeOnSelected();
     loggerCommandResults(failures: failures, progress: progress);
     if (failures.isNotEmpty) {
@@ -55,23 +55,59 @@ class FlavorAppCommand extends GmaCommand with LoggerMixin {
       loggerProgress(
           'changing flavor to ${AnsiStyles.white.bold(flavorType.value)}',
           package);
-      final process = await FlavorProcessor(
-              flavorType: flavorType, package: package, logger: logger)
-          .run();
-      final _exitCode = await process.exitCode;
-      if (_exitCode > 0) {
-        failures[package] = _exitCode;
+      await processFlavor(package, flavorType);
+      await processPubGet(package);
+      await processPubspecLock(package, flavorType);
+    }).drain<void>();
+  }
 
-        await process.stderr.transform(utf8.decoder).forEach((value) {
+  Future<void> processFlavor(Package package, FlavorType flavorType) async {
+    final process = await FlavorProcessor(
+            flavorType: flavorType, package: package, logger: logger)
+        .run();
+    final _exitCode = await process.exitCode;
+    if (_exitCode > 0) {
+      failures[package] = _exitCode;
+
+      await process.stderr.transform(utf8.decoder).forEach((value) {
+        manager.log(
+            '         ⌙ ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}');
+      });
+      await process.stdout.transform(utf8.decoder).forEach((value) {
+        if (value.startsWith('info •') || value.startsWith('warning •')) {
           manager.log(
-              '         ⌙ ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}');
-        });
-        await process.stdout.transform(utf8.decoder).forEach((value) {
-          if (value.startsWith('info •') || value.startsWith('warning •')) {
-            manager.log(
-                '            ${AnsiStyles.dim.italic(value.stdOutFiltred())}');
-          }
-        });
+              '            ${AnsiStyles.dim.italic(value.stdOutFiltred())}');
+        }
+      });
+    }
+  }
+
+  Future<void> processPubGet(Package package) async {
+    final process =
+        await package.process(package.command, ['pub', 'get'], logger: logger);
+    final _exitCode = await process.exitCode;
+    if (_exitCode > 0) {
+      failures[package] = _exitCode;
+
+      await process.stderr.transform(utf8.decoder).forEach((value) {
+        manager.log(
+            '         ⌙ ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}');
+      });
+      await process.stdout.transform(utf8.decoder).forEach((value) {
+        if (value.startsWith('info •') || value.startsWith('warning •')) {
+          manager.log(
+              '            ${AnsiStyles.dim.italic(value.stdOutFiltred())}');
+        }
+      });
+    }
+  }
+
+  Future<void> processPubspecLock(
+      Package package, FlavorType flavorType) async {
+    await pool.forEach<Package, void>(manager.selectedPackages,
+        (package) async {
+      if (isFastFail && failures.isNotEmpty) {
+        return Future.value();
       }
     }).drain<void>();
   }

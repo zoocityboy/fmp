@@ -7,20 +7,20 @@ import 'package:gmat/src/exceptions/not_initialized_exception.dart';
 import 'package:gmat/src/extensions/iterable_ext.dart';
 import 'package:gmat/src/commands/flavor/flavor_command.dart';
 import 'package:gmat/src/commands/quality/quality_command.dart';
-import 'package:gmat/src/commands/translate_command.dart';
+import 'package:gmat/src/commands/specials/translate_command.dart';
 import 'package:gmat/src/workspace.dart';
 import 'package:pool/pool.dart';
 import 'bootstrap/bootstrap_command.dart';
 import 'pub/pub_command.dart';
 import '../constants.dart';
 
-late GmaWorkspace workspace;
+GmaWorkspace? workspace;
 Pool pool = Pool(Constants.defaultConcurency);
 final Pool directoryPool = Pool(10);
 
-class KtCommandRunner extends CommandRunner<void> {
+class GmaCommandRunner extends CommandRunner<void> {
   // bool get allowTrailingOptions => true;
-  KtCommandRunner() : super('gmat', 'Manage GMA multi-package project') {
+  GmaCommandRunner() : super('gmat', 'Manage GMA multi-package project') {
     argParser.addFlag(
       Constants.argVerbose,
       abbr: 'v',
@@ -32,7 +32,7 @@ class KtCommandRunner extends CommandRunner<void> {
       Constants.argConcurrency,
       abbr: 'c',
       help: 'How many concurrent processes can run',
-      defaultsTo: "6",
+      defaultsTo: Constants.defaultConcurency.toString(),
     );
 
     argParser.addFlag(Constants.argFastFail,
@@ -65,14 +65,15 @@ class KtCommandRunner extends CommandRunner<void> {
         help: 'Allow operation in package examples', defaultsTo: false);
 
     try {
-      workspace = GmaWorkspace.fromDirectory(Directory.current);
+      workspace =
+          GmaWorkspace.isInitialized() ? GmaWorkspace.fromDirectory() : null;
       print(ListString.divider);
       print('- procesors: ${Platform.numberOfProcessors}');
-      print('- maxRss: ${ProcessInfo.maxRss}');
-      print('- currentRss: ${ProcessInfo.currentRss}');
-
+      print('- pools: ${Constants.defaultConcurency}');
       print(ListString.divider);
-    } catch (e, s) {}
+    } catch (e, s) {
+      print(e);
+    }
 
     addCommand(BootstrapCommand());
     addCommand(PubCommand());
@@ -80,6 +81,8 @@ class KtCommandRunner extends CommandRunner<void> {
     addCommand(QualityCommand());
     addCommand(FlavorCommand());
     addCommand(VersionCommand());
+
+    
   }
 
   @override
@@ -88,11 +91,17 @@ class KtCommandRunner extends CommandRunner<void> {
         int.parse(topLevelResults[Constants.argConcurrency] ??
             Constants.defaultConcurency),
         timeout: Duration(seconds: 1));
+        
+        
+  
     if (!GmaWorkspace.isInitialized() &&
-        topLevelResults.command?.name != 'bootstrap') {
+        !['bootstrap', 'init']
+            .every((element) => topLevelResults.arguments.contains(element))) {
+      pool.close();
       throw NotInitializedException();
     }
     await super.runCommand(topLevelResults);
+    pool.close();
   }
 
   @override

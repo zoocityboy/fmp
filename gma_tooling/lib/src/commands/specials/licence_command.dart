@@ -21,12 +21,12 @@ class LicenceSubCommand extends GmaCommand with LoggerMixin {
   Set<String> arguments = {'analyze'};
 
   LicenceSubCommand() {
-     final _apps = workspace.config.apps
+    final _apps = workspace?.config.apps
         .where((element) =>
             element.stages.isNotEmpty || element.countries.isNotEmpty)
         .toList();
     argParser.addOption(Constants.argApp,
-        allowed: _apps.map((e) => e.name).toList());
+        allowed: _apps?.map((e) => e.name).toList());
   }
 
   @override

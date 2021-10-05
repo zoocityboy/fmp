@@ -1,13 +1,12 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:args/args.dart';
 import 'package:cli_util/cli_logging.dart';
-import 'package:gmat/src/commands/i_command.dart';
-import 'package:pool/pool.dart';
 
 import 'package:gmat/src/constants.dart';
+import 'package:gmat/src/exceptions/not_found_packages.dart';
 import 'package:gmat/src/extensions/glob.dart';
+import 'package:gmat/src/extensions/iterable_ext.dart';
 import 'package:gmat/src/processor/init_processor.dart';
 
 import 'models/package.dart';
@@ -68,30 +67,38 @@ class GmaManager {
         .execute();
     allPackages.addAll(_packages);
     selectedPackages = allPackages;
-
+    // for (final item in selectedPackages) print(item);
     applyExcludeExamples();
     if (shouldUseFilter) {
       applyDependencies(dependsOn: dependsOn?.split(','));
+      applyDevDependencies(dependsOn: devDependsOn?.split(','));
     }
-    applySort();
+    if (selectedPackages.isEmpty) throw NotFoundPackages();
+    
   }
 
 
   void applyExcludeExamples() {
     if (!excludeExamples) return;
+    final glob =
+        GlobCreate.create('**/example**', currentDirectoryPath: directory.path);
+    print(glob);
     selectedPackages = allPackages
-        .where((element) => !element.directory.path.contains('example'))
+        .where((element) => !glob.matches(element.directory.path))
+        .sortByName()
         .toList();
   }
   /// Apply filter for packages with `koyal_flavor` dependency in pubspec.yaml
   void applyFlavorFilter({List<String>? apps}) {
+    print(apps);
     selectedPackages = allPackages.where((p) => p.hasFlavor == true).toList();
     if (apps != null) {
       selectedPackages = selectedPackages
           .where((app) => apps.any((element) => element == app.name))
+          .sortByName()
           .toList();
     }
-    applySort();
+    print(selectedPackages);
   }
 
   /// Apply package filter where package contains `dependsOn` in
@@ -101,52 +108,38 @@ class GmaManager {
     selectedPackages = selectedPackages
         .where((element) =>
             dependsOn.any((e) => element.devDependencies.containsKey(e)))
+            .sortByName()
         .toList();
-    applySort();
   }
 
   /// Apply package filter where package contains `dependsOn` in
   /// `dependencies:`
   void applyDependencies({List<String>? dependsOn}) {
-    print('applyDependencies:${selectedPackages.length} $dependsOn');
     if (dependsOn == null) return;
     selectedPackages = selectedPackages
         .where((element) =>
             dependsOn.any((e) => element.dependencies.containsKey(e)))
+        .sortByName()
         .toList();
-    applySort();
+    
   }
 
   /// Apply package filter where package contains `dependsOn` in
   /// `dependencies:` or `dev_dependencies:`
   void applyAllDependencies({List<String>? dependsOn}) {
-    print('applyAllDependencies:${selectedPackages.length} $dependsOn');
-    for (var item in selectedPackages) {
-      print(
-          '-> ${item.name} ${item.dependencies.containsKey('gen_lang')} : ${item.devDependencies.containsKey('gen_lang')}');
-    }
     if (dependsOn == null) return;
     selectedPackages = selectedPackages
         .where((element) => dependsOn.any((e) =>
             element.dependencies.containsKey(e) ||
             element.devDependencies.containsKey(e)))
+          .sortByName()
         .toList();
-
-    applySort();
-     print('applyAllDependencies: selected: ${selectedPackages.length}');
   }
-
-  /// Sort filtred packages by name and path
-  void applySort() {
-    selectedPackages.sort((a, b) => a.directoryName.compareTo(b.directoryName));
-  }
-
   /// Clean all
   ///
   /// remove all
   void cleanStorage() {
-    final globList = cleanFiles.map((e) => GlobCreate.create(e,
-        currentDirectoryPath: directory.path, recursive: true));
+    final globList = Globs.cleanFiles.toGlobList(directory);
     print(globList);
     final items = directory
         .listSync(recursive: true, followLinks: false)
@@ -166,7 +159,7 @@ class GmaManager {
 
   /// Simple logger of the [message] to the stdout
   void log(String messsage) {
-    logger.stdout('$hashCode $messsage');
+    logger.stdout(messsage);
   }
 
   /// Simple error logger of the [message] to the stderr

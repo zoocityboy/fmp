@@ -1,6 +1,6 @@
 
 import * as vscode from 'vscode';
-
+import * as nodeFetch from 'node-fetch';
 const dynamicWebServerPort = 9001;
 
 export class BoardPanel {
@@ -20,6 +20,11 @@ export class BoardPanel {
                 enableScripts: true,
 
             }
+        );
+        fetch('http://localhost:${dynamicWebServerPort}', {
+            method: 'GET',
+        }).then((response) =>
+            response.text()
         );
 
         this._getHtmlForWebview(panel.webview, extensionUri).then((value) => {

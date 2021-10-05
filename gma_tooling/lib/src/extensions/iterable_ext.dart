@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:glob/glob.dart';
+import 'package:gmat/src/extensions/glob.dart';
 import 'package:gmat/src/models/package.dart';
 
 extension IterableExtension<T> on Iterable<T> {
@@ -10,12 +12,21 @@ extension IterableExtension<T> on Iterable<T> {
     return null;
   }
 }
-extension on List<Package> {
+extension PackageList on List<Package> {
   Package? firstWhereOrNull(bool Function(Package element) test) {
     for (var element in this) {
       if (test(element)) return element;
     }
     return null;
+  }
+  List<Package> sortByName() {
+    sort((a, b) => a.directoryName.compareTo(b.directoryName));
+    return this;
+  }
+
+  List<Package> sortByPath() {
+    sort((a, b) => a.directory.path.compareTo(b.directory.path));
+    return this;
   }
 }
 
@@ -25,7 +36,7 @@ extension ListString on List {
   static String get dividerBottom => '_' * stdout.terminalColumns;
 }
 
-extension on Iterable<Package> {
+extension IterablePackage on Iterable<Package> {
   Iterable<Package> applyDependsOn(List<String> dependsOn) {
     if (dependsOn.isEmpty) return this;
 
@@ -36,4 +47,24 @@ extension on Iterable<Package> {
       });
     });
   }
+  
+  Iterable<Package> sortByName() {
+    final list = toList(growable: false);
+    list.sort((a, b) => a.directoryName.compareTo(b.directoryName));
+    return Iterable.castFrom(list);
+  }
+
+  Iterable<Package> sortByPath() {
+    final list = toList(growable: false);
+    list.sort((a, b) => a.directory.path.compareTo(b.directory.path));
+    return Iterable.castFrom(list);
+  }
+}
+
+extension IterableString on Iterable<String> {
+  Iterable<Glob> toGlobList(Directory directory) {
+    return map(
+        (e) => GlobCreate.create(e, currentDirectoryPath: directory.path));
+  }
+
 }

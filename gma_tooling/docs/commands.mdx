@@ -1,0 +1,142 @@
+---
+title: Commands
+description: Descriptions and examples of the available GMA commands
+---
+
+# Commands
+
+Commands can be run from the root of a GMA project.
+
+## bootstrap (bsi)
+
+Bootstraps the project by installing and linking project dependencies and install vscode extensions.
+
+```bash
+gmat bootstrap
+gmat bs
+```
+A `gma.yaml` file and empty `packages/` directory will be generated.
+
+Packages defined in the `gma.yaml` `packages` field will be locally linked whilst other dependencies
+will be automatically resolved.
+## flavor
+
+Flavor allows change flavor of a selected app which must be defined in `gma.yaml`.
+
+### app_name
+
+## pub
+Manipulation with package versions cross all packages in GMA project
+
+```bash
+gmat version --search dartz
+```
+
+## quality
+Manipulation with package versions cross all packages in GMA project
+
+```bash
+gmat version --search dartz
+```
+
+## translate
+
+Manipulation with package versions cross all packages in GMA project
+
+```bash
+gmat version --search dartz
+```
+
+## version
+
+Manipulation with package versions cross all packages in GMA project
+
+```bash
+gmat version
+```
+
+### --search (-s)
+
+Manipulation with package versions cross all packages in GMA project
+
+```bash
+gmat version --search dartz
+```
+
+### update
+
+Change version of package in all packages with this dependency to same version
+
+```bash
+gmat version update --package my_package --version ^2.0.0
+```
+
+## Global options
+
+Each GMA command can be used with these global commands:
+
+### --help (-h)
+
+Prints usage information about a command.
+
+```bash
+gmat --help
+gmat pub -h
+```
+
+### concurrency (-c)
+
+Defines the max concurrency value of how many packages will execute the command in at any one time. Defaults to `6`.
+
+```bash
+# Set a 12 concurrency
+gmat pub get -c 12
+```
+
+### --fail-fast
+
+fails on first exception. all other operations are skiped.
+Defaults to `false`.
+
+```bash
+# Fail fast
+gmat pub get --fail-fast
+```
+
+### --dry-run
+
+Will run placeholder command on every selected package.  
+Defaults to `false`.
+
+```bash
+# Check your command filters
+gmat pub get -f '**wrong**,**bad?idea**' --dry-run
+
+# Run your command filters
+gmat pub get -f '**wrong**' --fail-fast --no-dry-run
+```
+
+### --verbose (-v)
+
+Enable verbose logging with showing a time.
+Defaults to `false`.
+
+```bash
+gmat pub get -v
+```
+
+### --depends-on
+
+Include only packages that depend on specific dependencies.
+
+```bash
+gmat pub get --depends-on="capp_auth"
+```
+
+### ---dev-depends-on
+
+Include only packages that depend on specific devDependencies.
+
+```bash
+gmat pub get --dev-depends-on="capp_auth"
+```

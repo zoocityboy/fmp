@@ -12,7 +12,9 @@ class QualityCommand extends GmaCommand {
   @override
   final description = 'Analyze quality of selected packages';
 
-  QualityCommand() : super() {
+
+
+  QualityCommand() {
     addSubcommand(AnalyzeSubCommand());
     addSubcommand(DcmSubCommand());
     addSubcommand(AnalyzeCyclicDependenciesSubCommand());
@@ -20,8 +22,7 @@ class QualityCommand extends GmaCommand {
 
   @override
   FutureOr<void> run() {
-
-    return Future(() => null);
+   return null;
   }
 }
 

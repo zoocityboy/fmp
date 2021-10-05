@@ -8,15 +8,17 @@ export class FlavorTasks {
     get onDidChanged(): vscode.Event<TaskChangeEvent> {
         return this._onDidChanged.event;
     }
+    private inProgress: boolean = false;
     public changeFlavor(flavor: string, app: string, force: boolean = false) {
+        var appPackageName = app === 'capp' ? 'self_care' : 'mapp';
         let task = new vscode.Task(
             { type: 'gma.flavor', name: 'change_flavor' },
             vscode.TaskScope.Workspace,
             "flavor_update",
-            "dart ",
-            new vscode.ProcessExecution(
-                "dart",
-                ['/Users/zoocityboy/Develop/fmp/gma_tooling/bin/gmat.dart', 'flavor', '--flavor', flavor, '-app', app],
+            "gmat",
+            new vscode.ShellExecution(
+                "gmat",
+                ['flavor', appPackageName, '--choose', flavor,],
             ),
             "$dart-build_runner",
 
@@ -41,13 +43,16 @@ export class FlavorTasks {
         //     this.message("Change flavor finished.");
         // });
         vscode.tasks.onDidStartTaskProcess((value) => {
+            if (this.inProgress === true) { return; }
+            this.inProgress = true;
             console.log('onDidStartTaskProcess: %s : %s : %s', value.processId, value.execution.task.definition.type, value.execution.task.definition.name);
             this.message("Change flavor started.", undefined, ProgressState.loading);
         });
         vscode.tasks.onDidEndTaskProcess((value) => {
+
             console.log('onDidEndTaskProcess: %s : %s', value.execution.task.definition.type, value.execution.task.definition.name);
             this.message("Change flavor finished.", undefined, ProgressState.complete);
-
+            this.inProgress = false;
         });
     }
     private restartAnalyzer() {

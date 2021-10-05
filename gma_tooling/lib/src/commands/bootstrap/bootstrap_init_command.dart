@@ -2,8 +2,9 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:gmat/src/constants.dart';
+import 'package:gmat/src/commands/command_runner.dart';
 import 'package:gmat/src/processor/bootstrap_processor.dart';
+import 'package:gmat/src/workspace.dart';
 import '../i_command.dart';
 class BootstrapInitSubcommand extends SimpleGmaCommand {
   @override
@@ -16,10 +17,11 @@ class BootstrapInitSubcommand extends SimpleGmaCommand {
   @override
   FutureOr<void> run() async {
     final _cmd = BootstrapProcessor(
-        dir: Directory(
-          globalResults?[Constants.argDirectory] ?? Directory.current.path),
+        dir: Directory.current,
       logger: logger,
     );
     await _cmd.run();
+    workspace = GmaWorkspace.fromDirectory();
+    
   }
 }

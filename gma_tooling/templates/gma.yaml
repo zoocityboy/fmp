@@ -1,8 +1,6 @@
 name: GMA
 description: | 
   Multi-package settingsa adf asdf
-  asdfa
-  dynamic_forms_playgrounddfasdfasdf
   
 apps:
   - name: self_care

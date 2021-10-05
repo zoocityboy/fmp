@@ -5,7 +5,7 @@
 	"displayName": "GMA Extensions",
 	"description": "GMA Extensions",
 	"version": "0.0.1",
-	"icon": "images/koyal_icon.png",
+	"icon": "media/images/koyal_icon.png",
 	"engines": {
 		"vscode": "^1.46.0"
 	},
@@ -36,7 +36,101 @@
 				}
 			}
 		],
-		"configurationDefaults": {},
+		"walkthroughs": [
+			{
+				"id": "gma_walkthrough",
+				"title": "Getting started with GMA Project",
+				"description": "Quick start with GMA project",
+				"steps": [
+					{
+						"id": "newworkspace",
+						"title": "Brand new Workspace",
+						"description": "This step will run a command and check off once it has been run.\n[Show workspace](command:gma.wt.showWorkspace)",
+						"media": {
+							"image": "media/wt/workspace.png",
+							"altText": "Empty image"
+						},
+						"markdown": "media/wt/settings.md",
+						"completionEvents": [
+							"onCommand:gma.wt.showWorkspace"
+						]
+					},
+					{
+						"id": "recommended",
+						"title": "Recommended",
+						"description": "We choose great plugins which helps you with development.\n[Show workspace](command:gma.wt.runRecommended)",
+						"media": {
+							"image": "media/wt/recommended.png",
+							"altText": "Empty image"
+						},
+						"markdown": "media/wt/settings.md",
+						"completionEvents": [
+							"onCommand:gma.wt.runRecommended"
+						]
+					},
+					{
+						"id": "flavors",
+						"title": "Change flavor",
+						"description": "We prepare easy solution for changing flavors.\n[Change Flavor](command:gma.wt.runChangeFlavor)",
+						"media": {
+							"image": "media/wt/recommended.png",
+							"altText": "Empty image"
+						},
+						"markdown": "media/wt/settings.md",
+						"completionEvents": [
+							"onCommand:gma.wt.runChangeFlavor"
+						]
+					},
+					{
+						"id": "widgetcatalog",
+						"title": "Change Setting",
+						"description": "This step will change a setting and check off when the setting has changed\n[Change Setting](command:getting-started-sample.changeSetting)",
+						"media": {
+							"markdown": "media/wt/settings.md"
+						},
+						"completionEvents": [
+							"onSettingChanged:gma_start.sampleSetting"
+						]
+					},
+					{
+						"id": "documentation",
+						"title": "Read our documentation.",
+						"description": "This step will change a setting and check off when the setting has changed\n[Change Setting](command:getting-started-sample.changeSetting)",
+						"media": {
+							"markdown": "media/wt/settings.md"
+						},
+						"completionEvents": [
+							"onSettingChanged:gma_start.sampleSetting"
+						]
+					}
+				],
+				"configuration": {
+					"title": "Getting started with GMA Project",
+					"properties": {
+						"gma.wt.newworkspace": {
+							"description": "Sample setting",
+							"type": "boolean"
+						},
+						"gma.wt.recommended": {
+							"description": "Sample setting",
+							"type": "boolean"
+						},
+						"gma.wt.flavors": {
+							"description": "Sample setting",
+							"type": "boolean"
+						},
+						"gma.wt.widgetcatalog": {
+							"description": "Sample setting",
+							"type": "boolean"
+						},
+						"gma.wt.documentation": {
+							"description": "Sample setting",
+							"type": "boolean"
+						}
+					}
+				}
+			}
+		],
 		"configuration": [
 			{
 				"title": "GMA Studio",
@@ -134,6 +228,7 @@
 		"vscode-test": "^1.4.0"
 	},
 	"dependencies": {
-		"i18n-iso-countries": "^6.8.0"
+		"i18n-iso-countries": "^6.8.0",
+		"node-fetch": "^3.0.0"
 	}
 }

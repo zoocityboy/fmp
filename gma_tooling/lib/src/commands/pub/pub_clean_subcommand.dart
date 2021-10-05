@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:gmat/src/mixins/logger_mixin.dart';
 import 'package:gmat/src/commands/i_command.dart';
+import 'package:gmat/src/processor/shell_processor.dart';
 
 class PubCleanSubcommand extends GmaCommand with LoggerMixin {
   @override
@@ -21,6 +22,7 @@ class PubCleanSubcommand extends GmaCommand with LoggerMixin {
     await super.run();
     final progress = loggerCommandStart();
     manager.cleanStorage();
+    
     await executeOnSelected();
     if (failures.isNotEmpty) {
       loggerCommandFailures(progress: progress);
@@ -28,5 +30,8 @@ class PubCleanSubcommand extends GmaCommand with LoggerMixin {
     } else {
       loggerCommandSuccess(progress: progress);
     }
+    await AsyncShellProcessor('git', ['clean', '-x', '-d', '-f', '-q'],
+            logger: logger)
+        .run();
   }
 }

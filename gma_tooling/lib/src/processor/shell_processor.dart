@@ -27,7 +27,7 @@ class ShellProcessor extends AbstractProcessor<void> {
   }
 
   @override
-  String toString() => 'running: ${args.join(' ')}';
+  String toString() => 'running: $executable ${args.join(' ')}';
 
 }
 
@@ -47,12 +47,13 @@ class AsyncShellProcessor extends AbstractProcessor<ProcessResult> {
   final Logger logger;
 
   @override
-  Future<Process> run() {
-    return Process.start(executable, args,
-        workingDirectory: workingDirectory, runInShell: runInShell);
-  }
+  Future<Process> run() => Process.start(executable, args,
+      workingDirectory: workingDirectory,
+      // includeParentEnvironment: false,
+      runInShell: runInShell);
+
 
   @override
-  String toString() => 'running: ${args.join(' ')}';
+  String toString() => 'running: $executable ${args.join(' ')}';
 
 }

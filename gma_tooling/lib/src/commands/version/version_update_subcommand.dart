@@ -40,7 +40,6 @@ class VersionUpdateSubcommand extends GmaCommand with LoggerMixin {
   FutureOr<void> run() async {
     await super.run();
     final _package = argResults?[Constants.argPackage];
-
     manager.applyAllDependencies(dependsOn: [_package]);
     final progress = loggerCommandStart();
     await executeOnSelected();

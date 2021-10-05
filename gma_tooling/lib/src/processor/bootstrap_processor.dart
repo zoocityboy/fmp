@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:ansi_styles/ansi_styles.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:path/path.dart' as path;
 
@@ -23,6 +25,20 @@ class BootstrapProcessor extends AbstractExecutor<void> {
         await Isolate.resolvePackageUri(Uri.parse('package:gmat/gmat.dart'));
     return File(packageFileUri!.toFilePath()).parent.parent.path;
   }
+  void logHeader([val0]) => logger
+      .stdout('${AnsiStyles.blink(r'⌾')} ${AnsiStyles.yellow.bold('$val0')}');
+  void logErr([val0, val1]) {
+    logger.stderr(
+      '   ⌙ ${AnsiStyles.redBright(val0)} ${AnsiStyles.dim('~')} ${AnsiStyles.redBright.italic('$val1')}',
+    );
+  }
+
+  void logStdOut([val0, val1]) {
+    logger.stdout(
+      '   ⌙ ${AnsiStyles.dim(val0)} ${AnsiStyles.dim('~')} ${AnsiStyles.dim.italic('$val1')}',
+    );
+  }
+
 
   /// Check if installation exists
   Future<bool> check() async {
@@ -35,78 +51,62 @@ class BootstrapProcessor extends AbstractExecutor<void> {
   Future<void> clear() async {
     await Directory(path.join(_root.path, Constants.settingsTpl))
         .delete()
-        .then((value) {}, onError: (e) => logger.stderr(e.toString()));
+        .then(
+        (value) => logStdOut(value),
+        onError: (e) => logErr(e.toString()));
     await Directory(path.join(_root.path, Constants.workspaceTpl))
         .delete()
-        .then((value) {}, onError: (e) => logger.stderr(e.toString()));
+        .then((value) => logStdOut(value),
+            onError: (e) => logErr(e.toString()));
     await Directory(path.join(_root.path, Constants.toolingFolder))
         .delete(recursive: true)
-        .then((value) {}, onError: (e) => logger.stderr(e.toString()));
+        .then((value) => logStdOut(value),
+            onError: (e) => logErr(e.toString()));
   }
 
   Future<void> create() async {
     final packageRootPath = await getPackageRoot();
-    logger.stdout('package: $packageRootPath');
-    // final workspaceFileName = Constants.workspaceTpl;
-    // final settingsFileName = Constants.settingsTpl;
+    logHeader('Generate GMA project');
     final dir = await Directory(_root.path).create();
     await File(path.join(
             packageRootPath, Constants.templatesFolder, Constants.workspaceTpl))
         .copy(dir.path + Platform.pathSeparator + Constants.workspaceTpl)
         .then(
-            (value) => logger.stdout('$Constants.workspaceTpl created: $value'),
-            onError: (_) {
-      logger.stdout('${Constants.workspaceTpl} create failed: $_');
+            (value) => logger.stdout(
+                  '   ⌙ ${AnsiStyles.redBright(Constants.workspaceTpl)} ${AnsiStyles.dim('in folder')} ${AnsiStyles.redBright.italic('$value')}',
+                ), onError: (e) {
+      logErr(Constants.workspaceTpl, e);
     });
     await File(path.join(
             packageRootPath, Constants.templatesFolder, Constants.settingsTpl))
-        .copy(dir.path + Platform.pathSeparator + Constants.settingsTpl)
+        .copy(path.join(dir.path, Constants.settingsTpl))
         .then(
-            (value) =>
-                logger.stdout('${Constants.settingsTpl} created: $value'),
-            onError: (_) {
-      logger.stdout('${Constants.settingsTpl} failed: $_');
-    });
-    // await Directory(path.join(_root.path, Constants.appsFolder))
-    //     .create()
-    //     .then(
-    //     (value) => logger.stdout('${Constants.appsFolder} created: $value'),
-    //         onError: (_) {
-    //   logger.stdout('${Constants.appsFolder} failed: $_');
-    // });
+            (value) => logStdOut(Constants.settingsTpl, value.parent),
+            onError: (e) => logErr(Constants.settingsTpl, e));
     await Directory(path.join(_root.path, Constants.packagesFolder))
         .create()
         .then(
-            (value) =>
-                logger.stdout('${Constants.packagesFolder} created: $value'),
-            onError: (_) {
-      logger.stdout('${Constants.packagesFolder} failed: $_');
-    });
+            (value) => logStdOut(Constants.packagesFolder, value),
+            onError: (e) => logErr(Constants.packagesFolder, e));
     await Directory(path.join(_root.path, Constants.pluginsFolder))
         .create()
         .then(
-            (value) =>
-                logger.stdout('${Constants.pluginsFolder} created: $value'),
-            onError: (_) {
-      logger.stdout('${Constants.pluginsFolder} failed: $_');
-    });
+            (value) => logStdOut(Constants.pluginsFolder, value),
+            onError: (e) => logErr(Constants.pluginsFolder, e));
     await Directory(path.join(_root.path, Constants.docsFolder))
         .create()
         .then(
-        (value) => logger.stdout('${Constants.docsFolder} created: $value'),
-            onError: (_) {
-      logger.stdout('${Constants.docsFolder} failed: $_');
-    });
+        (value) => logStdOut(Constants.docsFolder, value),
+        onError: (e) => logErr(Constants.docsFolder, e));
     await File(path.join(_root.path, 'CHANGELOG.md'))
         .create()
-        .then((value) => logger.stdout('CHANGELOG created: $value'),
-            onError: (_) {
-      logger.stdout('CHANGELOG failed: $_');
-    });
+        .then(
+        (value) => logStdOut('CHANGELOG.md', value),
+        onError: (e) => logErr('CHANGELOG.md', e));
     await File(path.join(_root.path, 'README.md')).create().then(
-        (value) => logger.stdout('README.md created: $value'), onError: (_) {
-      logger.stdout('README.md failed: $_');
-    });
+        (value) => logStdOut('README.md', value),
+        onError: (e) => logErr('README.md', e));
+    
 
     await installExtensions();
     await ShellProcessor(
@@ -114,6 +114,7 @@ class BootstrapProcessor extends AbstractExecutor<void> {
       [Constants.workspaceTpl],
             workingDirectory: _root.path, logger: logger,)
         .run();
+    logger.stdout('\n ⌙ ${AnsiStyles.green.bold('SUCCESS')}');
   }
 
   Future<void> installExtensions() async {
@@ -122,14 +123,25 @@ class BootstrapProcessor extends AbstractExecutor<void> {
         Directory(path.join(packageRootPath, Constants.extensionsFolder))
         .listSync(followLinks: false, recursive: false)
         .where((element) => element.path.toLowerCase().endsWith('.vsix'));
-    logger.stdout(_extensions.join(','));
+    
+    logHeader('GMA Extension installer');
     for (final ext in _extensions) {
-      await AsyncShellProcessor(
+      final process = await AsyncShellProcessor(
         'code',
         ['--install-extension', ext.path],
         logger: logger,
       ).run();
+      process.stdout.transform(utf8.decoder).forEach((element) {
+        logger.stdout(
+          '   ⌙ ${AnsiStyles.dim(element)}',
+        );
+      });
+
     }
+  }
+
+  Future<void> checkFlavor() async {
+      
   }
 
   @override

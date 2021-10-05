@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:io'; 
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
 
@@ -16,6 +16,8 @@ abstract class Constants {
   ///
   static const String workspaceTpl = 'gma.code-workspace';
   static const String settingsTpl = 'gma.yaml';
+  static const String pubspecYaml = 'pubspec.yaml';
+  static const String pubspecCoreYaml = 'pubspec.core.yaml';
 
   static const int defaultConcurency = 6;
 
@@ -24,8 +26,8 @@ abstract class Constants {
   static const String argFastFail = 'fast-fail';
   static const String argDryRun = 'dry-run';
   static const String argFilter = 'name';
-  static const String argFilterDependency = 'dependesOn';
-  static const String argFilterDevDependency = 'devDependsOn';
+  static const String argFilterDependency = 'depends-on';
+  static const String argFilterDevDependency = 'dev-depends-on';
   static const String argDirectory = 'dir';
   static const String argExamples = 'examples';
   static const String argSearch = 'search';
@@ -62,4 +64,17 @@ class Utils {
     if (!file.existsSync()) return null;
     return loadYaml(file.readAsStringSync()) as YamlMap;
   }
+}
+
+abstract class Globs {
+  static Iterable<String> cleanFiles = [
+    '**/coverage/',
+    '**/build/',
+    '**/.dart_tool/',
+    '**/.flavor',
+    '**/.packages',
+    '**/.metadata',
+    '**/.flutter-plugins',
+    '**/.flutter-plugins-dependencies'
+  ];
 }

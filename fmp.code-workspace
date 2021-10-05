@@ -7,5 +7,7 @@
 			"path": "gma_tooling"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"dart.analyzerInstrumentationLogFile": null
+	}
 }

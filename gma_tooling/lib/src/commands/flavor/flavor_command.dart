@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:gmat/src/commands/command_runner.dart';
 import 'package:gmat/src/mixins/logger_mixin.dart';
+import 'package:gmat/src/workspace.dart';
 import '../i_command.dart';
 import 'flavor_app_command.dart';
 
@@ -15,11 +16,12 @@ class FlavorCommand extends GmaCommand with LoggerMixin {
   bool get shouldUseFilter => false;
 
   FlavorCommand() {
-    final _apps = workspace.config.apps
+    if (GmaWorkspace.isInitialized()) {
+      final _apps = workspace?.config.apps
         .where((element) =>
             element.stages.isNotEmpty || element.countries.isNotEmpty)
         .toList();
-    for (final item in _apps) {
+    for (final item in _apps ?? []) {
       addSubcommand(FlavorAppCommand(item,
           customName: item.name, customDescription: item.description ?? ''));
     }
@@ -28,6 +30,7 @@ class FlavorCommand extends GmaCommand with LoggerMixin {
         abbr: 'r',
         help: 'Force reload flavor even if is same like current',
         negatable: false);
+      }
   }
 
   @override

@@ -8,7 +8,7 @@ import 'package:gmat/src/constants.dart';
 import 'package:gmat/src/mixins/logger_mixin.dart';
 import 'package:gmat/src/models/package.dart';
 
-import 'i_command.dart';
+import '../i_command.dart';
 
 class TranslateCommand extends GmaCommand with LoggerMixin {
   @override
