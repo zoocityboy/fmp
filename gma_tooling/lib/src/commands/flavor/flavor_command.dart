@@ -1,11 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:gmat/src/commands/command_runner.dart';
-import 'package:gmat/src/mixins/logger_mixin.dart';
 import 'package:gmat/src/workspace.dart';
 import '../i_command.dart';
 import 'flavor_app_command.dart';
 
-class FlavorCommand extends GmaCommand with LoggerMixin {
+class FlavorCommand extends GmaCommand {
   @override
   final name = 'flavor';
 
@@ -17,22 +17,26 @@ class FlavorCommand extends GmaCommand with LoggerMixin {
 
   FlavorCommand() {
     if (GmaWorkspace.isInitialized()) {
-      final _apps = workspace?.config.apps
-        .where((element) =>
-            element.stages.isNotEmpty || element.countries.isNotEmpty)
-        .toList();
-    for (final item in _apps ?? []) {
-      addSubcommand(FlavorAppCommand(item,
-          customName: item.name, customDescription: item.description ?? ''));
-    }
-
-    argParser.addFlag('force-reload',
-        abbr: 'r',
-        help: 'Force reload flavor even if is same like current',
-        negatable: false);
+        final _apps = workspace?.config.apps
+          .where((element) =>
+              element.stages.isNotEmpty || element.countries.isNotEmpty)
+          .toList();
+      for (final item in _apps ?? []) {
+        addSubcommand(FlavorAppCommand(item,
+            customName: item.name, customDescription: item.description ?? ''));
       }
+    }
   }
 
   @override
-  FutureOr<void> run() async {}
+  FutureOr<void> run() async {
+    final execArgs = argResults!.rest;
+
+    if (execArgs.isEmpty) {
+      logger.stdout(description);
+      logger.stdout(argParser.usage);
+      exit(1);
+    }
+    return null;
+  }
 }

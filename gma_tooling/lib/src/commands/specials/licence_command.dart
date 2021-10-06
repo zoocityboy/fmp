@@ -1,16 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:gmat/src/commands/command_runner.dart';
 import 'package:gmat/src/commands/i_command.dart';
 import 'package:gmat/src/constants.dart';
-import 'package:gmat/src/mixins/logger_mixin.dart';
 import 'package:gmat/src/models/package.dart';
 import 'package:gmat/gmat.dart';
 
-class LicenceSubCommand extends GmaCommand with LoggerMixin {
+class LicenceSubCommand extends GmaCommand {
   @override
   String get description => 'Scrape and save licences of all packages';
 
@@ -32,24 +30,19 @@ class LicenceSubCommand extends GmaCommand with LoggerMixin {
   @override
   FutureOr<void> run() async {
     await super.run();
-    final progress = loggerCommandStart();
+    manager.loggerCommandStart();
     await executeOnSelected();
-    if (failures.isNotEmpty) {
-      loggerCommandFailures(progress: progress);
-      exitCode = 1;
-    } else {
-      loggerCommandSuccess(progress: progress);
-    }
+    manager.loggerCommandResults();
   }
 
   @override
-  Future<void> executeOnSelected() async {
+  Future<void> executeOnSelected({List<GmaWorker>? addToJobs}) async {
     return await pool.forEach<Package, void>(manager.selectedPackages,
         (package) async {
       if (isFastFail && failures.isNotEmpty) {
         return Future.value();
       }
-      loggerProgress(package.command, package);
+      // loggerProgress(package.command, package);
       final process = await package.process(package.command, arguments.toList(),
           dryRun: manager.isDryRun, logger: manager.logger);
 
@@ -60,12 +53,13 @@ class LicenceSubCommand extends GmaCommand with LoggerMixin {
         }
         await process.stderr.transform(utf8.decoder).forEach((value) {
           manager.log(
-              '         ⌙ ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}');
+              '⌙ ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}'
+                  .spaceLeft(10));
         });
         await process.stdout.transform(utf8.decoder).forEach((value) {
           if (value.startsWith('info •') || value.startsWith('warning •')) {
             manager.log(
-                '            ${AnsiStyles.dim.italic(value.stdOutFiltred())}');
+                AnsiStyles.dim.italic(value.stdOutFiltred()).spaceLeft(10));
           }
         });
       }

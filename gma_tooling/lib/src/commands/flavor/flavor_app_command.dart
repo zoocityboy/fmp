@@ -1,17 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
-import 'package:ansi_styles/ansi_styles.dart';
-import 'package:gmat/src/commands/command_runner.dart';
-import 'package:gmat/src/extensions/string_ext.dart';
-import 'package:gmat/src/mixins/logger_mixin.dart';
+import 'package:gmat/src/extensions/package.dart';
+import 'package:gmat/src/manager/manager.dart';
 import 'package:gmat/src/models/config/config_app.dart';
 import 'package:gmat/src/models/flavor/flavors.dart';
 import 'package:gmat/src/models/package.dart';
-import 'package:gmat/src/processor/flavor_processor.dart';
 import '../i_command.dart';
 
-class FlavorAppCommand extends GmaCommand with LoggerMixin {
+class FlavorAppCommand extends GmaCommand {
   final String customName, customDescription;
 
   @override
@@ -32,83 +28,46 @@ class FlavorAppCommand extends GmaCommand with LoggerMixin {
   }
   @override
   FutureOr<void> run() async {
-    await super.run();
-
-    manager.applyFlavorFilter(apps: [customName]);
-    final progress = loggerCommandStart();
-    
-    await executeOnSelected();
-    loggerCommandResults(failures: failures, progress: progress);
+    FlavorType flavorType = FlavorTypeConverter.fromJson(argResults!['choose']);
+    final manager = await GmaManager.initialize(globalResults, logger,
+        shouldUseFilter: shouldUseFilter);
+    manager
+      ..applyFlavorFilter(apps: [customName])
+      ..loggerCommandStart(
+          command: 'flutter',
+          arguments: {'pub', 'get'},
+          description: customDescription);
+    for (final package in manager.selectedPackages) {
+      package.updateFlavor(flavorType);
+    }
+    await manager.runFiltered('flutter', {'pub', 'get'}, cb: (worker) {
+      if (worker.result.exitCode == 0) {
+        (worker.package as Package).updateFlavorPubspecLock(flavorType);
+      }
+    });
+    manager.loggerCommandResults();
     if (failures.isNotEmpty) {
       exitCode = 1;
     }
   }
 
-  @override
-  Future<void> executeOnSelected() async {
-    FlavorType flavorType = FlavorTypeConverter.fromJson(argResults!['choose']);
-    await pool.forEach<Package, void>(manager.selectedPackages,
-        (package) async {
-      if (isFastFail && failures.isNotEmpty) {
-        return Future.value();
-      }
-      loggerProgress(
-          'changing flavor to ${AnsiStyles.white.bold(flavorType.value)}',
-          package);
-      await processFlavor(package, flavorType);
-      await processPubGet(package);
-      await processPubspecLock(package, flavorType);
-    }).drain<void>();
-  }
-
-  Future<void> processFlavor(Package package, FlavorType flavorType) async {
-    final process = await FlavorProcessor(
-            flavorType: flavorType, package: package, logger: logger)
-        .run();
-    final _exitCode = await process.exitCode;
-    if (_exitCode > 0) {
-      failures[package] = _exitCode;
-
-      await process.stderr.transform(utf8.decoder).forEach((value) {
-        manager.log(
-            '         ⌙ ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}');
-      });
-      await process.stdout.transform(utf8.decoder).forEach((value) {
-        if (value.startsWith('info •') || value.startsWith('warning •')) {
-          manager.log(
-              '            ${AnsiStyles.dim.italic(value.stdOutFiltred())}');
-        }
-      });
-    }
-  }
-
-  Future<void> processPubGet(Package package) async {
-    final process =
-        await package.process(package.command, ['pub', 'get'], logger: logger);
-    final _exitCode = await process.exitCode;
-    if (_exitCode > 0) {
-      failures[package] = _exitCode;
-
-      await process.stderr.transform(utf8.decoder).forEach((value) {
-        manager.log(
-            '         ⌙ ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}');
-      });
-      await process.stdout.transform(utf8.decoder).forEach((value) {
-        if (value.startsWith('info •') || value.startsWith('warning •')) {
-          manager.log(
-              '            ${AnsiStyles.dim.italic(value.stdOutFiltred())}');
-        }
-      });
-    }
-  }
-
-  Future<void> processPubspecLock(
-      Package package, FlavorType flavorType) async {
-    await pool.forEach<Package, void>(manager.selectedPackages,
-        (package) async {
-      if (isFastFail && failures.isNotEmpty) {
-        return Future.value();
-      }
-    }).drain<void>();
-  }
+  // @override
+  // Future<void> executeOnSelected() async {
+  //   FlavorType flavorType = FlavorTypeConverter.fromJson(argResults!['choose']);
+  //   final pool = manager.pool;
+    
+  //   final jobs =
+  //       manager.getWorkerJobs(command: command, arguments: {'pub', 'get'});
+    
+  //   for (final package in manager.selectedPackages) {
+  //     package.updateFlavor(flavorType);
+  //   }
+  //   await for (final job in pool.startWorkers(jobs)) {
+  //     final worker = job as GmaWorker;
+  //     manager.loggerProgress(worker);
+  //     if (worker.result.exitCode == 0) {
+  //       (worker.package as Package).updateFlavorPubspecLock(flavorType);
+  //     }
+  //   }
+  // }
 }

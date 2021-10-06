@@ -18,6 +18,7 @@ abstract class Constants {
   static const String settingsTpl = 'gma.yaml';
   static const String pubspecYaml = 'pubspec.yaml';
   static const String pubspecCoreYaml = 'pubspec.core.yaml';
+  static const String pubspecLock = 'pubspec.lock';
 
   static const int defaultConcurency = 6;
 
@@ -50,6 +51,11 @@ abstract class PubspecKeys {
 abstract class EnvConstants {
   static const String rootFolder = 'GMA_ROOT_FOLDER';
   static const String apps = 'GMA_APPS';
+}
+abstract class Padding {
+  static const int command = 2;
+  static const int status = 4;
+  static const int progress = 6;
 }
 
 abstract class TextConstants {

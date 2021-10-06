@@ -55,8 +55,6 @@
         ],
         "dart.runPubGetOnPubspecChanges": false,
         "dart.promptToGetPackages": false,
-        "dart.analyzerInstrumentationLogFile": "analyzer_instrumentation.log",
-        "dart.analyzerLogFile": "analyzer.log",
         "files.exclude": {
             "**/.git": true,
             "**/.DS_Store": true,

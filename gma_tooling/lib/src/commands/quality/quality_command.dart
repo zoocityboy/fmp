@@ -4,6 +4,7 @@ import 'package:gmat/src/commands/quality/dcm_command.dart';
 
 import '../i_command.dart';
 import 'analyze_command.dart';
+import 'format_subcommand.dart';
 
 class QualityCommand extends GmaCommand {
   @override
@@ -18,6 +19,7 @@ class QualityCommand extends GmaCommand {
     addSubcommand(AnalyzeSubCommand());
     addSubcommand(DcmSubCommand());
     addSubcommand(AnalyzeCyclicDependenciesSubCommand());
+    addSubcommand(FomatSubcommand());
   }
 
   @override

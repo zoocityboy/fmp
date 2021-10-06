@@ -3,10 +3,9 @@ import 'dart:async';
 import 'dart:io';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:gmat/src/commands/i_command.dart';
-import 'package:gmat/src/mixins/logger_mixin.dart';
 import 'package:gmat/src/extensions/iterable_ext.dart';
 
-class AnalyzeCyclicDependenciesSubCommand extends GmaCommand with LoggerMixin {
+class AnalyzeCyclicDependenciesSubCommand extends GmaCommand {
   @override
   String get description => 'Run cyclic dependency checker';
 
@@ -22,16 +21,16 @@ class AnalyzeCyclicDependenciesSubCommand extends GmaCommand with LoggerMixin {
   @override
   FutureOr<void> run() async {
     await super.run();
-    final progress = loggerCommandStart();
+    manager.loggerCommandStart();
     await executeOnSelected();
-    loggerCommandResults(failures: failures, progress: progress);
+    manager.loggerCommandResults();
     if (failures.isNotEmpty) {
       exitCode = 1;
     } 
   }
   
   @override
-  Future<void> executeOnSelected() async {
+  Future<void> executeOnSelected({List<GmaWorker>? addToJobs}) async {
     for (final item in manager.allPackages) {
         if (isVerbose){
         manager.log(

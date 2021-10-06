@@ -3,10 +3,12 @@ import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
 import 'package:glob/glob.dart';
+import 'package:gmat/src/constants.dart';
 import 'package:gmat/src/extensions/glob.dart';
 import 'package:gmat/src/models/package.dart';
 import 'package:gmat/src/processor/i_abstract_processor.dart';
 import 'package:pool/pool.dart';
+import 'package:process_runner/process_runner.dart';
 
 /// Init processor
 class InitProcessor extends AbstractProcessor<List<Package>> {
@@ -22,8 +24,8 @@ class InitProcessor extends AbstractProcessor<List<Package>> {
         currentDirectoryPath: workspace.path);
     final isPuspecFile =
         (
-        file.path.endsWith('${Platform.pathSeparator}pubspec.yaml') ||
-            file.path.endsWith('${Platform.pathSeparator}pubspec.yml') &&
+        file.path.endsWith('${Platform.pathSeparator}pubspec.yml') ||
+            file.path.endsWith(Constants.pubspecYaml) &&
                 !dartToolGlob.matches(file.path));
     if (globs != null) {
       return globs.any((glob) => glob.matches(file.path)) && isPuspecFile;
@@ -31,9 +33,6 @@ class InitProcessor extends AbstractProcessor<List<Package>> {
     return isPuspecFile;
   }
   FutureOr<List<Package>> execute() async {
-    
-
-    print(workspace.path);
     final globList = filters?.map((e) =>
         GlobCreate.create('**/$e', currentDirectoryPath: workspace.path));
     final allPubspecs = await workspace
@@ -41,7 +40,9 @@ class InitProcessor extends AbstractProcessor<List<Package>> {
         .where((file) => where(file, globs: globList?.toList()))
         .toList();
     List<Package> _result = [];
+    
     final x = Pool(10, timeout: Duration(seconds: 2));
+
     await x.forEach<FileSystemEntity, void>(allPubspecs, (file) async {
       final _package = Package(file);
       await _package.loadPubspec();

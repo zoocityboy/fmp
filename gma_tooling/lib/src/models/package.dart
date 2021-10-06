@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:cli_util/cli_logging.dart';
 import 'package:gmat/gmat.dart';
+import 'package:gmat/src/commands/i_command.dart';
 import 'package:gmat/src/constants.dart';
 import 'package:gmat/src/extensions/directory_ext.dart';
 import 'package:gmat/src/models/flavor/pubspec_flavor.dart';
@@ -26,12 +27,6 @@ abstract class IEntity {
   Map<String, DependencyReference> dependencies = {};
   Map<String, DependencyReference> devDependencies = {};
   Map<String, DependencyReference> dependencyOverrides = {};
-  Future<Process> process(
-    String command,
-    List<String> args, {
-    bool dryRun = false,
-    required Logger logger,
-  });
   Future<bool> loadPubspec();
   Directory get directory;
   bool hasFlavor = false;
@@ -39,37 +34,45 @@ abstract class IEntity {
   Map<FlavorType, Flavor>? flavors;
   late PubSpec pubSpec;
   late String command;
+  GmaWorker getWorkerJob(String command, List<String> args,
+      {bool dryRun = false, required Logger logger});
+  Future<Process> process(
+    String command,
+    List<String> args, {
+    bool dryRun = false,
+    required Logger logger,
+  });
+  GmaWorker? _gmaWorker;
 }
 
-class Entity extends IEntity {
-  Entity(this.pubspecPath) : directory = pubspecPath.parent;
-  
+class Package extends IEntity {
+  Package(this.pubspecPath) : directory = pubspecPath.parent;
+
   @override
   FileSystemEntity pubspecPath;
-  
+
   @override
   Directory directory;
 
   String get directoryName => directory.directoryName;
-  
+
   @override
   Future<bool> loadPubspec() async {
-      pubSpec = await PubSpec.load(directory);
-      name = pubSpec.name ?? directory.directoryName;
-      version = pubSpec.version;
-      dependencies = pubSpec.dependencies;
-      devDependencies = pubSpec.devDependencies;
-      dependencyOverrides = pubSpec.dependencyOverrides;
-      packageType = parsePackageType(pubSpec);
-      hasTranslation = containsGenLang(pubSpec);
-      hasFlavor = containsFlavor(pubSpec);
-      flavors = parseFlavors(pubSpec);
-      command = packageType == PackageType.flutter ? 'flutter' : 'dart';
-      return true;
+    pubSpec = await PubSpec.load(directory);
+    name = pubSpec.name ?? directory.directoryName;
+    version = pubSpec.version;
+    dependencies = pubSpec.dependencies;
+    devDependencies = pubSpec.devDependencies;
+    dependencyOverrides = pubSpec.dependencyOverrides;
+    packageType = parsePackageType(pubSpec);
+    hasTranslation = containsGenLang(pubSpec);
+    hasFlavor = containsFlavor(pubSpec);
+    flavors = parseFlavors(pubSpec);
+    command = packageType == PackageType.flutter ? 'flutter' : 'dart';
+    return true;
   }
 
   PackageType parsePackageType(PubSpec pubSpec) {
-    
     if (dependencies.keys.toList().contains('flutter')) {
       return PackageType.flutter;
     }
@@ -77,7 +80,7 @@ class Entity extends IEntity {
         ? PackageType.dart
         : PackageType.plugin;
   }
-  
+
   Map<FlavorType, Flavor>? parseFlavors(PubSpec pubSpec) {
     final _containsFlavor = containsFlavor(pubSpec);
     if (_containsFlavor) {
@@ -99,7 +102,7 @@ class Entity extends IEntity {
 
   bool containsFlavor(PubSpec pubSpec) =>
       pubSpec.unParsedYaml?.containsKey(PubspecKeys.flavorKey) ?? false;
-      
+
   bool containsGenLang(PubSpec pubSpec) =>
       pubSpec.allDependencies.containsKey(PubspecKeys.genLangKey);
 
@@ -117,8 +120,6 @@ class Entity extends IEntity {
         ..addAll(newFlavorDependencies!);
       await pubSpec.save(pubspecPath.parent);
     } else {}
-    
-    
   }
 
   @override
@@ -128,7 +129,7 @@ class Entity extends IEntity {
 
   @override
   Future<Process> process(String command, List<String> args,
-      {bool dryRun = false, required Logger logger}) async { 
+      {bool dryRun = false, required Logger logger}) async {
     if (dryRun) {
       await Future.delayed(Duration(milliseconds: 200));
       return AsyncShellProcessor(Platform.isWindows ? 'dir' : 'ls', [],
@@ -139,6 +140,7 @@ class Entity extends IEntity {
             workingDirectory: directory.path, logger: logger)
         .run();
   }
+
   DependencyReference? getPackageVersion(String name) {
     final allDependencies = [
       ...dependencies.entries,
@@ -149,16 +151,17 @@ class Entity extends IEntity {
         ?.value;
     return _reference;
   }
-}
 
-class App extends Entity {
-  App(FileSystemEntity pubspecPath) : super(pubspecPath);
-}
-
-class Package extends Entity {
-  Package(FileSystemEntity pubspecPath) : super(pubspecPath);
-}
-
-class Plugin extends Entity {
-  Plugin(FileSystemEntity pubspecPath) : super(pubspecPath);
+  @override
+  GmaWorker getWorkerJob(String command, List<String> args,
+      {bool dryRun = false, required Logger logger, bool isFastFail = false}) {
+    return _gmaWorker ??= GmaWorker(
+      this,
+      [command, ...args],
+      name: name,
+      workingDirectory: directory,
+      runInShell: true,
+      isFastFail: isFastFail,
+    );
+  }
 }

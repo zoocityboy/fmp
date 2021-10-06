@@ -1,8 +1,3 @@
----
-title: Commands
-description: Descriptions and examples of the available GMA commands
----
-
 # Commands
 
 Commands can be run from the root of a GMA project.
@@ -23,28 +18,64 @@ will be automatically resolved.
 
 Flavor allows change flavor of a selected app which must be defined in `gma.yaml`.
 
-### app_name
+#### app_name
+> Note: `app_name` is dynamic value taken from your `gma.yaml` configuration
+
+**--choose** - available flavors per application
+```bash
+gmat flavor self_care --choose fakein
+```
+> Note: `gmat flavor self_care -h` for available flovers
 
 ## pub
 Manipulation with package versions cross all packages in GMA project
 
+#### clean
+Clean selected packages
 ```bash
-gmat version --search dartz
+gmat pub clean
+```
+
+#### get
+Iterete all selected packages and run pub get on the package
+```bash
+gmat pub get
+```
+#### refresh
+Clean all packages and re-run pub get in all project
+```bash
+gmat pub refresh
 ```
 
 ## quality
 Manipulation with package versions cross all packages in GMA project
 
+#### analyze
 ```bash
-gmat version --search dartz
+gmat quality analyze
+```
+
+#### cyclic
+```bash
+gmat quality cyclic
+```
+
+#### dcm
+```bash
+gmat quality dcm
+```
+
+#### format
+```bash
+gmat quality format
 ```
 
 ## translate
 
-Manipulation with package versions cross all packages in GMA project
+Select all translatable packages (depends on `gen_lang`) and run translation command
 
 ```bash
-gmat version --search dartz
+gmat translate 
 ```
 
 ## version
@@ -82,6 +113,14 @@ Prints usage information about a command.
 ```bash
 gmat --help
 gmat pub -h
+```
+
+### --[no-]example
+Global filter for package examplaes operations
+Defaults to `false`.
+```bash
+# filter even example
+gmat pub get --example
 ```
 
 ### concurrency (-c)

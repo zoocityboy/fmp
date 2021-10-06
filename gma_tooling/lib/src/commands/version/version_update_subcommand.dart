@@ -6,13 +6,12 @@ import 'package:ansi_styles/ansi_styles.dart';
 import 'package:gmat/src/commands/command_runner.dart';
 import 'package:gmat/src/commands/i_command.dart';
 import 'package:gmat/src/constants.dart';
-import 'package:gmat/src/mixins/logger_mixin.dart';
 import 'package:gmat/src/models/package.dart';
 import 'package:gmat/src/processor/version_processor.dart';
 import 'package:gmat/src/extensions/string_ext.dart';
 import 'package:pubspec/pubspec.dart';
 
-class VersionUpdateSubcommand extends GmaCommand with LoggerMixin {
+class VersionUpdateSubcommand extends GmaCommand {
   @override
   String get description =>
       'Find all packages with same package and show current versions';
@@ -41,16 +40,16 @@ class VersionUpdateSubcommand extends GmaCommand with LoggerMixin {
     await super.run();
     final _package = argResults?[Constants.argPackage];
     manager.applyAllDependencies(dependsOn: [_package]);
-    final progress = loggerCommandStart();
+    manager.loggerCommandStart();
     await executeOnSelected();
-    loggerCommandResults(failures: failures, progress: progress);
+    manager.loggerCommandResults();
     if (failures.isNotEmpty) {
       exitCode = 1;
     }
   }
 
   @override
-  Future<void> executeOnSelected() async {
+  Future<void> executeOnSelected({List<GmaWorker>? addToJobs}) async {
     final _version = argResults?[Constants.argVersion];
     final _package = argResults?[Constants.argPackage];
 
@@ -63,7 +62,8 @@ class VersionUpdateSubcommand extends GmaCommand with LoggerMixin {
       if (DependencyReference.fromJson(_version) ==
           package.getPackageVersion(_package)) {
         manager.log(
-            '         ⌙ ${AnsiStyles.dim.bold(package.name)} ${AnsiStyles.dim('depenency')} ${AnsiStyles.dim.bold(_package)} ${AnsiStyles.dim('not changed. current version is same.')}');
+            '⌙ ${AnsiStyles.dim.bold(package.name)} ${AnsiStyles.dim('depenency')} ${AnsiStyles.dim.bold(_package)} ${AnsiStyles.dim('not changed. current version is same.')}'
+                .padLeft(10));
         return Future.value();
       }
       loggerVersionProgress(package, _package, _version);
@@ -79,12 +79,13 @@ class VersionUpdateSubcommand extends GmaCommand with LoggerMixin {
         failures[package] = _exitCode;
         await process.stderr.transform(utf8.decoder).forEach((value) {
           manager.log(
-              '         ⌙ ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}');
+              '⌙ ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}'
+                  .padLeft(10));
         });
         await process.stdout.transform(utf8.decoder).forEach((value) {
           if (value.startsWith('info •') || value.startsWith('warning •')) {
             manager.log(
-                '            ${AnsiStyles.dim.italic(value.stdOutFiltred())}');
+                AnsiStyles.dim.italic(value.stdOutFiltred()).padLeft(12));
           }
         });
       }
@@ -96,8 +97,10 @@ class VersionUpdateSubcommand extends GmaCommand with LoggerMixin {
       Package onPackage, String nameOfPackage, String toVersion) {
     final _current = onPackage.getPackageVersion(nameOfPackage)?.toJson();
     manager.log(
-        '         ⌙  ${AnsiStyles.dim.bold(onPackage.name)} changing dependency $nameOfPackage package...');
+        '⌙  ${AnsiStyles.dim.bold(onPackage.name)} changing dependency $nameOfPackage package...'
+            .padLeft(10));
     manager.log(
-        '           ⌙ ${AnsiStyles.white.bold(_current)} -> ${AnsiStyles.dim(toVersion)}');
+        '⌙ ${AnsiStyles.white.bold(_current)} -> ${AnsiStyles.dim(toVersion)}'
+            .padLeft(10));
   }
 }

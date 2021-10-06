@@ -5,9 +5,9 @@ import 'package:ansi_styles/ansi_styles.dart';
 import 'package:gmat/src/commands/i_command.dart';
 import 'package:gmat/src/commands/version/version_update_subcommand.dart';
 import 'package:gmat/src/constants.dart';
-import 'package:gmat/src/mixins/logger_mixin.dart';
+import 'package:gmat/src/extensions/string_ext.dart';
 
-class VersionCommand extends GmaCommand with LoggerMixin {
+class VersionCommand extends GmaCommand {
   @override
   String get name => 'version';
 
@@ -38,9 +38,9 @@ class VersionCommand extends GmaCommand with LoggerMixin {
           _query != null) {
         await super.run();
         manager.applyAllDependencies(dependsOn: [_query]);
-        final progress = loggerCommandStart();
+        manager.loggerCommandStart();
         await executeSelected(_query);
-        loggerCommandResults(failures: failures, progress: progress);
+        manager.loggerCommandResults();
         if (failures.isNotEmpty) {
           exitCode = 1;
         }
@@ -58,7 +58,8 @@ class VersionCommand extends GmaCommand with LoggerMixin {
       final reference = package.getPackageVersion(query);
       if (reference != null) {
         logger.stdout(
-            '         ⌙ ${AnsiStyles.dim.bold(package.name)} ${AnsiStyles.dim('$reference ...')}');
+            '⌙ ${AnsiStyles.dim.bold(package.name)} ${AnsiStyles.dim('$reference ...')}'
+                .spaceLeft(10));
       }
     }
   }

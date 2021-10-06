@@ -1,15 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
-import 'package:ansi_styles/ansi_styles.dart';
-import 'package:gmat/src/commands/command_runner.dart';
 import 'package:gmat/src/constants.dart';
 import 'package:gmat/src/extensions/string_ext.dart';
-import 'package:gmat/src/mixins/logger_mixin.dart';
 import 'package:gmat/src/commands/i_command.dart';
-import 'package:gmat/src/models/package.dart';
 
-class PubTranslateSubcommand extends GmaCommand with LoggerMixin {
+class PubTranslateSubcommand extends GmaCommand {
   @override
   final name = 'translate';
   @override
@@ -38,49 +33,31 @@ class PubTranslateSubcommand extends GmaCommand with LoggerMixin {
   FutureOr<void> run() async {
     await super.run();
     manager.applyAllDependencies(dependsOn: [PubspecKeys.genLangKey]);
-    final progress = loggerCommandStart();
+    
+    manager.loggerCommandStart(
+        command: command, arguments: arguments, description: description);
     await executeOnSelected();
-    loggerCommandResults(failures: failures, progress: progress);
+    manager.loggerCommandResults();
     if (failures.isNotEmpty) {
       exitCode = 1;
     }
   }
 
   @override
-  Future<void> executeOnSelected() async {
-    return await pool.forEach<Package, void>(manager.selectedPackages,
-        (package) async {
-      if (isFastFail && failures.isNotEmpty) {
-        return Future.value();
-      }
-
-      loggerProgress(package.command, package);
-      final process = await package.process(
-          package.command,
-          [
-            ...arguments.toList(),
-            '--class-name',
-            'L10n${package.directoryName.toPascalCase()}'
-          ],
-          dryRun: manager.isDryRun,
-          logger: manager.logger);
-
-      if (await process.exitCode > 0) {
-        failures[package] = await process.exitCode;
-        if (!isVerbose) {
-          manager.log('\n');
-        }
-        await process.stderr.transform(utf8.decoder).forEach((value) {
-          manager.log(
-              '         ⌙ ${AnsiStyles.redBright.bold(package.name)}  ${AnsiStyles.dim.italic(value.stdErrFiltred())}');
-        });
-        await process.stdout.transform(utf8.decoder).forEach((value) {
-          if (value.startsWith('info •') || value.startsWith('warning •')) {
-            manager.log(
-                '            ${AnsiStyles.dim.italic(value.stdOutFiltred())}');
-          }
-        });
-      }
-    }).drain<void>();
+  Future<void> executeOnSelected({List<GmaWorker>? addToJobs}) async {
+    manager.initPool();
+    // final _jobs = manager.getWorkerJobs(command: command, arguments: )
+    final jobs = manager.selectedPackages
+        .map((package) => package.getWorkerJob(
+            package.command,
+            [
+              ...arguments.toList(),
+              '--class-name',
+              'L10n${package.directoryName.toPascalCase()}'
+            ],
+            logger: logger))
+        .toList();
+    await manager.processSelectedPackages(
+        jobs, (job) => manager.loggerProgress(job));
   }
 }

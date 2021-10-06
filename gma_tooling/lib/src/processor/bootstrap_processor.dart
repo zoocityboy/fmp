@@ -70,7 +70,7 @@ class BootstrapProcessor extends AbstractExecutor<void> {
     final dir = await Directory(_root.path).create();
     await File(path.join(
             packageRootPath, Constants.templatesFolder, Constants.workspaceTpl))
-        .copy(dir.path + Platform.pathSeparator + Constants.workspaceTpl)
+        .copy(path.join(dir.path, Constants.workspaceTpl))
         .then(
             (value) => logger.stdout(
                   '   ⌙ ${AnsiStyles.redBright(Constants.workspaceTpl)} ${AnsiStyles.dim('in folder')} ${AnsiStyles.redBright.italic('$value')}',
@@ -97,16 +97,7 @@ class BootstrapProcessor extends AbstractExecutor<void> {
         .create()
         .then(
         (value) => logStdOut(Constants.docsFolder, value),
-        onError: (e) => logErr(Constants.docsFolder, e));
-    await File(path.join(_root.path, 'CHANGELOG.md'))
-        .create()
-        .then(
-        (value) => logStdOut('CHANGELOG.md', value),
-        onError: (e) => logErr('CHANGELOG.md', e));
-    await File(path.join(_root.path, 'README.md')).create().then(
-        (value) => logStdOut('README.md', value),
-        onError: (e) => logErr('README.md', e));
-    
+        onError: (e) => logErr(Constants.docsFolder, e));  
 
     await installExtensions();
     await ShellProcessor(

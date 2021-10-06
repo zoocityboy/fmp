@@ -1,13 +1,10 @@
-import 'dart:io';
-
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:gmat/src/commands/version/version_command.dart';
 import 'package:gmat/src/exceptions/not_initialized_exception.dart';
-import 'package:gmat/src/extensions/iterable_ext.dart';
 import 'package:gmat/src/commands/flavor/flavor_command.dart';
 import 'package:gmat/src/commands/quality/quality_command.dart';
-import 'package:gmat/src/commands/specials/translate_command.dart';
+import 'package:gmat/src/models/logger/gmat_logger.dart';
 import 'package:gmat/src/workspace.dart';
 import 'package:pool/pool.dart';
 import 'bootstrap/bootstrap_command.dart';
@@ -19,8 +16,43 @@ Pool pool = Pool(Constants.defaultConcurency);
 final Pool directoryPool = Pool(10);
 
 class GmaCommandRunner extends CommandRunner<void> {
-  // bool get allowTrailingOptions => true;
   GmaCommandRunner() : super('gmat', 'Manage GMA multi-package project') {
+    _setupGlobalArgs();
+    try {
+      workspace =
+          GmaWorkspace.isInitialized() ? GmaWorkspace.fromDirectory() : null;
+    } catch (e, _) {
+      print(e);
+    }
+
+    addCommand(BootstrapCommand());
+    addCommand(PubCommand());
+    addCommand(QualityCommand());
+    addCommand(FlavorCommand());
+    addCommand(VersionCommand());
+  }
+
+  @override
+  Future<void> runCommand(ArgResults topLevelResults) async {
+    try {
+      if (!GmaWorkspace.isInitialized() &&
+          ![
+            'bootstrap'
+          ].every((element) => topLevelResults.arguments.contains(element))) {
+        throw NotInitializedException();
+      }
+      await super.runCommand(topLevelResults);
+    } on OutOfMemoryError catch (e, s) {
+      print('$e');
+      print(s);
+      GmatVerboseLogger().stdout(e.toString());
+    }
+  }
+
+  @override
+  String? get usageFooter => TextConstants.footerUsageKey;
+
+  void _setupGlobalArgs() {
     argParser.addFlag(
       Constants.argVerbose,
       abbr: 'v',
@@ -63,47 +95,5 @@ class GmaCommandRunner extends CommandRunner<void> {
 
     argParser.addFlag(Constants.argExamples,
         help: 'Allow operation in package examples', defaultsTo: false);
-
-    try {
-      workspace =
-          GmaWorkspace.isInitialized() ? GmaWorkspace.fromDirectory() : null;
-      print(ListString.divider);
-      print('- procesors: ${Platform.numberOfProcessors}');
-      print('- pools: ${Constants.defaultConcurency}');
-      print(ListString.divider);
-    } catch (e, s) {
-      print(e);
-    }
-
-    addCommand(BootstrapCommand());
-    addCommand(PubCommand());
-    addCommand(TranslateCommand());
-    addCommand(QualityCommand());
-    addCommand(FlavorCommand());
-    addCommand(VersionCommand());
-
-    
   }
-
-  @override
-  Future<void> runCommand(ArgResults topLevelResults) async {
-    pool = Pool(
-        int.parse(topLevelResults[Constants.argConcurrency] ??
-            Constants.defaultConcurency),
-        timeout: Duration(seconds: 1));
-        
-        
-  
-    if (!GmaWorkspace.isInitialized() &&
-        !['bootstrap', 'init']
-            .every((element) => topLevelResults.arguments.contains(element))) {
-      pool.close();
-      throw NotInitializedException();
-    }
-    await super.runCommand(topLevelResults);
-    pool.close();
-  }
-
-  @override
-  String? get usageFooter => TextConstants.footerUsageKey;
 }

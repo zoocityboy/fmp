@@ -6,6 +6,7 @@ import 'package:gmat/src/exceptions/not_found_packages.dart';
 import 'package:gmat/src/exceptions/not_found_pubspec.dart';
 import 'package:gmat/src/exceptions/not_initialized_exception.dart';
 import 'package:gmat/src/extensions/iterable_ext.dart';
+import 'package:gmat/src/extensions/string_ext.dart';
 
 import 'src/commands/command_runner.dart';
 
@@ -14,13 +15,35 @@ export 'src/extensions/directory_ext.dart';
 export 'src/extensions/iterable_ext.dart';
 export 'src/extensions/string_ext.dart';
 export 'src/extensions/glob.dart';
+void killDartProcess() {
+  stdout.writeAll([
+    '\n\n',
+    AnsiStyles.dim(ListString.divider),
+    '\n',
+    AnsiStyles.dim
+        .italic('⌘ GMAT was closed by user. Killing all sub processes.')
+        .spaceLeftCommand(),
+    '\n',
+    AnsiStyles.dim(ListString.divider),
+    '\n\n',
+  ]);
 
+  if (Platform.isWindows) {
+    Process.runSync('taskkill', ['/F', '/IM', 'dart.exe']);
+  } else if (Platform.isLinux || Platform.isMacOS) {
+    Process.runSync('killall', ['-9', 'dart']);
+  }
+}
 void execute(List<String> args) async {
+  
+
   await GmaCommandRunner().run(args).catchError((error) {
+    
     if (error is NotInitializedException) {
       print(ListString.dividerTop);
       print('GMAT is not initialized yet. run command: gmat bootstrap init');
       print(ListString.dividerBottom);
+      
       exit(65);
     }
     switch (error.runtimeType) {

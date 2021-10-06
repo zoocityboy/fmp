@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:io';
-import 'package:gmat/src/mixins/logger_mixin.dart';
 import 'package:gmat/src/commands/i_command.dart';
-import 'package:gmat/src/processor/shell_processor.dart';
+import 'package:process_runner/process_runner.dart';
 
-class PubCleanSubcommand extends GmaCommand with LoggerMixin {
+class PubCleanSubcommand extends GmaCommand {
   @override
   String get description => 'Clean depdencies of packages.';
 
@@ -20,18 +18,15 @@ class PubCleanSubcommand extends GmaCommand with LoggerMixin {
   @override
   FutureOr<void> run() async {
     await super.run();
-    final progress = loggerCommandStart();
-    manager.cleanStorage();
+    manager.loggerCommandStart(
+        command: command, arguments: arguments, description: description);
+    await manager.cleanStorage();
+    await executeOnSelected(addToJobs: [
+      GmaWorker(null, ['git', 'clean', '-x', '-d', '-f', '-q'],
+          runInShell: true)
+    ]);
+
+    manager.loggerCommandResults();
     
-    await executeOnSelected();
-    if (failures.isNotEmpty) {
-      loggerCommandFailures(progress: progress);
-      exitCode = 1;
-    } else {
-      loggerCommandSuccess(progress: progress);
-    }
-    await AsyncShellProcessor('git', ['clean', '-x', '-d', '-f', '-q'],
-            logger: logger)
-        .run();
   }
 }
