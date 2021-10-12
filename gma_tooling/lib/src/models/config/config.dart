@@ -11,6 +11,7 @@ class GmaConfig {
   List<String> countries;
   List<GmaApp> apps;
   List<String> packages;
+  String? executable;
   GmaConfig({
     required this.name,
     required this.description,
@@ -18,6 +19,7 @@ class GmaConfig {
     required this.countries,
     required this.apps,
     required this.packages,
+    this.executable = 'gmat',
   });
 
   GmaConfig copyWith({
@@ -27,6 +29,7 @@ class GmaConfig {
     List<String>? countries,
     List<GmaApp>? apps,
     List<String>? packages,
+    String? executable,
   }) {
     return GmaConfig(
       name: name ?? this.name,
@@ -35,6 +38,7 @@ class GmaConfig {
       countries: countries ?? this.countries,
       apps: apps ?? this.apps,
       packages: packages ?? this.packages,
+      executable: executable ?? this.executable,
     );
   }
 
@@ -46,6 +50,7 @@ class GmaConfig {
       'countries': countries,
       'apps': apps.map((x) => x.toMap()).toList(),
       'packages': packages,
+      'executable': executable,
     };
   }
 
@@ -57,6 +62,7 @@ class GmaConfig {
       countries: [],
       apps: List<GmaApp>.from(map['apps']?.map((x) => GmaApp.fromMap(x))),
       packages: List<String>.from(map['packages']),
+      executable: map['executable'] ?? 'gmat',
     );
   }
 
@@ -67,7 +73,7 @@ class GmaConfig {
 
   @override
   String toString() {
-    return 'GmaConfig(name: $name, description: $description, stages: $stages, countries: $countries, apps: $apps, packages: $packages)';
+    return 'GmaConfig(name: $name, description: $description, stages: $stages, countries: $countries, apps: $apps, packages: $packages, executable: $executable)';
   }
 
   @override
@@ -78,6 +84,7 @@ class GmaConfig {
     return other is GmaConfig &&
         other.name == name &&
         other.description == description &&
+        other.executable == executable &&
       listEquals(other.stages, stages) &&
         listEquals(other.countries, countries) &&
       listEquals(other.apps, apps) &&
@@ -91,6 +98,7 @@ class GmaConfig {
       stages.hashCode ^
         countries.hashCode ^
       apps.hashCode ^
-        packages.hashCode;
+        packages.hashCode ^
+        executable.hashCode;
   }
 }

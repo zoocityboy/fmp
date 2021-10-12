@@ -1,3 +1,4 @@
+import 'dart:io';
 
 import 'package:gmat/src/commands/i_command.dart';
 import 'package:gmat/src/commands/pub/pub_clean_subcommand.dart';
@@ -5,7 +6,7 @@ import 'package:gmat/src/commands/pub/pub_get_subcommand.dart';
 import 'package:gmat/src/commands/pub/pub_refresh_subcommand.dart';
 import 'package:gmat/src/commands/pub/pub_translate_subcommand.dart';
 
-class PubCommand extends GmaCommand {
+class PubCommand extends SimpleGmaCommand {
   @override
   final name = 'pub';
   @override
@@ -22,6 +23,12 @@ class PubCommand extends GmaCommand {
   }
   @override
   Future<void> run() async {
+    final execArgs = argResults!.rest;
+    if (execArgs.isEmpty) {
+      logger.stdout(description);
+      logger.stdout(argParser.usage);
+      exit(1);
+    }
     
   }
 }

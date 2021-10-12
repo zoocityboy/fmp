@@ -1,10 +1,13 @@
+import 'dart:io';
+
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
+import 'package:gmat/src/commands/specials/licence_command.dart';
+import 'package:gmat/src/commands/specials/server_command.dart';
 import 'package:gmat/src/commands/version/version_command.dart';
 import 'package:gmat/src/exceptions/not_initialized_exception.dart';
 import 'package:gmat/src/commands/flavor/flavor_command.dart';
 import 'package:gmat/src/commands/quality/quality_command.dart';
-import 'package:gmat/src/models/logger/gmat_logger.dart';
 import 'package:gmat/src/workspace.dart';
 import 'package:pool/pool.dart';
 import 'bootstrap/bootstrap_command.dart';
@@ -12,29 +15,25 @@ import 'pub/pub_command.dart';
 import '../constants.dart';
 
 GmaWorkspace? workspace;
-Pool pool = Pool(Constants.defaultConcurency);
 final Pool directoryPool = Pool(10);
 
 class GmaCommandRunner extends CommandRunner<void> {
   GmaCommandRunner() : super('gmat', 'Manage GMA multi-package project') {
     _setupGlobalArgs();
-    try {
-      workspace =
+    workspace =
           GmaWorkspace.isInitialized() ? GmaWorkspace.fromDirectory() : null;
-    } catch (e, _) {
-      print(e);
-    }
-
     addCommand(BootstrapCommand());
     addCommand(PubCommand());
     addCommand(QualityCommand());
     addCommand(FlavorCommand());
     addCommand(VersionCommand());
+    addCommand(ServerCommand());
+    addCommand(LicencesCommand());
   }
 
   @override
   Future<void> runCommand(ArgResults topLevelResults) async {
-    try {
+    // try {
       if (!GmaWorkspace.isInitialized() &&
           ![
             'bootstrap'
@@ -42,11 +41,12 @@ class GmaCommandRunner extends CommandRunner<void> {
         throw NotInitializedException();
       }
       await super.runCommand(topLevelResults);
-    } on OutOfMemoryError catch (e, s) {
-      print('$e');
-      print(s);
-      GmatVerboseLogger().stdout(e.toString());
-    }
+      exit(0);
+    // } on UsageException catch (e, s) {
+    //   print('${topLevelResults.command?.name}');
+    //   printUsage();
+    //   exit(1);
+    // }
   }
 
   @override

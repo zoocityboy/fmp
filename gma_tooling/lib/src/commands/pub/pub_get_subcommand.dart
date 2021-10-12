@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:gmat/src/commands/i_command.dart';
-import 'package:gmat/src/manager/manager.dart';
 
 class PubGetSubcommand extends GmaCommand {
   @override
@@ -17,17 +16,16 @@ class PubGetSubcommand extends GmaCommand {
   
   @override
   FutureOr<void> run() async {
-    manager = await GmaManager.initialize(globalResults, logger,
-        shouldUseFilter: shouldUseFilter);
+   await super.run();
     manager.loggerCommandStart(
-        command: command, arguments: arguments, description: description);
-    if (manager.isDryRun) {
-      arguments.add('--dry-run');
-    }
+        command: command,
+      arguments: arguments,
+      description: description,
+    );
+    
     await manager.runFiltered(command, arguments);
     manager.loggerCommandResults();
     if (failures.isNotEmpty) {
-      
       exitCode = 1;
     }
   }

@@ -6,9 +6,9 @@ This package is created specifically for the GMA project. It will not work prope
 
 ### standard installation
 
-```dart
-dart pub global unactivate gmat
-dart pub global activate --source path . --executable=gmat
+```bash
+dart pub global deactivate gmat
+dart pub global activate --source=path . --executable=gmat
 ```
 
 ### use without Installation
@@ -26,7 +26,7 @@ install un*x bro.
 ```
 
 ## Setup
-GMA Tooling needs definition of project structure defined in `gma.yaml`
+GMA Tooling needs strictly defined project structure defined in `gma.yaml`
 
 
 ```yaml
@@ -40,14 +40,14 @@ apps:
     description: Customer application
     flavor: fakein
     stages:
-        - fake
-        - prod
+      - fake
+      - prod
     countries:
-        - in
-        - vn
-        - ph
-        - id
-
+      - in
+      - vn
+      - ph
+      - id
+    ...
 packages:
   - packages/**
   - plugins/**

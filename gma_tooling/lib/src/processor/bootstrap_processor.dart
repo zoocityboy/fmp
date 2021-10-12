@@ -5,6 +5,8 @@ import 'dart:isolate';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:cli_util/cli_logging.dart';
+import 'package:gmat/src/extensions/string_ext.dart';
+import 'package:gmat/src/manager/manager.dart';
 import 'package:path/path.dart' as path;
 
 import 'package:gmat/src/constants.dart';
@@ -25,17 +27,22 @@ class BootstrapProcessor extends AbstractExecutor<void> {
         await Isolate.resolvePackageUri(Uri.parse('package:gmat/gmat.dart'));
     return File(packageFileUri!.toFilePath()).parent.parent.path;
   }
-  void logHeader([val0]) => logger
-      .stdout('${AnsiStyles.blink(r'⌾')} ${AnsiStyles.yellow.bold('$val0')}');
+   
+  logSubHeader(String message) =>
+      logger.stdout('⌘ ${AnsiStyles.cyan.bold(message)}'.spaceLeftCommand());
+  logStepContent(String message, {bool styled = true}) => logger.stdout(
+      '⌙ ${styled ? AnsiStyles.dim(message) : message}'.spaceLeftProgress());
   void logErr([val0, val1]) {
+    final _secondMessage = val1 != null
+        ? '${AnsiStyles.dim('~')} ${AnsiStyles.redBright.italic('$val1')}'
+        : '';
     logger.stderr(
-      '   ⌙ ${AnsiStyles.redBright(val0)} ${AnsiStyles.dim('~')} ${AnsiStyles.redBright.italic('$val1')}',
-    );
+      '   ⌙ ${AnsiStyles.redBright(val0)} $_secondMessage');
+   
   }
 
   void logStdOut([val0, val1]) {
-    logger.stdout(
-      '   ⌙ ${AnsiStyles.dim(val0)} ${AnsiStyles.dim('~')} ${AnsiStyles.dim.italic('$val1')}',
+    logStepContent('$val0 $val1', styled: false
     );
   }
 
@@ -44,68 +51,87 @@ class BootstrapProcessor extends AbstractExecutor<void> {
   Future<bool> check() async {
     final directory =
         Directory(path.join(_root.path, Constants.toolingFolder));
-    final _exists = directory.exists();
-    return _exists;
+    return directory.exists();
   }
 
   Future<void> clear() async {
-    await Directory(path.join(_root.path, Constants.settingsTpl))
-        .delete()
-        .then(
-        (value) => logStdOut(value),
-        onError: (e) => logErr(e.toString()));
-    await Directory(path.join(_root.path, Constants.workspaceTpl))
-        .delete()
-        .then((value) => logStdOut(value),
-            onError: (e) => logErr(e.toString()));
-    await Directory(path.join(_root.path, Constants.toolingFolder))
-        .delete(recursive: true)
-        .then((value) => logStdOut(value),
-            onError: (e) => logErr(e.toString()));
+    try {
+      final _value =
+          await Directory(path.join(_root.path, Constants.settingsTpl))
+              .delete();
+      logStdOut(_value.path);
+    } catch (e) {
+      logErr(e.toString());
+    }
+    try {
+      final _value =
+          await Directory(path.join(_root.path, Constants.workspaceTpl))
+        .delete();
+      logStdOut(_value.path);
+    } catch (e) {
+      logErr(e.toString());
+    }
+    try {
+      final _value =
+          await Directory(path.join(_root.path, Constants.toolingFolder))
+        .delete(recursive: true);
+      logStdOut(_value.path);
+    } catch (e) {
+      logErr(e.toString());
+    }
   }
 
   Future<void> create() async {
     final packageRootPath = await getPackageRoot();
-    logHeader('Generate GMA project');
+    logSubHeader('Generate GMA project structure.');
     final dir = await Directory(_root.path).create();
-    await File(path.join(
+    
+try {
+      final _value = await File(path.join(
             packageRootPath, Constants.templatesFolder, Constants.workspaceTpl))
-        .copy(path.join(dir.path, Constants.workspaceTpl))
-        .then(
-            (value) => logger.stdout(
-                  '   ⌙ ${AnsiStyles.redBright(Constants.workspaceTpl)} ${AnsiStyles.dim('in folder')} ${AnsiStyles.redBright.italic('$value')}',
-                ), onError: (e) {
+        .copy(path.join(dir.path, Constants.workspaceTpl));
+      logStepContent(
+        '${AnsiStyles.bold(Constants.workspaceTpl)} in folder ${AnsiStyles.italic(_value.parent.path)}',
+      );
+    } catch (e) {
       logErr(Constants.workspaceTpl, e);
-    });
-    await File(path.join(
-            packageRootPath, Constants.templatesFolder, Constants.settingsTpl))
-        .copy(path.join(dir.path, Constants.settingsTpl))
-        .then(
-            (value) => logStdOut(Constants.settingsTpl, value.parent),
-            onError: (e) => logErr(Constants.settingsTpl, e));
-    await Directory(path.join(_root.path, Constants.packagesFolder))
-        .create()
-        .then(
-            (value) => logStdOut(Constants.packagesFolder, value),
-            onError: (e) => logErr(Constants.packagesFolder, e));
-    await Directory(path.join(_root.path, Constants.pluginsFolder))
-        .create()
-        .then(
-            (value) => logStdOut(Constants.pluginsFolder, value),
-            onError: (e) => logErr(Constants.pluginsFolder, e));
-    await Directory(path.join(_root.path, Constants.docsFolder))
-        .create()
-        .then(
-        (value) => logStdOut(Constants.docsFolder, value),
-        onError: (e) => logErr(Constants.docsFolder, e));  
+    }
 
-    await installExtensions();
-    await ShellProcessor(
-      'open',
-      [Constants.workspaceTpl],
-            workingDirectory: _root.path, logger: logger,)
-        .run();
-    logger.stdout('\n ⌙ ${AnsiStyles.green.bold('SUCCESS')}');
+    try {
+      final _value = await File(path.join(
+            packageRootPath, Constants.templatesFolder, Constants.settingsTpl))
+        .copy(path.join(dir.path, Constants.settingsTpl));
+      logStdOut(Constants.settingsTpl, _value.parent);
+    } catch (e) {
+      logErr(Constants.settingsTpl, e);
+    }
+    try {
+      final _value =
+          await Directory(path.join(_root.path, Constants.packagesFolder))
+        .create();
+      logStdOut(Constants.packagesFolder, _value);
+    } catch (e) {
+      logErr(Constants.packagesFolder, e);
+    }
+    try {
+      final _value =
+          await Directory(path.join(_root.path, Constants.pluginsFolder))
+              .create();
+      logStdOut(Constants.pluginsFolder, _value);
+    } catch (e) {
+      logErr(Constants.pluginsFolder, e);
+    }
+    try {
+      final _value =
+          await Directory(path.join(_root.path, Constants.docsFolder)).create();
+      logStdOut(Constants.docsFolder, _value);
+    } catch (e) {
+      logErr(Constants.docsFolder, e);
+    }
+
+    logger
+        .stdout('\n ⌙ ${AnsiStyles.green.bold('SUCCESS')}'.spaceLeftCommand());
+    
   }
 
   Future<void> installExtensions() async {
@@ -115,24 +141,35 @@ class BootstrapProcessor extends AbstractExecutor<void> {
         .listSync(followLinks: false, recursive: false)
         .where((element) => element.path.toLowerCase().endsWith('.vsix'));
     
-    logHeader('GMA Extension installer');
+    logSubHeader('Installing extension for Visual Studio Code');
     for (final ext in _extensions) {
+      logStepContent('installing ${ext.path.split('/').last}');
       final process = await AsyncShellProcessor(
-        'code',
+        'codex',
         ['--install-extension', ext.path],
         logger: logger,
       ).run();
       process.stdout.transform(utf8.decoder).forEach((element) {
-        logger.stdout(
-          '   ⌙ ${AnsiStyles.dim(element)}',
+        logStdOut(
+          element,
         );
       });
+      final ec = await process.exitCode;
+      if (ec == 127) {
+        logErr(
+            'Exntesion is not installed. You don\'t have installed Visual Studio Code download and install: https://code.visualstudio.com/]');
+      } else if (ec > 0) {
+        logErr('Failed', process.stderr.transform(utf8.decoder).toString());
+      } else {
+        await ShellProcessor(
+          'open',
+          [Constants.workspaceTpl],
+          workingDirectory: _root.path,
+          logger: logger,
+        ).run();
+      }
 
     }
-  }
-
-  Future<void> checkFlavor() async {
-      
   }
 
   @override
@@ -141,6 +178,17 @@ class BootstrapProcessor extends AbstractExecutor<void> {
     if (_exists) {
       await clear();
     }
-    await create();
+    await GmaInstaller().run();
+
+    // await create();
+    // await installExtensions();
+    // logSubHeader('Refresh project');
+    // final x = await AsyncShellProcessor('gmatt', ['pub', 'get'], logger: logger)
+    //     .run();
+
+    // logStdOut(x.stdout.transform(utf8.decoder).toString());
+    // logErr(x.stderr.transform(utf8.decoder).toString());
+    // await x.exitCode;
+
   }
 }

@@ -2,6 +2,7 @@ import 'dart:core';
 import 'dart:io';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:args/command_runner.dart';
+import 'package:gmat/src/exceptions/nodejs_not_found.dart';
 import 'package:gmat/src/exceptions/not_found_packages.dart';
 import 'package:gmat/src/exceptions/not_found_pubspec.dart';
 import 'package:gmat/src/exceptions/not_initialized_exception.dart';
@@ -18,14 +19,12 @@ export 'src/extensions/glob.dart';
 void killDartProcess() {
   stdout.writeAll([
     '\n\n',
-    AnsiStyles.dim(ListString.divider),
-    '\n',
+    
     AnsiStyles.dim
         .italic('⌘ GMAT was closed by user. Killing all sub processes.')
         .spaceLeftCommand(),
     '\n',
-    AnsiStyles.dim(ListString.divider),
-    '\n\n',
+    
   ]);
 
   if (Platform.isWindows) {
@@ -35,30 +34,41 @@ void killDartProcess() {
   }
 }
 void execute(List<String> args) async {
-  
-
   await GmaCommandRunner().run(args).catchError((error) {
-    
-    if (error is NotInitializedException) {
-      print(ListString.dividerTop);
-      print('GMAT is not initialized yet. run command: gmat bootstrap init');
-      print(ListString.dividerBottom);
-      
-      exit(65);
-    }
     switch (error.runtimeType) {
+      case NodeJsNotFoundException:
+        print(
+            '⌙ ${AnsiStyles.redBright('${error.message}')}'.spaceLeftCommand());
+        exitCode = 0;
+        break;
       case NotInitializedException:
-        exit(64);
+        print(ListString.dividerTop);
+        print('GMAT is not initialized yet. run command: gmat bootstrap init');
+        print(ListString.dividerBottom);
+        
+        exitCode = 64;
+        break;
       case NotFoundPackages:
-        exit(64);
+        print('$error');
+        exitCode = 64;
+        break;
+
       case NotFoundPubspec:
-        exit(64);
+        print('$error');
+        exitCode = 64;
+        break;
+      case UsageException:
+        print('$error');
+        exitCode = 1;
+        break;
+      default:
+        print(AnsiStyles.red(error.message));
+        exitCode = 64;
+        break;
     }
-    if (error is! UsageException) throw error;
-    
-    AnsiStyles.red(error.message);
-    exit(64);
+    killDartProcess();
+    exit(exitCode);  
   });
-  
+  killDartProcess();
   
 }

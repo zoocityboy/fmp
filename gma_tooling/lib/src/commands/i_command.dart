@@ -5,7 +5,9 @@ import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:gmat/src/constants.dart';
+import 'package:gmat/src/extensions/iterable_ext.dart';
 import 'package:gmat/src/manager/manager.dart';
+import 'package:gmat/src/models/gma_worker.dart';
 import 'package:gmat/src/models/logger/gmat_logger.dart';
 import 'package:gmat/src/models/package.dart';
 import 'package:process_runner/process_runner.dart';
@@ -15,6 +17,7 @@ abstract class SimpleGmaCommand<T> extends Command<T> {
   bool get isVerbose => globalResults?[Constants.argVerbose] == true;
   bool get isFastFail => globalResults?[Constants.argFastFail] == true;
   bool get isDryRun => globalResults?[Constants.argDryRun] == true;
+  bool get isAffectedOnly => globalResults?[Constants.argAffectedOnly] == true;
   Logger get logger => isVerbose ? GmatVerboseLogger() : GmatStandardLogger();
   final failures = <Package, int>{};
   @override
@@ -27,7 +30,7 @@ abstract class SimpleGmaCommand<T> extends Command<T> {
   bool get allowTrailingOptions => true;
   @override
   late final ArgParser argParser = ArgParser(
-    usageLineLength: stdout.terminalColumns,
+    usageLineLength: terminalColumns,
     allowTrailingOptions: allowTrailingOptions,
   );
 }
@@ -35,13 +38,17 @@ abstract class SimpleGmaCommand<T> extends Command<T> {
 
 abstract class GmaCommand extends SimpleGmaCommand<void> {
   bool get shouldUseFilter => true;
-
   late GmaManager manager;
+
+  Future<void> initialize() async {
+    manager = await GmaManager.initialize(globalResults, logger,
+        shouldUseFilter: shouldUseFilter);
+    return;
+  }
 
   @override
   FutureOr<void> run() async {
-    manager = await GmaManager.initialize(globalResults, logger,
-        shouldUseFilter: shouldUseFilter);
+    await initialize();
     
   }
 
@@ -50,60 +57,37 @@ abstract class GmaCommand extends SimpleGmaCommand<void> {
     if (addToJobs != null && addToJobs.isNotEmpty) {
       jobs.addAll(addToJobs);
     }
+    return runJobs(jobs: jobs);
+  }
+
+  Future<void> runJobs({List<GmaWorker> jobs = const <GmaWorker>[]}) async {
     try {
       await for (final job in manager.pool.startWorkers(jobs)) {
         if (job is GmaWorker) {
           manager.loggerProgress(job);
           if (job.result.exitCode > 0) {
-            failures[job.package as Package] = job.result.exitCode;
+            if (job.package != null) {
+              failures[job.package as Package] = job.result.exitCode;
+            } else {
+              manager.logError('${job.name} failed: ${job.result.exitCode}');
+            }
           }
         }
         
     }
     } on ProcessRunnerException catch (e) {
       if (isFastFail) {
-        stderr.writeln('execution failed: $e');
+        manager.logError('execution failed: $e');
         exitCode = e.exitCode;
         return;
       }
+    } catch (e, s) {
+      manager.logError('execution failed: $e');
+      print(e);
+      print(s);
     }
     return Future.value(null);
   }
 }
 
-abstract class GmaMultipleCommand extends GmaCommand {
-  List<MapEntry<String?, List<String>>> commands = [];
 
-  @override
-  FutureOr<void> run() async {
-    await super.run();
-  }
-  
-  @override
-  Future<void> executeOnSelected({List<GmaWorker>? addToJobs}) async {
-    for (final item in commands) {
-      command = item.key;
-      customArgs = item.value.toSet();
-      await super.executeOnSelected();
-      failures.addAll(super.failures);
-    }
-  }
-}
-
-class GmaWorker extends WorkerJob {
-  GmaWorker(
-    this.package,
-    List<String> command, {
-    String? name,
-    Directory? workingDirectory,
-    bool printOutput = false,
-    bool runInShell = true,
-    bool isFastFail = false,
-  }) : super(command,
-            name: name,
-            workingDirectory: workingDirectory,
-            printOutput: printOutput,
-            runInShell: runInShell,
-            failOk: !isFastFail);
-  final Package? package;
-}

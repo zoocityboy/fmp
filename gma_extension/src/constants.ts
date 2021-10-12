@@ -11,6 +11,9 @@ export class Constants {
     static changeCountryCommandId = 'gma.flavor.changeCountry';
     static changeStageCommandId = 'gma.flavor.changeStage';
 
-    static showBoardCommandId = 'gma.flavor.showBoard';
+    static configWidgetCatalog = 'gma.flavor.widget_catalog';
     static showWidgetCatalogCommandId = 'gma.flavor.showCatalog';
+
+    static configDynamicFormsPlayground = 'gma.flavor.dynamic_forms_playground';
+    static showDynamicPlaygroundCatalogCommandId = 'gma.flavor.showDynamicFormsPlayground';
 }

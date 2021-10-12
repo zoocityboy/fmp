@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import 'package:gmat/src/constants.dart';
 import 'package:gmat/src/extensions/package.dart';
 import 'package:gmat/src/manager/manager.dart';
 import 'package:gmat/src/models/config/config_app.dart';
@@ -22,13 +22,18 @@ class FlavorAppCommand extends GmaCommand {
   FlavorAppCommand(GmaApp app,
       {required this.customName, required this.customDescription}) {
     argParser.addOption(
-      'choose',
+      Constants.argChange,
       allowed: app.flavors,
+      // allowedHelp: app.allowHelp,
+        help: 'Select flavor of selected application'
+            'example: fakein => stage: fake, country: India'
     );
   }
   @override
   FutureOr<void> run() async {
-    FlavorType flavorType = FlavorTypeConverter.fromJson(argResults!['choose']);
+   
+    FlavorType flavorType =
+        FlavorTypeConverter.fromJson(argResults![Constants.argChange]);
     final manager = await GmaManager.initialize(globalResults, logger,
         shouldUseFilter: shouldUseFilter);
     manager
@@ -42,32 +47,13 @@ class FlavorAppCommand extends GmaCommand {
     }
     await manager.runFiltered('flutter', {'pub', 'get'}, cb: (worker) {
       if (worker.result.exitCode == 0) {
-        (worker.package as Package).updateFlavorPubspecLock(flavorType);
+        if (worker.package is Package) {
+          (worker.package as Package).updateFlavorPubspecLock(flavorType);
+        }
       }
     });
-    manager.loggerCommandResults();
-    if (failures.isNotEmpty) {
-      exitCode = 1;
-    }
+    manager
+      ..loggerCommandResults()
+      ..resolveExit();
   }
-
-  // @override
-  // Future<void> executeOnSelected() async {
-  //   FlavorType flavorType = FlavorTypeConverter.fromJson(argResults!['choose']);
-  //   final pool = manager.pool;
-    
-  //   final jobs =
-  //       manager.getWorkerJobs(command: command, arguments: {'pub', 'get'});
-    
-  //   for (final package in manager.selectedPackages) {
-  //     package.updateFlavor(flavorType);
-  //   }
-  //   await for (final job in pool.startWorkers(jobs)) {
-  //     final worker = job as GmaWorker;
-  //     manager.loggerProgress(worker);
-  //     if (worker.result.exitCode == 0) {
-  //       (worker.package as Package).updateFlavorPubspecLock(flavorType);
-  //     }
-  //   }
-  // }
 }

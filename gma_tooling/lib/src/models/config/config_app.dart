@@ -11,6 +11,7 @@ class GmaApp {
   List<String> stages;
   List<String> countries;
   List<String> exclude;
+  int? expressPort;
   GmaApp({
     required this.name,
     required this.folder,
@@ -19,12 +20,18 @@ class GmaApp {
     this.countries = const [],
     this.description,
     this.exclude = const [],
+    this.expressPort,
   });
 
   List<String>? get flavors => stages
       .map((e) => countries.map((e1) => '$e$e1'))
       .expand((element) => element)
       .toList();
+  Map<String, String> get allowHelp => {
+        for (var stage in stages)
+          stage: countries.map((d) => '$stage$d').join(',')
+      };
+      
       
 
   GmaApp copyWith({
@@ -35,6 +42,7 @@ class GmaApp {
     List<String>? stages,
     List<String>? countries,
     List<String>? exclude,
+    int? expressPort,
   }) {
     return GmaApp(
       name: name ?? this.name,
@@ -44,6 +52,7 @@ class GmaApp {
       stages: stages ?? this.stages,
       countries: countries ?? this.countries,
       exclude: exclude ?? this.exclude,
+      expressPort: expressPort ?? this.expressPort,
     );
   }
 
@@ -55,6 +64,7 @@ class GmaApp {
       'stages': stages,
       'countries': countries,
       'exclude': exclude,
+      'expressPort': expressPort,
     };
   }
 
@@ -67,6 +77,7 @@ class GmaApp {
       stages: List<String>.from(map['stages'] ?? []),
       countries: List<String>.from(map['countries'] ?? []),
       exclude: List<String>.from(map['exclude_packages'] ?? []),
+      expressPort: map['expressPort']
     );
   }
 
@@ -79,6 +90,7 @@ class GmaApp {
       stages: List<String>.from(map['stages']),
       countries: List<String>.from(map['countries']),
       exclude: List<String>.from(map['exclude_packages']),
+      expressPort: map['expressPort']
     );
   }
 
@@ -96,7 +108,8 @@ class GmaApp {
       description: $description
       stages: $stages
       countries: $countries 
-      exclude: $exclude
+      exclude: $exclude,
+      expressPort: $expressPort
     )''';
   }
 

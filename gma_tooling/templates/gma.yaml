@@ -1,6 +1,6 @@
 name: GMA
 description: | 
-  Multi-package settingsa adf asdf
+  Multi-package manager for GMA project.
   
 apps:
   - name: self_care
@@ -35,11 +35,14 @@ apps:
   - name: widget_catalog
     folder: widget_catalog
     description: Widget catalog
+    expressPort: 9001
   - name: dynamic_forms_playground
     folder: dynamic_forms_playground
     description: Dynamic forms playground  
+    expressPort: 9002
+    
 packages:
   - packages/**
   - plugins/**
-
+executable: gmatt
 runners:

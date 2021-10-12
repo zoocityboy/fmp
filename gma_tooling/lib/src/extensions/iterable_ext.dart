@@ -29,11 +29,11 @@ extension PackageList on List<Package> {
     return this;
   }
 }
-
+final terminalColumns = stdout.hasTerminal ? stdout.terminalColumns : 80;
 extension ListString on List {
-  static String get divider => '⎼' * stdout.terminalColumns;
-  static String get dividerTop => '⎺' * stdout.terminalColumns;
-  static String get dividerBottom => '_' * stdout.terminalColumns;
+  static String get divider => '⎼' * terminalColumns;
+  static String get dividerTop => '⎺' * terminalColumns;
+  static String get dividerBottom => '_' * terminalColumns;
 }
 
 extension IterablePackage on Iterable<Package> {

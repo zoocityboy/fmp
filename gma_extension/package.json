@@ -4,6 +4,7 @@
 	"name": "gma",
 	"displayName": "GMA Extensions",
 	"description": "GMA Extensions",
+	"repository": "http://github.com/zoocityboy/fmp",
 	"version": "0.0.1",
 	"icon": "media/images/koyal_icon.png",
 	"engines": {
@@ -159,24 +160,39 @@
 		],
 		"commands": [
 			{
-				"command": "gma.flavor.showBoard",
-				"title": "Show Cat Codicons",
-				"category": "Cat Codicons"
+				"title": "Show Widget Catalog",
+				"shortTitle": "WidgetCatalog",
+				"command": "gma.flavor.showCatalog",
+				"category": "GMA"
+			},
+			{
+				"title": "Show Dynamic Forms Playground",
+				"shortTitle": "Dynamic Playground",
+				"command": "gma.flavor.showDynamicPlayground",
+				"category": "GMA"
 			},
 			{
 				"category": "GMA",
+
 				"command": "gma.flavor.changeApp",
-				"title": "Select application"
+				"title": "Select application",
+				"shortTitle": "Application"
 			},
 			{
 				"category": "GMA",
 				"command": "gma.flavor.changeCountry",
-				"title": "Select country"
+				"title": "Select country",
+				"shortTitle": "Country"
 			},
 			{
 				"category": "GMA",
 				"command": "gma.flavor.changeStage",
-				"title": "Select stage"
+				"title": "Select stage",
+				"shortTitle": "Stage",
+				"icon": {
+					"light": "path/to/light/icon.svg",
+					"dark": "path/to/dark/icon.svg"
+				}
 			}
 		],
 		"viewsContainers": {
@@ -184,7 +200,7 @@
 				{
 					"id": "gma-activity",
 					"title": "GMA Tools",
-					"icon": "images/koyal_icon.svg"
+					"icon": "media/images/koyal_icon.svg"
 				}
 			]
 		},
@@ -193,7 +209,7 @@
 				{
 					"id": "nodeDependencies",
 					"name": "Documentation",
-					"icon": "images/koyal_icon.svg",
+					"icon": "media/images/koyal_icon.svg",
 					"contextualTitle": "Documentation"
 				}
 			]
@@ -201,7 +217,11 @@
 		"viewsWelcome": [
 			{
 				"view": "nodeDependencies",
-				"contents": "[Widget Catalog](command:gma.flavor.showBoard)"
+				"contents": "[Widget Catalog](command:gma.flavor.showCatalog)"
+			},
+			{
+				"view": "nodeDependencies",
+				"contents": "[Dynamic Forms Playground](command:gma.flavor.showDynamicFormsPlayground)"
 			}
 		]
 	},

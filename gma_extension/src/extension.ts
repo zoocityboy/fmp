@@ -3,27 +3,30 @@ import * as vscode from 'vscode';
 import { WorkspaceConfigurator } from './configuration';
 import { ProgressState } from './models';
 import { FlavorTasks } from './tasks';
-import { BoardPanel } from './panel/board_panel';
+import { WidgetCatalogPanel } from './panel/widget_catalog_panel';
+import { DynamicPlaygroundPanel } from './panel/dynamic_forms_panel';
 import { Constants } from './constants';
 import { NodeDependenciesProvider } from './panel/tree';
 let statusBarItem: vscode.StatusBarItem;
+let progressStatusBarItem: vscode.StatusBarItem;
 let flavorConfig: WorkspaceConfigurator;
 let flaverTask: FlavorTasks;
 
 const wait = (ms: number) => new Promise(res => setTimeout(res, ms));
 
-function showMessageWithDelay(message: string, ms: number = 1500) {
-	vscode.window.withProgress({
-		location: vscode.ProgressLocation.Notification,
-		title: message,
-		cancellable: false
-	}, async (progress, token) => {
-		for (let i = 0; i < 50; ++i) {
-			progress.report({ increment: 2 });
-			await wait(ms / 100);
-		}
-	});
-}
+// function showMessageWithDelay(message: string, ms: number = 1500) {
+// 	vscode.window.withProgress({
+// 		location: vscode.ProgressLocation.Notification,
+// 		title: message,
+// 		cancellable: false
+// 	}, async (progress, token) => {
+// 		for (let i = 0; i < 50; ++i) {
+// 			progress.report({ increment: 2 });
+// 			await wait(ms / 100);
+// 		}
+// 	});
+
+// }
 export function activate(context: vscode.ExtensionContext) {
 
 	flaverTask = new FlavorTasks();
@@ -31,23 +34,19 @@ export function activate(context: vscode.ExtensionContext) {
 		console.log(`FlavorTasks: ${value.message} ${value.state} ${value.failed}`);
 		switch (value.state) {
 			case ProgressState.loading:
-				showMessageWithDelay(value.message ?? 'Building flavor...', 5000);
+				updateProgressStatusBarItem(value.state, value.message ?? 'Building flavor...');
 
 				break;
 			case ProgressState.complete:
 				if (value.failed) {
-					vscode.window.showErrorMessage(value.failed.message);
+					updateProgressStatusBarItem(value.state, value.failed.message ?? 'Error...');
 				} else {
-					// vscode.window.showInformationMessage(value.message ?? 'Build flavor finished', {
-					// 	modal: false,
-					// } as vscode.MessageOptions, "Okey").then((value) => { });
-					showMessageWithDelay(value.message ?? 'Build flavor finished', 2500);
-
+					updateProgressStatusBarItem(value.state, value.message ?? 'Building flavor...');
 				}
 
 				break;
 			default:
-				vscode.window.showInformationMessage(`${value.message}`);
+				updateProgressStatusBarItem(value.state, value.message ?? 'Building flavor...');
 				break;
 		}
 	});
@@ -60,18 +59,64 @@ export function activate(context: vscode.ExtensionContext) {
 
 	});
 	registerChangeFlavor(context);
-	registerBoardPanel(context);
+	registerWidgetCatalogPanel(context);
+	registerDynamicFormPlaygroundPanel(context);
 }
 export function deactivate() {
 	statusBarItem.hide();
+	progressStatusBarItem.hide();
 }
-export async function registerBoardPanel(context: vscode.ExtensionContext) {
+export async function registerWidgetCatalogPanel(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
-		vscode.commands.registerCommand(Constants.showBoardCommandId, () => {
-			BoardPanel.show(context.extensionUri);
+		vscode.commands.registerCommand(Constants.showWidgetCatalogCommandId, () => {
+			WidgetCatalogPanel.show(context.extensionUri);
 		})
 	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand('catCoding.doRefactor', () => {
+			if (WidgetCatalogPanel.currentPanel) {
+				WidgetCatalogPanel.currentPanel.doRefactor();
+			}
+		})
+	);
+	if (vscode.window.registerWebviewPanelSerializer) {
+		// Make sure we register a serializer in activation event
+		vscode.window.registerWebviewPanelSerializer(WidgetCatalogPanel.viewType, {
+			async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
+				console.log(`Got state: ${state}`);
+				webviewPanel.webview.options = WidgetCatalogPanel.getWebviewOptions(context.extensionUri);
+				WidgetCatalogPanel.revive(webviewPanel, context.extensionUri);
+			}
+		});
+	}
 }
+
+export async function registerDynamicFormPlaygroundPanel(context: vscode.ExtensionContext) {
+	context.subscriptions.push(
+		vscode.commands.registerCommand(Constants.showDynamicPlaygroundCatalogCommandId, () => {
+			DynamicPlaygroundPanel.show(context.extensionUri);
+		})
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand('catCoding.doRefactor', () => {
+			if (DynamicPlaygroundPanel.currentPanel) {
+				DynamicPlaygroundPanel.currentPanel.doRefactor();
+			}
+		})
+	);
+	if (vscode.window.registerWebviewPanelSerializer) {
+		// Make sure we register a serializer in activation event
+		vscode.window.registerWebviewPanelSerializer(DynamicPlaygroundPanel.viewType, {
+			async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
+				console.log(`Got state: ${state}`);
+				webviewPanel.webview.options = DynamicPlaygroundPanel.getWebviewOptions(context.extensionUri);
+				DynamicPlaygroundPanel.revive(webviewPanel, context.extensionUri);
+			}
+		});
+	}
+}
+
+
 export async function registerTreePanel(context: vscode.ExtensionContext) {
 	const folder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.applicationFolder)!;
 	vscode.window.registerTreeDataProvider(
@@ -103,6 +148,9 @@ export async function registerChangeFlavor(context: vscode.ExtensionContext) {
 	});
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
 	statusBarItem.command = Constants.changeFlavorCommandId;
+
+	progressStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
+
 	flavorConfig.apply();
 }
 
@@ -125,18 +173,33 @@ export async function changeFlavorFlow() {
 	const shortTag = flavorConfig.getFlavorShortTag();
 	const app = flavorConfig.getApp();
 	if (shortTag !== undefined && app !== undefined) {
+		updateProgressStatusBarItem(ProgressState.loading, "Change flavor started.");
 		flaverTask.changeFlavor(shortTag, app.key);
 	}
-	updateStatusBarItem();
-
-
 }
 async function updateStatusBarItem() {
 	statusBarItem.text = '....';
 	let app = flavorConfig.getApp();
 	let stage = flavorConfig.getStage();
 	let country = flavorConfig.getCountry();
-	statusBarItem.text = `$(notebook-execute) ${country?.label ?? ''} ${app?.label ?? ''} app in ${stage?.label ?? ''}`;
+	statusBarItem.text = `$(globe~spin) ${country?.label ?? ''} ${app?.label ?? ''} app in ${stage?.label ?? ''}`;
 	statusBarItem.show();
 
+}
+async function updateProgressStatusBarItem(state: ProgressState, message: string) {
+
+	switch (state) {
+		case ProgressState.default:
+
+			break;
+		case ProgressState.loading:
+			statusBarItem.text = `$(sync~spin) ${message}`;
+			break;
+		case ProgressState.complete:
+			statusBarItem.text = `$(sync~spin) ${message}`;
+			wait(3000).then(() => {
+				updateStatusBarItem();
+			});
+			break;
+	}
 }

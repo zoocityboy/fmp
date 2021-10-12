@@ -1,4 +1,30 @@
+import 'dart:io';
+import 'package:path/path.dart' as p;
 import 'package:gmat/src/constants.dart';
+
+extension FilePathExtension on File {
+  String toRelativePath() {
+    final _current = path;
+    var context = p.Context(current: Directory.current.path);
+    return context.relative(_current);
+  }
+}
+
+extension FileSystemExtension on FileSystemEntity {
+  String toRelativePath({Directory? directory}) {
+    final _current = path;
+    var context = p.Context(current: directory?.path ?? Directory.current.path);
+    return context.relative(_current);
+  }
+}
+
+extension DirectoryPathExtension on Directory {
+  String toRelativePath() {
+    final _current = path;
+    var context = p.Context(current: Directory.current.path);
+    return context.relative(_current);
+  }
+}
 
 extension StringPascal on String {
   String _upperCaseFirstLetter(String word) {

@@ -15,6 +15,7 @@ mixin _ProcessorMixin on _GmaManager {
           .toString()
           .padLeft(3);
   String get done => '${pool.completedJobs}/${pool.totalJobs}'.padLeft(7);
+  
   List<GmaWorker> getWorkerJobs(
           {String? command, Set<String> arguments = const <String>{}}) =>
       selectedPackages
@@ -25,6 +26,7 @@ mixin _ProcessorMixin on _GmaManager {
                 isFastFail: isFastFail,
               ))
           .toList();
+
   Future<void> processSelectedPackages(
       List<GmaWorker> jobs, void Function(GmaWorker job)? cb) async {
     await for (final job in pool.startWorkers(jobs)) {

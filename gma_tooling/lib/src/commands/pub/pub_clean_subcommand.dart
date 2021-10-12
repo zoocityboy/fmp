@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:gmat/src/commands/i_command.dart';
-import 'package:process_runner/process_runner.dart';
+import 'package:gmat/src/models/gma_worker.dart';
 
 class PubCleanSubcommand extends GmaCommand {
   @override
@@ -19,7 +19,10 @@ class PubCleanSubcommand extends GmaCommand {
   FutureOr<void> run() async {
     await super.run();
     manager.loggerCommandStart(
-        command: command, arguments: arguments, description: description);
+        command: command,
+      arguments: arguments,
+      description: description,
+    );
     await manager.cleanStorage();
     await executeOnSelected(addToJobs: [
       GmaWorker(null, ['git', 'clean', '-x', '-d', '-f', '-q'],
@@ -27,6 +30,7 @@ class PubCleanSubcommand extends GmaCommand {
     ]);
 
     manager.loggerCommandResults();
+    
     
   }
 }

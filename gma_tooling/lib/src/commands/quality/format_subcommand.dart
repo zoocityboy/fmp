@@ -1,12 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:glob/glob.dart';
-import 'package:glob/list_local_fs.dart';
 import 'package:gmat/src/commands/i_command.dart';
-import 'package:gmat/src/processor/shell_processor.dart';
-
+import 'package:gmat/src/models/gma_worker.dart';
+import 'package:glob/list_local_fs.dart';
+import 'package:gmat/src/extensions/string_ext.dart';
 class FomatSubcommand extends GmaCommand {
   @override
   String get description => 'Format code of the project.';
@@ -17,31 +16,38 @@ class FomatSubcommand extends GmaCommand {
   String? get command => 'dart';
 
   @override
-  Set<String> arguments = {'format', '-o', 'write', '.'};
+  Set<String> arguments = {'format'};
 
   @override
   FutureOr<void> run() async {
     await super.run();
+    if (manager.isDryRun) {
+      arguments.addAll({'-o', 'write'});
+    }
 
-    manager.loggerCommandStart();
-    final allFormatableFiles = Glob('**/*[^.freezed|^.g].dart')
-        .listSync(root: Directory.current.path, followLinks: false);
-
-    arguments.add(allFormatableFiles.map((e) => e.path).join(' '));
-    final processor = AsyncShellProcessor(command!, arguments.toList(),
-        workingDirectory: Directory.current.path, logger: logger);
-
-    print(processor.toString());
-
-    final response = await processor.run();
-    response.stdout
-        .transform(utf8.decoder)
-        .forEach((value) => logger.stdout(value));
-    await response.exitCode;
-    print(response);
-    manager.loggerCommandResults();
+    manager.loggerCommandStart(
+        description: description, command: command, arguments: arguments);
+    final jobs = getWorkerJobs(command: command, arguments: arguments);
+    await runJobs(jobs: jobs);
+    manager
+      ..loggerCommandResults()
+      ..resolveExit();
     if (failures.isNotEmpty) {
       exitCode = 1;
     }
   }
+  List<GmaWorker> getWorkerJobs(
+          {String? command, Set<String> arguments = const <String>{}}) =>
+      manager.selectedPackages.map((package) {
+        final allFormatableFiles = Glob('**/*[^.freezed|^.g].dart')
+            .listSync(root: package.directory.path, followLinks: false)
+            .map((e) => e.toRelativePath(directory: package.directory))
+            .toList();
+        return package.getWorkerJob(
+          command ?? package.command,
+          [...arguments.toList(), ...allFormatableFiles],
+          logger: logger,
+          isFastFail: isFastFail,
+        );
+      }).toList();
 }

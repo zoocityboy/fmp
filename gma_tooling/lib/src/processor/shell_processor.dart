@@ -38,6 +38,7 @@ class AsyncShellProcessor extends AbstractProcessor<ProcessResult> {
     this.workingDirectory,
     this.runInShell = true,
     required this.logger,
+    this.mode = ProcessStartMode.normal,
   });
   final String executable;
   final String? workingDirectory;
@@ -45,15 +46,17 @@ class AsyncShellProcessor extends AbstractProcessor<ProcessResult> {
   final bool runInShell;
   @override
   final Logger logger;
+  final ProcessStartMode mode;
 
   @override
   Future<Process> run() => Process.start(executable, args,
       workingDirectory: workingDirectory,
       // includeParentEnvironment: false,
-      runInShell: runInShell);
+      runInShell: runInShell,
+      mode: mode);
 
 
   @override
   String toString() => 'running: $executable ${args.join(' ')}';
-
+  
 }

@@ -5,15 +5,12 @@ import 'package:gmat/src/workspace.dart';
 import '../i_command.dart';
 import 'flavor_app_command.dart';
 
-class FlavorCommand extends GmaCommand {
+class FlavorCommand extends SimpleGmaCommand {
   @override
   final name = 'flavor';
 
   @override
   final description = 'Change flavor of selected App';
-
-  @override
-  bool get shouldUseFilter => false;
 
   FlavorCommand() {
     if (GmaWorkspace.isInitialized()) {
@@ -31,12 +28,11 @@ class FlavorCommand extends GmaCommand {
   @override
   FutureOr<void> run() async {
     final execArgs = argResults!.rest;
-
+    print(execArgs);
     if (execArgs.isEmpty) {
       logger.stdout(description);
       logger.stdout(argParser.usage);
       exit(1);
     }
-    return null;
   }
 }

@@ -1,6 +1,26 @@
 part of 'manager.dart';
 
-mixin _LoggerMixin on _ProcessorMixin {
+mixin _BaseLoggerMixin {
+  String formatTitle(String message, {String? prefix = '⌾'}) =>
+      AnsiStyles.yellow.bold('$prefix $message'.spaceLeft(0));
+  String formatSubtitle(String message, {String? prefix = '⌞'}) =>
+      AnsiStyles.cyan.bold('$prefix $message'.spaceLeft(2));
+  String formatHeader(String message, {String? prefix = '○'}) =>
+      AnsiStyles.dim.bold('$prefix $message'.spaceLeft(4));
+  String formatBody(String message, {String? prefix = '⌞'}) =>
+      AnsiStyles.dim('$prefix $message'.spaceLeft(4));
+  String formatCaption(String message, {String? prefix = '⌞'}) =>
+      AnsiStyles.dim('$prefix $message'.spaceLeft(6));
+  String formatFailed(String message,
+          {String? prefix = '✕', int spaceLeft = 4}) =>
+      AnsiStyles.redBright.italic('$prefix $message'.spaceLeft(spaceLeft));
+  String formatSuccess(
+          {String? message, String? prefix = '✓', int spaceLeft = 4}) =>
+      AnsiStyles.greenBright.italic(
+          '$prefix ${message ?? 'Successfully finished'}\n'
+              .spaceLeft(spaceLeft));
+}
+mixin _LoggerMixin on _BaseLoggerMixin, _ProcessorMixin {
   Progress? currentProgress;
   void loggerCommandStart(
       {String? command, Set<String>? arguments, String? description}) {
@@ -57,7 +77,7 @@ mixin _LoggerMixin on _ProcessorMixin {
             .spaceLeftStatus(),
       );
       logError(
-        '⌙ ${AnsiStyles.redBright(failures[package]?.value)}'.spaceLeft(12),
+        '⌙ ${AnsiStyles.redBright(failures[package]?.value)}'.spaceLeftStatus(),
       );
     }
   }

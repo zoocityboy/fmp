@@ -2,18 +2,28 @@
 
 Commands can be run from the root of a GMA project.
 
-## bootstrap (bsi)
+## bootstrap
 
 Bootstraps the project by installing and linking project dependencies and install vscode extensions.
 
 ```bash
 gmat bootstrap
-gmat bs
 ```
 A `gma.yaml` file and empty `packages/` directory will be generated.
 
 Packages defined in the `gma.yaml` `packages` field will be locally linked whilst other dependencies
 will be automatically resolved.
+
+**--[no-]server-build** - build sever for apps with port
+
+**--[no-]server-run** - run simply local server on ```http://localhost:$port```
+
+**--[no-]refresh** - run  ```dart/flutter pub get``` in all packages
+
+**--extensions** - Install GMA Studio extension for Visual Studio Cod
+
+
+
 ## flavor
 
 Flavor allows change flavor of a selected app which must be defined in `gma.yaml`.
@@ -21,9 +31,9 @@ Flavor allows change flavor of a selected app which must be defined in `gma.yaml
 #### app_name
 > Note: `app_name` is dynamic value taken from your `gma.yaml` configuration
 
-**--choose** - available flavors per application
+**--change** - available flavors per application
 ```bash
-gmat flavor self_care --choose fakein
+gmat flavor self_care --change fakein
 ```
 > Note: `gmat flavor self_care -h` for available flovers
 
@@ -86,12 +96,12 @@ Manipulation with package versions cross all packages in GMA project
 gmat version
 ```
 
-### --search (-s)
+### search
 
 Manipulation with package versions cross all packages in GMA project
 
 ```bash
-gmat version --search dartz
+gmat version search --package dartz
 ```
 
 ### update

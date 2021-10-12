@@ -9,5 +9,8 @@ void main(List<String> arguments) {
       koyal_tools.killDartProcess();
     });
    koyal_tools.execute(arguments);
- }, (e, s) => print('Oh noes! $e $s'));
+ }, (e, s) {
+    print('Oh noes! $e $s');
+    exit(1);
+  });
 }

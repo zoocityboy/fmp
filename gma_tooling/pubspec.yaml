@@ -9,8 +9,6 @@ dependencies:
   ansi_styles: ^0.3.0
   args: ^2.2.0
   collection: ^1.15.0-nullsafety.4
-  dart_console: ^1.0.0
-  pool: ^1.5.0
   cli_util: ^0.3.4
   pubspec: ^2.0.1
   yaml: ^3.1.0
@@ -18,6 +16,11 @@ dependencies:
   json_annotation: ^4.0.1
   json2yaml: ^2.0.0
   process_runner: ^4.1.2
+  shelf: ^1.0.0
+  shelf_static: ^1.0.0
+  html: ^0.15.0
+  http: ^0.13.3
+  csv: ^5.0.0
 dev_dependencies:
   nock: ^1.2.0
   test: ^1.17.5
@@ -27,3 +30,4 @@ dev_dependencies:
 
 executables:
   gmat:
+  gma_server:

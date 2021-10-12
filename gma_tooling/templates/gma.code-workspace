@@ -53,12 +53,25 @@
             "feature",
             "bug"
         ],
+        "dart.analysisExcludedFolders": [
+            "Root",
+            "Plugins",
+            "Pipelines",
+            "Application"
+        ],
+        "dart.sdkPaths": [
+            "fvm/default/bin/cache/dart-sdk/"
+        ],
         "dart.runPubGetOnPubspecChanges": false,
         "dart.promptToGetPackages": false,
         "files.exclude": {
             "**/.git": true,
+            "**/.svn": true,
+            "**/.hg": true,
+            "**/CVS": true,
             "**/.DS_Store": true,
             "**/Thumbs.db": true,
+            "**/.gitX": true,
             "**/localizations_processor": true,
             "**/build/**": true,
             "**/.git/**": true,
@@ -140,7 +153,13 @@
                 },
                 "picked": false
             }
-        ]
+        ],
+        "explorer.compactFolders": false,
+        "search.exclude": {
+            "**/*.freezed.dart": true,
+            "**/*.g.dart": true
+        },
+        "window.title": "GMA Studio ~ ${activeEditorShort}${separator}${rootName}"
     },
     "launch": {
         "configurations": [

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:gmat/src/constants.dart';
 import 'package:gmat/src/extensions/string_ext.dart';
 import 'package:gmat/src/commands/i_command.dart';
+import 'package:gmat/src/models/gma_worker.dart';
 
 class PubTranslateSubcommand extends GmaCommand {
   @override
@@ -45,8 +46,6 @@ class PubTranslateSubcommand extends GmaCommand {
 
   @override
   Future<void> executeOnSelected({List<GmaWorker>? addToJobs}) async {
-    manager.initPool();
-    // final _jobs = manager.getWorkerJobs(command: command, arguments: )
     final jobs = manager.selectedPackages
         .map((package) => package.getWorkerJob(
             package.command,

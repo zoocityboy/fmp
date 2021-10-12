@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:gmat/src/commands/i_command.dart';
 
@@ -20,7 +19,10 @@ class PubRefreshSubcommand extends GmaCommand {
   FutureOr<void> run() async {
     await super.run();
     manager.loggerCommandStart(
-        command: command, arguments: arguments, description: description);
+        command: command,
+      arguments: arguments,
+      description: description,
+    );
     final jobs = manager.getWorkerJobs(
       command: command,
       arguments: arguments,

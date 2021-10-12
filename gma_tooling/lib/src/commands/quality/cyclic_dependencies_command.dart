@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:gmat/src/commands/i_command.dart';
 import 'package:gmat/src/extensions/iterable_ext.dart';
+import 'package:gmat/src/models/gma_worker.dart';
 
 class AnalyzeCyclicDependenciesSubCommand extends GmaCommand {
   @override

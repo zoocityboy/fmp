@@ -2,14 +2,15 @@ import 'dart:async';
 import 'dart:io';
 import 'package:cli_util/cli_logging.dart';
 import 'package:gmat/gmat.dart';
-import 'package:gmat/src/commands/i_command.dart';
 import 'package:gmat/src/constants.dart';
 import 'package:gmat/src/extensions/directory_ext.dart';
 import 'package:gmat/src/models/flavor/pubspec_flavor.dart';
+import 'package:gmat/src/models/gma_worker.dart';
 import 'package:gmat/src/processor/shell_processor.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
+import 'package:path/path.dart' as path;
 
 import 'flavor/flavors.dart';
 
@@ -28,6 +29,7 @@ abstract class IEntity {
   Map<String, DependencyReference> devDependencies = {};
   Map<String, DependencyReference> dependencyOverrides = {};
   Future<bool> loadPubspec();
+  Future<bool> loadPubspecCore();
   Directory get directory;
   bool hasFlavor = false;
   bool hasTranslation = false;
@@ -59,6 +61,22 @@ class Package extends IEntity {
   @override
   Future<bool> loadPubspec() async {
     pubSpec = await PubSpec.load(directory);
+    name = pubSpec.name ?? directory.directoryName;
+    version = pubSpec.version;
+    dependencies = pubSpec.dependencies;
+    devDependencies = pubSpec.devDependencies;
+    dependencyOverrides = pubSpec.dependencyOverrides;
+    packageType = parsePackageType(pubSpec);
+    hasTranslation = containsGenLang(pubSpec);
+    hasFlavor = containsFlavor(pubSpec);
+    flavors = parseFlavors(pubSpec);
+    command = packageType == PackageType.flutter ? 'flutter' : 'dart';
+    return true;
+  }
+  @override
+  Future<bool> loadPubspecCore() async {
+    pubSpec = await PubSpec.loadFile(
+        path.join(directory.path, Constants.pubspecCoreYaml));
     name = pubSpec.name ?? directory.directoryName;
     version = pubSpec.version;
     dependencies = pubSpec.dependencies;

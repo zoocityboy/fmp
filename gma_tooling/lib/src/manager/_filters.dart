@@ -1,27 +1,31 @@
 part of 'manager.dart';
 
 mixin _FiltersMixin on _GmaManager {
+  /// Select packages where was something changed.
+  void applyAffectedOnly() {}
+
+  ///
   void applyExcludeExamples() {
-    if (!excludeExamples) return;
+    if (includeExamples) return;
     final glob =
         GlobCreate.create('**/example**', currentDirectoryPath: directory.path);
-    print(glob);
-    selectedPackages = allPackages
+
+    selectedPackages = selectedPackages
         .where((package) => !glob.matches(package.directory.path))
         .sortByName()
-        .toList();
+        .toSet();
   }
 
   /// Apply filter for packages with `koyal_flavor` dependency in pubspec.yaml
   void applyFlavorFilter({List<String>? apps}) {
-    selectedPackages = allPackages.where((p) => p.hasFlavor == true).toList();
+    selectedPackages =
+        selectedPackages.where((p) => p.hasFlavor == true).toSet();
     if (apps != null) {
       selectedPackages = selectedPackages
           .where((app) => apps.any((element) => element == app.name))
           .sortByName()
-          .toList();
+          .toSet();
     }
-    print(selectedPackages);
   }
 
   /// Apply package filter where package contains `dependsOn` in
@@ -32,7 +36,7 @@ mixin _FiltersMixin on _GmaManager {
         .where((element) =>
             dependsOn.any((e) => element.devDependencies.containsKey(e)))
         .sortByName()
-        .toList();
+        .toSet();
   }
 
   /// Apply package filter where package contains `dependsOn` in
@@ -43,7 +47,7 @@ mixin _FiltersMixin on _GmaManager {
         .where((element) =>
             dependsOn.any((e) => element.dependencies.containsKey(e)))
         .sortByName()
-        .toList();
+        .toSet();
   }
 
   /// Apply package filter where package contains `dependsOn` in
@@ -55,6 +59,6 @@ mixin _FiltersMixin on _GmaManager {
             element.dependencies.containsKey(e) ||
             element.devDependencies.containsKey(e)))
         .sortByName()
-        .toList();
+        .toSet();
   }
 }
