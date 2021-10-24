@@ -5,22 +5,24 @@ export interface Selectable extends QuickPickItem {
 }
 export class App implements Selectable {
     label: string;
+    description?: string;
     key: string;
     exclude: Object;
     picked?: boolean;
 
-    constructor(label: string, key: string, exclude: Object, picked?: boolean) {
+    constructor(label: string, key: string, exclude: Object, picked?: boolean, description?: string,) {
         this.label = label; //this.label = this.picked === true ? `$(star-full) ${label}` : `$(star-empty) ${label}`; 
+        this.description = description;
         this.key = key;
         this.picked = picked;
         this.exclude = exclude;
 
     }
     toConfiguration(): Object {
-        return { "label": this.label, "key": this.key, "exclude": this.exclude, "picked": this.picked ?? false };
+        return { "label": this.label, "description": this.description, "key": this.key, "exclude": this.exclude, "picked": this.picked ?? false };
     }
     static toModel(item: never): App {
-        return new App(item['label'], item['key'], item['exclude'], item['picked']);
+        return new App(item['label'], item['key'], item['exclude'], item['picked'], item['description']);
     }
 }
 export class Country implements Selectable {

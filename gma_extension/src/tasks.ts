@@ -18,7 +18,7 @@ export class FlavorTasks {
             "gmat",
             new vscode.ShellExecution(
                 "gmat",
-                ['flavor', appPackageName, '--choose', flavor,],
+                ['flavor', appPackageName, '--change', flavor,],
             ),
             "$dart-build_runner",
 
