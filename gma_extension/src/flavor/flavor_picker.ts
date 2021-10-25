@@ -1,8 +1,3 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import { QuickPickItem, window, Disposable, CancellationToken, QuickInputButton, QuickInput, ExtensionContext, QuickInputButtons, Uri } from 'vscode';
 import { WorkspaceConfigurator } from '../configuration';
 import * as vscode from 'vscode';
@@ -40,88 +35,43 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
     const title = 'Choose application';
 
     async function step1(input: MultiStepInput, state: Partial<State>) {
-        const additionalSteps = typeof state.resourceGroup === 'string' ? 1 : 0;
-        const runtimes = await getAvailableRuntimes(state.resourceGroup!, undefined /* TODO: token */);
-        // TODO: Remember currently active item when navigating back.
+        const items = await getAvailableCountries(state.resourceGroup!, undefined /* TODO: token */);
         state.runtime = await input.showQuickPick({
             title,
             step: 1,
             totalSteps: 3,
             placeholder: 'Pick a country',
-            items: runtimes,
+            items: items,
             activeItem: state.runtime,
             shouldResume: shouldResume
         });
+        return step2(input, state);
     }
 
     async function step2(input: MultiStepInput, state: Partial<State>) {
-        const additionalSteps = typeof state.resourceGroup === 'string' ? 1 : 0;
-        const runtimes = await getAvailableRuntimes(state.resourceGroup!, undefined /* TODO: token */);
-        // TODO: Remember currently active item when navigating back.
+        const items = await getAvailableApps(state.resourceGroup!, undefined /* TODO: token */);
         state.runtime = await input.showQuickPick({
             title,
             step: 2,
             totalSteps: 3,
-            placeholder: 'Pick a stage',
-            items: runtimes,
+            placeholder: 'Pick application',
+            items: items,
             activeItem: state.runtime,
             shouldResume: shouldResume
         });
+        return step3(input, state);
     }
 
     async function step3(input: MultiStepInput, state: Partial<State>) {
-        const additionalSteps = typeof state.resourceGroup === 'string' ? 1 : 0;
-        const runtimes = await getAvailableRuntimes(state.resourceGroup!, undefined /* TODO: token */);
-        // TODO: Remember currently active item when navigating back.
+        const items = await getAvailableStages(state.resourceGroup!, undefined /* TODO: token */);
         state.runtime = await input.showQuickPick({
             title,
             step: 3,
             totalSteps: 3,
             placeholder: 'Pick a flavor',
-            items: runtimes,
+            items: items,
             activeItem: state.runtime,
             shouldResume: shouldResume
-        });
-    }
-
-    async function pickRuntime(input: MultiStepInput, state: Partial<State>) {
-        const additionalSteps = typeof state.resourceGroup === 'string' ? 1 : 0;
-        const runtimes = await getAvailableRuntimes(state.resourceGroup!, undefined /* TODO: token */);
-        // TODO: Remember currently active item when navigating back.
-        state.runtime = await input.showQuickPick({
-            title,
-            step: 3 + additionalSteps,
-            totalSteps: 3 + additionalSteps,
-            placeholder: 'Pick a runtime',
-            items: runtimes,
-            activeItem: state.runtime,
-            shouldResume: shouldResume
-        });
-    }
-    async function pickApp(input: MultiStepInput, state: Partial<State>) {
-        const additionalSteps = typeof state.resourceGroup === 'string' ? 1 : 0;
-        const runtimes = await getAvailableRuntimes(state.resourceGroup!, undefined /* TODO: token */);
-        // TODO: Remember currently active item when navigating back.
-        state.runtime = await input.showQuickPick({
-            title,
-            step: 3 + additionalSteps,
-            totalSteps: 3 + additionalSteps,
-            placeholder: 'Pick a runtime',
-            items: runtimes,
-            activeItem: state.runtime,
-            shouldResume: shouldResume
-        });
-    }
-
-    async function showSelect<T extends vscode.QuickPickItem>(placeholder: string, items: T[]): Promise<T | undefined> {
-        return vscode.window.showQuickPick(items, {
-            placeHolder: placeholder,
-            onDidSelectItem: item => {
-                const _item: vscode.QuickPickItem = item as vscode.QuickPickItem;
-                items.forEach((value) => {
-                    value.picked = value.label === _item.label;
-                });
-            }
         });
     }
 
@@ -131,28 +81,33 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
             // noop
         });
     }
-
-    async function validateNameIsUnique(name: string) {
-        // ...validate...
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return name === 'vscode' ? 'Name not unique' : undefined;
-    }
-
-    async function getAvailableRuntimes(resourceGroup: QuickPickItem | string, token?: CancellationToken): Promise<QuickPickItem[]> {
-        // ...retrieve...
-        // await new Promise(resolve => setTimeout(resolve, 1000));
+    async function getAvailableCountries(resourceGroup: QuickPickItem | string, token?: CancellationToken): Promise<QuickPickItem[]> {
         return flavorConfig.countries.map(value => ({
+            key: value.key,
             label: value.label,
-            description: value.label,
-            detail: value.label,
+            detail: value.detail,
             picked: value.picked,
-            alwaysShow: true,
         }));
-        // return ['Node 8.9', 'Node 6.11', 'Node 4.5']
-        //     .map(label => ({ label }));
+    }
+    async function getAvailableStages(resourceGroup: QuickPickItem | string, token?: CancellationToken): Promise<QuickPickItem[]> {
+        return flavorConfig.stages.map(value => ({
+            key: value.key,
+            label: value.label,
+            detail: value.detail,
+            picked: value.picked,
+        }));
+    }
+    async function getAvailableApps(resourceGroup: QuickPickItem | string, token?: CancellationToken): Promise<QuickPickItem[]> {
+        return flavorConfig.apps.map(value => ({
+            key: value.key,
+            label: value.label,
+            detail: value.detail,
+            picked: value.picked,
+        }));
     }
 
     const state = await collectInputs();
+    console.log(state);
     window.showInformationMessage(`Picked app '${state.name}'`);
 }
 

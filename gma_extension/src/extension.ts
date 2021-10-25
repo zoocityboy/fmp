@@ -47,7 +47,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 	});
 	registerChangeFlavorMultiStep(context);
-	// registerChangeFlavor(context);
 	registerWidgetCatalogPanel(context);
 	registerDynamicFormPlaygroundPanel(context);
 }
@@ -144,7 +143,6 @@ export async function registerChangeFlavor(context: vscode.ExtensionContext) {
 }
 export async function registerChangeFlavorMultiStep(context: vscode.ExtensionContext) {
 	const disposableCommand = vscode.commands.registerCommand(Constants.changeFlavorCommandId, () => {
-		// changeFlavorFlow();
 		multiStepInput(context, flavorConfig);
 	});
 

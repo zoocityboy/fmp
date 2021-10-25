@@ -5,58 +5,62 @@ export interface Selectable extends QuickPickItem {
 }
 export class App implements Selectable {
     label: string;
-    description?: string;
+    detail?: string;
     key: string;
     exclude: Object;
     picked?: boolean;
 
-    constructor(label: string, key: string, exclude: Object, picked?: boolean, description?: string,) {
+    constructor(label: string, key: string, exclude: Object, picked?: boolean, detail?: string,) {
         this.label = label; //this.label = this.picked === true ? `$(star-full) ${label}` : `$(star-empty) ${label}`; 
-        this.description = description;
+        this.detail = detail;
         this.key = key;
         this.picked = picked;
         this.exclude = exclude;
 
     }
     toConfiguration(): Object {
-        return { "label": this.label, "description": this.description, "key": this.key, "exclude": this.exclude, "picked": this.picked ?? false };
+        return { "label": this.label, "detail": this.detail, "key": this.key, "exclude": this.exclude, "picked": this.picked ?? false };
     }
     static toModel(item: never): App {
-        return new App(item['label'], item['key'], item['exclude'], item['picked'], item['description']);
+        return new App(item['label'], item['key'], item['exclude'], item['picked'], item['detail']);
     }
 }
 export class Country implements Selectable {
     label: string;
+    detail?: string;
     key: string;
     picked?: boolean;
-    constructor(label: string, key: string, picked?: boolean) {
+    constructor(label: string, key: string, picked?: boolean, detail?: string,) {
         this.label = label; //this.label = this.picked === true ? `$(star-full) ${label}` : `$(star-empty) ${label}`; 
         this.key = key;
         this.picked = picked;
+        this.detail = detail;
 
     }
     toConfiguration(): Object {
-        return { "label": this.label, "key": this.key, "picked": this.picked ?? false };
+        return { "label": this.label, "key": this.key, "picked": this.picked ?? false, "detail": this.detail };
     }
     static toModel(item: never): Country {
-        return new Country(item['label'], item['key'], item['picked']);
+        return new Country(item['label'], item['key'], item['picked'], item['detail']);
     }
 }
 export class Stage implements Selectable {
     label: string;
+    detail?: string;
     key: string;
     picked?: boolean;
-    constructor(label: string, key: string, picked?: boolean) {
+    constructor(label: string, key: string, picked?: boolean, detail?: string,) {
         this.label = label; //this.label = this.picked === true ? `$(star-full) ${label}` : `$(star-empty) ${label}`; 
         this.key = key;
         this.picked = picked;
+        this.detail = detail;
 
     }
     toConfiguration(): Object {
-        return { "label": this.label, "key": this.key, "picked": this.picked ?? false };
+        return { "label": this.label, "key": this.key, "picked": this.picked ?? false, "detail": this.detail };
     }
-    static toModel(item: never): Stage {
-        return new Stage(item['label'], item['key'], item['picked']);
+    static toModel(item: never): Country {
+        return new Country(item['label'], item['key'], item['picked'], item['detail']);
     }
 }
 export enum ProgressState {
