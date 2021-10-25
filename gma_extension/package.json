@@ -192,23 +192,20 @@
 				"category": "GMA",
 				"command": "gma.flavor.changeStage",
 				"title": "Select stage",
-				"shortTitle": "Stage",
-				"icon": {
-					"light": "path/to/light/icon.svg",
-					"dark": "path/to/dark/icon.svg"
-				}
+				"shortTitle": "Stage"
+				
 			},
 			{
 				"category": "gma.build-runner",
 				"command": "gma.build_runner.build",
 				"title": "build",
-				"icon": "$(play)"
+				"icon": "$(extensions-refresh)"
 			},
 			{
 				"category": "gma.build-runner",
 				"command": "gma.build_runner.watch",
 				"title": "watch",
-				"icon": "$(server)"
+				"icon": "$(variables-view-icon)"
 			},
 			{
 				"category": "gma.build-runner",
@@ -232,7 +229,9 @@
 					"id": "nodeDependencies",
 					"name": "Documentation",
 					"icon": "media/images/koyal_icon.svg",
-					"contextualTitle": "Documentation"
+					"contextualTitle": "Documentation",
+					"type": "webview"
+
 				},
 				{
 					"id": "gma_build_runner_view",

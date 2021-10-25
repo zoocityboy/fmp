@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { scanFile } from './build_runner_files';
+import { scanFile as scanFilesystem } from './build_runner_files';
 import { Process } from './build_runner_process';
 import { NestTreeItem, NestTreeProvider } from './build_runner_tree';
 import { TreeModel } from './models/pubspec';
@@ -16,7 +16,7 @@ export async function registerBuildRunner(context: vscode.ExtensionContext,) {
     register('gma.build_runner.build', (args: NestTreeItem) => Process.instance.create(args, 'build'));
     register('gma.build_runner.terminate', (args: NestTreeItem) => Process.instance.terminate(args));
 
-    const nestList = await scanFile();
+    const nestList = await scanFilesystem();
 
     const recurse = (data: TreeModel): NestTreeItem => {
         return new NestTreeItem(
