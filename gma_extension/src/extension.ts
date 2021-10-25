@@ -48,7 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	});
 	registerChangeFlavorMultiStep(context);
-	registerWidgetCatalogPanel(context);
+	// registerWidgetCatalogPanel(context);
 	registerDynamicFormPlaygroundPanel(context);
 	registerBuildRunner(context);
 }
@@ -58,13 +58,9 @@ export function deactivate() {
 }
 
 export async function registerWidgetCatalogPanel(context: vscode.ExtensionContext) {
+
 	context.subscriptions.push(
 		vscode.commands.registerCommand(Constants.showWidgetCatalogCommandId, () => {
-			WidgetCatalogPanel.show(context.extensionUri);
-		})
-	);
-	context.subscriptions.push(
-		vscode.commands.registerCommand('catCoding.doRefactor', () => {
 			if (WidgetCatalogPanel.currentPanel) {
 				WidgetCatalogPanel.currentPanel.doRefactor();
 			}
@@ -83,13 +79,9 @@ export async function registerWidgetCatalogPanel(context: vscode.ExtensionContex
 }
 
 export async function registerDynamicFormPlaygroundPanel(context: vscode.ExtensionContext) {
+
 	context.subscriptions.push(
 		vscode.commands.registerCommand(Constants.showDynamicPlaygroundCatalogCommandId, () => {
-			DynamicPlaygroundPanel.show(context.extensionUri);
-		})
-	);
-	context.subscriptions.push(
-		vscode.commands.registerCommand('catCoding.doRefactor', () => {
 			if (DynamicPlaygroundPanel.currentPanel) {
 				DynamicPlaygroundPanel.currentPanel.doRefactor();
 			}
@@ -147,17 +139,6 @@ export async function registerChangeFlavorMultiStep(context: vscode.ExtensionCon
 	const disposableCommand = vscode.commands.registerCommand(Constants.changeFlavorCommandId, () => {
 		multiStepInput(context, flavorConfig);
 	});
-
-	// vscode.commands.registerCommand(Constants.changeAppCommandId, () => {
-	// 	showSelect('Select app', flavorConfig.apps).then((value) => flavorConfig.apply());
-	// });
-	// vscode.commands.registerCommand(Constants.changeCountryCommandId, () => {
-	// 	showSelect('Select country', flavorConfig.countries).then((value) => flavorConfig.apply());
-	// });
-	// vscode.commands.registerCommand(Constants.changeStageCommandId, () => {
-	// 	showSelect('Select stage', flavorConfig.stages).then((value) => flavorConfig.apply());
-
-	// });
 
 	context.subscriptions.push(disposableCommand);
 	vscode.workspace.onDidChangeConfiguration((value) => {

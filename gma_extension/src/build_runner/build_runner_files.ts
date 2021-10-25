@@ -29,7 +29,7 @@ export const scanFile = async (): Promise<TreeModel[]> => {
         const pubspecObjs = await Promise.all(pubspecObjsPromises);
         const effectList = pubspecObjs.filter((e) => {
             return (
-                // Object.keys(e?.dependencies ?? {}).includes('build_runner') ||
+                Object.keys(e?.dependencies ?? {}).includes('build_runner') ||
                 Object.keys(e?.dev_dependencies ?? {}).includes('build_runner')
             );
         });
@@ -37,6 +37,7 @@ export const scanFile = async (): Promise<TreeModel[]> => {
             name: workspace.name,
             uri: workspace.uri,
             children: effectList.map((e, i) => {
+                console.log(`pubspec: ${e!.name} ${pubspecUris[i]}`);
                 return {
                     name: e!.name,
                     uri: pubspecUris[i],

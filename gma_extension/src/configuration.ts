@@ -42,8 +42,11 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         this._apps = this.loadApps();
         this._countries = this.loadCountries();
         this._stages = this.loadStages();
-
+        console.log(this._apps);
+        console.log(this._countries);
+        console.log(this._stages);
     }
+
     private loadApps(): App[] {
         try {
             return this.configuration
@@ -76,7 +79,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         items.forEach((value) => {
             value.picked = value.key === item.key;
         });
-        let key = this.getSettingsKey(item);
+        let key = this.getSettingsKey<T>(item);
         let values = items.map((value) => value.toConfiguration());
         try {
             await this.configuration.update(key, values, this.target);
@@ -93,48 +96,50 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     }
 
     private getSettingsKey<T extends Selectable>(item: T): string {
-        switch (true) {
-            case item instanceof App:
-                return Constants.configKeyApps;
-            case item instanceof Country:
-                return Constants.configKeyCountries;
-            case item instanceof Stage:
-                return Constants.configKeyStages;
-            default:
-                return 'gma.flavor.uups';
+        console.log(`getSettingsKey isApp: ${item instanceof App} isCountry: ${item instanceof Country} isStage: ${item instanceof Stage}`);
+        if (item instanceof App) {
+            return Constants.configKeyApps;
+        } else if (item instanceof Country) {
+            return Constants.configKeyCountries;
+        } else if (item instanceof Stage) {
+            return Constants.configKeyStages;
         }
+        return 'gma.flavor.uups';
     }
 
     public async setCountry(item: Country): Promise<boolean> {
-        return await this.setSelected(item, this._countries);
+        return await this.setSelected<Country>(item, this._countries);
     }
     public getCountry(reload: Boolean = false): Country | undefined {
         var _items = this._countries;
         if (reload) {
             _items = this.loadCountries();
         }
-        return this.getSelected(_items);
+        return this.getSelected<Country>(_items);
     }
+
     public async setApp(item: App): Promise<boolean> {
-        return await this.setSelected(item, this._apps);
+        return await this.setSelected<App>(item, this._apps);
     }
     public getApp(reload: Boolean = false): App | undefined {
         var _items = this._apps;
         if (reload) {
             _items = this.loadApps();
         }
-        return this.getSelected(_items);
+        return this.getSelected<App>(_items);
     }
+
     public async setStage(item: Stage): Promise<boolean> {
-        return await this.setSelected(item, this._stages);
+        return await this.setSelected<Stage>(item, this._stages);
     }
     public getStage(reload: Boolean = false): Stage | undefined {
         var _items = this._stages;
         if (reload) {
             _items = this.loadStages();
         }
-        return this.getSelected(_items);
+        return this.getSelected<Stage>(_items);
     }
+
     /***
      * Simply get short tag from selected country and stage
      * example: 
@@ -196,6 +201,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
             name: Constants.applicationFolder
         });
     }
+
     public async apply(): Promise<boolean> {
         let app = this.getApp();
         let stage = this.getStage();
@@ -208,6 +214,9 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     }
     public async update(app: App, stage: Stage, country: Country): Promise<boolean> {
         this.message("Updating ...", undefined, ProgressState.loading);
+        console.log(`app: ${app}`);
+        console.log(`stage: ${stage}`);
+        console.log(`country: ${country}`);
         await this.setApp(app);
         await this.setCountry(country);
         await this.setStage(stage);

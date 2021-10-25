@@ -25,6 +25,10 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
         resourceGroup: QuickPickItem | string;
         name: string;
         runtime: QuickPickItem;
+        app: App;
+        stage: Stage;
+        country: Country;
+
     }
 
     async function collectInputs() {
@@ -46,6 +50,7 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
             activeItem: state.runtime,
             shouldResume: shouldResume
         });
+        state.country = state.runtime as Country;
         return step2(input, state);
     }
 
@@ -60,6 +65,7 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
             activeItem: state.runtime,
             shouldResume: shouldResume
         });
+        state.app = state.runtime as App;
         return step3(input, state);
     }
 
@@ -74,10 +80,10 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
             activeItem: state.runtime,
             shouldResume: shouldResume
         });
+        state.stage = state.runtime as Stage;
     }
 
     function shouldResume() {
-        // Could show a notification with the option to resume.
         return new Promise<boolean>((resolve, reject) => {
             // noop
         });
@@ -94,7 +100,11 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
 
     const state = await collectInputs();
     console.log(state);
-    window.showInformationMessage(`Picked app '${state.name}'`);
+    flavorConfig.setApp(state.app);
+    flavorConfig.setCountry(state.country);
+    flavorConfig.setStage(state.stage);
+    flavorConfig.apply();
+    window.showInformationMessage(`Picked app ${state.country.label} app ${state.app.label} in ${state.stage.label}`);
 }
 
 

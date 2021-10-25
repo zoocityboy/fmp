@@ -59,8 +59,8 @@ export class Stage implements Selectable {
     toConfiguration(): Object {
         return { "label": this.label, "key": this.key, "picked": this.picked ?? false, "detail": this.detail };
     }
-    static toModel(item: never): Country {
-        return new Country(item['label'], item['key'], item['picked'], item['detail']);
+    static toModel(item: never): Stage {
+        return new Stage(item['label'], item['key'], item['picked'], item['detail']);
     }
 }
 export enum ProgressState {
