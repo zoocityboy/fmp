@@ -10,10 +10,14 @@
 	"engines": {
 		"vscode": "^1.46.0"
 	},
+	"extensionDependencies": [
+		"Dart-Code.dart-code"
+	],
 	"categories": [
 		"Other"
 	],
 	"activationEvents": [
+		"onLanguage:dart",
 		"workspaceContains:**/gma.yaml"
 	],
 	"main": "./out/extension.js",
@@ -193,6 +197,24 @@
 					"light": "path/to/light/icon.svg",
 					"dark": "path/to/dark/icon.svg"
 				}
+			},
+			{
+				"category": "gma.build-runner",
+				"command": "gma.build_runner.build",
+				"title": "build",
+				"icon": "$(play)"
+			},
+			{
+				"category": "gma.build-runner",
+				"command": "gma.build_runner.watch",
+				"title": "watch",
+				"icon": "$(server)"
+			},
+			{
+				"category": "gma.build-runner",
+				"command": "gma.build_runner.terminate",
+				"title": "terminate",
+				"icon": "$(debug-stop)"
 			}
 		],
 		"viewsContainers": {
@@ -211,6 +233,11 @@
 					"name": "Documentation",
 					"icon": "media/images/koyal_icon.svg",
 					"contextualTitle": "Documentation"
+				},
+				{
+					"id": "gma_build_runner_view",
+					"name": "Project build runners",
+					"type": "tree"
 				}
 			]
 		},
@@ -223,7 +250,35 @@
 				"view": "nodeDependencies",
 				"contents": "[Dynamic Forms Playground](command:gma.flavor.showDynamicFormsPlayground)"
 			}
-		]
+		],
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "gma.build_runner.watch",
+					"when": "false"
+				},
+				{
+					"command": "gma.build_runner.build",
+					"when": "false"
+				},
+				{
+					"command": "gma.build_runner.terminate",
+					"when": "false"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "gma.build_runner.watch",
+					"when": "view == gma_build_runner_view && viewItem == file",
+					"group": "inline"
+				},
+				{
+					"command": "gma.build_runner.build",
+					"when": "view == gma_build_runner_view && viewItem == file",
+					"group": "inline"
+				}
+			]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
@@ -248,7 +303,7 @@
 		"vscode-test": "^1.4.0"
 	},
 	"dependencies": {
-		"i18n-iso-countries": "^6.8.0",
-		"node-fetch": "^3.0.0"
+		"pidtree": "^0.5.0",
+		"yaml": "^1.10.2"
 	}
 }

@@ -101,21 +101,25 @@
         "gma.flavor.countries": [
             {
                 "label": "India",
+                "detail": "Indian app",
                 "key": "in",
                 "picked": true
             },
             {
                 "label": "Vietnam",
+                "detail": "Vietnam app",
                 "key": "vn",
                 "picked": false
             },
             {
                 "label": "Philipines",
+                "detail": "Philipines app",
                 "key": "ph",
                 "picked": false
             },
             {
                 "label": "Indonesia",
+                "detail": "Indonesia app",
                 "key": "id",
                 "picked": false
             }
@@ -123,6 +127,7 @@
         "gma.flavor.stages": [
             {
                 "label": "Fake",
+                "detail": "",
                 "key": "fake",
                 "picked": true
             },

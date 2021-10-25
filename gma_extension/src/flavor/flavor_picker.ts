@@ -1,6 +1,7 @@
 import { QuickPickItem, window, Disposable, CancellationToken, QuickInputButton, QuickInput, ExtensionContext, QuickInputButtons, Uri } from 'vscode';
 import { WorkspaceConfigurator } from '../configuration';
-import * as vscode from 'vscode';
+import { App, Country, Selectable, Stage } from '../models';
+
 /**
  * A multi-step input using window.createQuickPick() and window.createInputBox().
  * 
@@ -35,7 +36,7 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
     const title = 'Choose application';
 
     async function step1(input: MultiStepInput, state: Partial<State>) {
-        const items = await getAvailableCountries(state.resourceGroup!, undefined /* TODO: token */);
+        const items = await getItems<Country>(flavorConfig.countries);
         state.runtime = await input.showQuickPick({
             title,
             step: 1,
@@ -49,7 +50,7 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
     }
 
     async function step2(input: MultiStepInput, state: Partial<State>) {
-        const items = await getAvailableApps(state.resourceGroup!, undefined /* TODO: token */);
+        const items = await getItems<App>(flavorConfig.apps);
         state.runtime = await input.showQuickPick({
             title,
             step: 2,
@@ -63,7 +64,7 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
     }
 
     async function step3(input: MultiStepInput, state: Partial<State>) {
-        const items = await getAvailableStages(state.resourceGroup!, undefined /* TODO: token */);
+        const items = await getItems<Stage>(flavorConfig.stages);
         state.runtime = await input.showQuickPick({
             title,
             step: 3,
@@ -81,24 +82,9 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
             // noop
         });
     }
-    async function getAvailableCountries(resourceGroup: QuickPickItem | string, token?: CancellationToken): Promise<QuickPickItem[]> {
-        return flavorConfig.countries.map(value => ({
-            key: value.key,
-            label: value.label,
-            detail: value.detail,
-            picked: value.picked,
-        }));
-    }
-    async function getAvailableStages(resourceGroup: QuickPickItem | string, token?: CancellationToken): Promise<QuickPickItem[]> {
-        return flavorConfig.stages.map(value => ({
-            key: value.key,
-            label: value.label,
-            detail: value.detail,
-            picked: value.picked,
-        }));
-    }
-    async function getAvailableApps(resourceGroup: QuickPickItem | string, token?: CancellationToken): Promise<QuickPickItem[]> {
-        return flavorConfig.apps.map(value => ({
+
+    async function getItems<T extends Selectable>(items: T[], token?: CancellationToken): Promise<QuickPickItem[]> {
+        return items.map(value => ({
             key: value.key,
             label: value.label,
             detail: value.detail,

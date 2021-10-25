@@ -8,6 +8,7 @@ import { DynamicPlaygroundPanel } from './panel/dynamic_forms_panel';
 import { Constants } from './constants';
 import { NodeDependenciesProvider } from './panel/tree';
 import { multiStepInput } from './flavor/flavor_picker';
+import { registerBuildRunner } from './build_runner/build_runner';
 let statusBarItem: vscode.StatusBarItem;
 let progressStatusBarItem: vscode.StatusBarItem;
 let flavorConfig: WorkspaceConfigurator;
@@ -49,6 +50,7 @@ export function activate(context: vscode.ExtensionContext) {
 	registerChangeFlavorMultiStep(context);
 	registerWidgetCatalogPanel(context);
 	registerDynamicFormPlaygroundPanel(context);
+	registerBuildRunner(context);
 }
 export function deactivate() {
 	statusBarItem.hide();

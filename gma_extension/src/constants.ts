@@ -1,6 +1,9 @@
 
 
 export class Constants {
+    static pluginsFolder: String = "Plugins";
+    static packagesFolder: String = "Packages";
+
     static applicationFolder: string = "Application";
     static configKeyApps: string = "gma.flavor.apps";
     static configKeyCountries: string = "gma.flavor.countries";
