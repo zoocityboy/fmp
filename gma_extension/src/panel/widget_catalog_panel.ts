@@ -1,8 +1,7 @@
 
 import * as vscode from 'vscode';
-// import * as nodeFetch from 'node-fetch';
 import * as path from 'path';
-const dynamicWebServerPort = 9000;
+const dynamicWebServerPort = 9001;
 
 export class WidgetCatalogPanel {
     public static currentPanel: WidgetCatalogPanel | undefined;
@@ -33,10 +32,8 @@ export class WidgetCatalogPanel {
     }
     public static getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
         return {
-
             enableScripts: true,
             enableCommandUris: true,
-
             localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')]
         };
     }
@@ -47,7 +44,7 @@ export class WidgetCatalogPanel {
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
         this._panel.onDidChangeViewState(
             e => {
-                console.log(e);
+                console.log('onDidChangeViewState: ${e}');
                 if (this._panel.visible) {
                     this._update();
                 }
@@ -120,13 +117,7 @@ export class WidgetCatalogPanel {
         <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="
-                    default-src 'none'; 
-                    frame-src ${uri} ${cspSource} http: https:; 
-                    img-src ${cspSource}; 
-                    style-src ${cspSource}; 
-                    script-src 'nonce-${nonce}';
-                ">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${uri} ${cspSource} http: https:; img-src ${cspSource}; style-src ${cspSource}; script-src 'nonce-${nonce}';">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link href="${stylesResetUri}" rel="stylesheet">
 				<link href="${stylesMainUri}" rel="stylesheet"> 

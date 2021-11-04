@@ -12,6 +12,7 @@ export interface IWorkspaceConfigurator {
 export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     private target: vscode.ConfigurationTarget = vscode.ConfigurationTarget.Workspace;
     private appWorkspaceFolder: vscode.WorkspaceFolder | undefined;
+    public rootWorkspaceFolder: vscode.WorkspaceFolder | undefined;
     private configuration: vscode.WorkspaceConfiguration;
     private _stages: Stage[] = [];
     public get stages() {
@@ -32,6 +33,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         this._onDidChanged = new vscode.EventEmitter<ConfiguratorChangeEvent>();
         this.configuration = vscode.workspace.getConfiguration();
         this.appWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.applicationFolder);
+        this.rootWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.rootFolder);
         this.loadConfig();
     }
     get onDidChanged(): vscode.Event<ConfiguratorChangeEvent> {
@@ -214,9 +216,11 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     }
     public async update(app: App, stage: Stage, country: Country): Promise<boolean> {
         this.message("Updating ...", undefined, ProgressState.loading);
-        console.log(`app: ${app}`);
-        console.log(`stage: ${stage}`);
-        console.log(`country: ${country}`);
+
+        if (!app || !stage || !country) {
+            this.message(undefined, new Error('not selected'), ProgressState.complete);
+            return false;
+        }
         await this.setApp(app);
         await this.setCountry(country);
         await this.setStage(stage);
@@ -225,7 +229,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         await this.updateLauncher();
 
 
-        await this.wait(3000);
+        await this.wait(1000);
         this.message("success", undefined, ProgressState.complete);
         return true;
     }

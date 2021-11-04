@@ -6,20 +6,19 @@ import { FlavorTasks } from './tasks';
 import { WidgetCatalogPanel } from './panel/widget_catalog_panel';
 import { DynamicPlaygroundPanel } from './panel/dynamic_forms_panel';
 import { Constants } from './constants';
-import { NodeDependenciesProvider } from './panel/tree';
 import { multiStepInput } from './flavor/flavor_picker';
 import { registerBuildRunner } from './build_runner/build_runner';
 let statusBarItem: vscode.StatusBarItem;
 let progressStatusBarItem: vscode.StatusBarItem;
 let flavorConfig: WorkspaceConfigurator;
-let flaverTask: FlavorTasks;
+let flavorTask: FlavorTasks;
 
 const wait = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 export function activate(context: vscode.ExtensionContext) {
-
-	flaverTask = new FlavorTasks();
-	flaverTask.onDidChanged((value) => {
+	flavorConfig = new WorkspaceConfigurator();
+	flavorTask = new FlavorTasks();
+	flavorTask.onDidChanged((value) => {
 		console.log(`FlavorTasks: ${value.message} ${value.state} ${value.failed}`);
 		switch (value.state) {
 			case ProgressState.loading:
@@ -39,19 +38,22 @@ export function activate(context: vscode.ExtensionContext) {
 				break;
 		}
 	});
-	flavorConfig = new WorkspaceConfigurator();
+
+	flavorTask.rootWorkspaceFolder = flavorConfig.rootWorkspaceFolder;
 	flavorConfig.onDidChanged((value) => {
 		console.log(value);
 		if (value.state === ProgressState.complete) {
 			updateStatusBarItem();
 		}
-
 	});
-	registerChangeFlavorMultiStep(context);
-	// registerWidgetCatalogPanel(context);
+
+	registerWidgetCatalogPanel(context);
 	registerDynamicFormPlaygroundPanel(context);
 	registerBuildRunner(context);
+	registerChangeFlavorMultiStep(context);
+
 }
+
 export function deactivate() {
 	statusBarItem.hide();
 	progressStatusBarItem.hide();
@@ -61,9 +63,10 @@ export async function registerWidgetCatalogPanel(context: vscode.ExtensionContex
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(Constants.showWidgetCatalogCommandId, () => {
-			if (WidgetCatalogPanel.currentPanel) {
-				WidgetCatalogPanel.currentPanel.doRefactor();
-			}
+			// if (WidgetCatalogPanel.currentPanel !== undefined) {
+			// 	WidgetCatalogPanel.currentPanel.doRefactor();
+			// }
+			WidgetCatalogPanel.show(context.extensionUri);
 		})
 	);
 	if (vscode.window.registerWebviewPanelSerializer) {
@@ -82,13 +85,13 @@ export async function registerDynamicFormPlaygroundPanel(context: vscode.Extensi
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(Constants.showDynamicPlaygroundCatalogCommandId, () => {
-			if (DynamicPlaygroundPanel.currentPanel) {
-				DynamicPlaygroundPanel.currentPanel.doRefactor();
-			}
+			// if (DynamicPlaygroundPanel.currentPanel) {
+			// 	DynamicPlaygroundPanel.currentPanel.doRefactor();
+			// }
+			DynamicPlaygroundPanel.show(context.extensionUri);
 		})
 	);
 	if (vscode.window.registerWebviewPanelSerializer) {
-		// Make sure we register a serializer in activation event
 		vscode.window.registerWebviewPanelSerializer(DynamicPlaygroundPanel.viewType, {
 			async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
 				console.log(`Got state: ${state}`);
@@ -99,45 +102,9 @@ export async function registerDynamicFormPlaygroundPanel(context: vscode.Extensi
 	}
 }
 
-export async function registerTreePanel(context: vscode.ExtensionContext) {
-	const folder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.applicationFolder)!;
-	vscode.window.registerTreeDataProvider(
-		'nodeDependencies',
-		new NodeDependenciesProvider(folder?.uri.path)
-	);
-}
-
-export async function registerChangeFlavor(context: vscode.ExtensionContext) {
-
-	const disposableCommand = vscode.commands.registerCommand(Constants.changeFlavorCommandId, () => {
-		changeFlavorFlow();
-	});
-
-	vscode.commands.registerCommand(Constants.changeAppCommandId, () => {
-		showSelect('Select app', flavorConfig.apps).then((value) => flavorConfig.apply());
-	});
-	vscode.commands.registerCommand(Constants.changeCountryCommandId, () => {
-		showSelect('Select country', flavorConfig.countries).then((value) => flavorConfig.apply());
-	});
-	vscode.commands.registerCommand(Constants.changeStageCommandId, () => {
-		showSelect('Select stage', flavorConfig.stages).then((value) => flavorConfig.apply());
-
-	});
-
-	context.subscriptions.push(disposableCommand);
-	vscode.workspace.onDidChangeConfiguration((value) => {
-		console.log(value.affectsConfiguration.name);
-	});
-	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-	statusBarItem.command = Constants.changeFlavorCommandId;
-
-	progressStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
-
-	flavorConfig.apply();
-}
 export async function registerChangeFlavorMultiStep(context: vscode.ExtensionContext) {
 	const disposableCommand = vscode.commands.registerCommand(Constants.changeFlavorCommandId, () => {
-		multiStepInput(context, flavorConfig);
+		changeFlavorFlow(context);
 	});
 
 	context.subscriptions.push(disposableCommand);
@@ -150,7 +117,9 @@ export async function registerChangeFlavorMultiStep(context: vscode.ExtensionCon
 	progressStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
 
 	flavorConfig.apply();
+	await runUpdateFlavor(context);
 }
+
 export async function showSelect<T extends vscode.QuickPickItem>(placeholder: string, items: T[]): Promise<T | undefined> {
 	return vscode.window.showQuickPick(items, {
 		placeHolder: placeholder,
@@ -163,18 +132,20 @@ export async function showSelect<T extends vscode.QuickPickItem>(placeholder: st
 	});
 }
 
-export async function changeFlavorFlow() {
-	await showSelect('Select country', flavorConfig.countries);
-	await showSelect('Select app', flavorConfig.apps);
-	await showSelect('Select stage', flavorConfig.stages);
-	await flavorConfig.apply();
+export async function changeFlavorFlow(context: vscode.ExtensionContext) {
+	await multiStepInput(context, flavorConfig);
+	await runUpdateFlavor(context);
+}
+
+export async function runUpdateFlavor(context: vscode.ExtensionContext) {
 	const shortTag = flavorConfig.getFlavorShortTag();
 	const app = flavorConfig.getApp();
 	if (shortTag !== undefined && app !== undefined) {
 		updateProgressStatusBarItem(ProgressState.loading, "Change flavor started.");
-		flaverTask.changeFlavor(shortTag, app.key);
+		flavorTask.changeFlavor(shortTag, app.key);
 	}
 }
+
 async function updateStatusBarItem() {
 	statusBarItem.text = '....';
 	const app = flavorConfig.getApp();
@@ -184,6 +155,7 @@ async function updateStatusBarItem() {
 	statusBarItem.show();
 
 }
+
 async function updateProgressStatusBarItem(state: ProgressState, message: string) {
 
 	switch (state) {

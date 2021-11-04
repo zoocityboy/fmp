@@ -27,20 +27,19 @@ export const scanFile = async (): Promise<TreeModel[]> => {
 
         const pubspecObjsPromises = pubspecUris.map((uri) => readYaml(uri));
         const pubspecObjs = await Promise.all(pubspecObjsPromises);
-        const effectList = pubspecObjs.filter((e) => {
-            return (
-                Object.keys(e?.dependencies ?? {}).includes('build_runner') ||
-                Object.keys(e?.dev_dependencies ?? {}).includes('build_runner')
-            );
+        const pubspecObjs1 = new Array();
+        pubspecObjs.forEach((value, index) => {
+            pubspecObjs1.push([pubspecUris[index], value]);
         });
+        const _filtred = pubspecObjs1.filter(value => Object.keys(value[1]?.dev_dependencies ?? {}).includes('build_runner')).sort();
         const ret: TreeModel = {
             name: workspace.name,
             uri: workspace.uri,
-            children: effectList.map((e, i) => {
-                console.log(`pubspec: ${e!.name} ${pubspecUris[i]}`);
+            children: _filtred.map((e, i) => {
+                console.log(`pubspec: ${e[1].name} ${e[0]}`);
                 return {
-                    name: e!.name,
-                    uri: pubspecUris[i],
+                    name: e[1].name,
+                    uri: e[0],
                 };
             }),
         };

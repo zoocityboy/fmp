@@ -177,7 +177,6 @@
 			},
 			{
 				"category": "GMA",
-
 				"command": "gma.flavor.changeApp",
 				"title": "Select application",
 				"shortTitle": "Application"
@@ -226,11 +225,9 @@
 		"views": {
 			"gma-activity": [
 				{
-					"id": "nodeDependencies",
-					"name": "Documentation",
-					"icon": "media/images/koyal_icon.svg",
-					"contextualTitle": "Documentation",
-					"type": "webview"
+					"id": "gma_web_servers_view",
+					"name": "Servers",
+					"contextualTitle": "Servers"
 
 				},
 				{
@@ -242,11 +239,11 @@
 		},
 		"viewsWelcome": [
 			{
-				"view": "nodeDependencies",
+				"view": "gma_web_servers_view",
 				"contents": "[Widget Catalog](command:gma.flavor.showCatalog)"
 			},
 			{
-				"view": "nodeDependencies",
+				"view": "gma_web_servers_view",
 				"contents": "[Dynamic Forms Playground](command:gma.flavor.showDynamicFormsPlayground)"
 			}
 		],

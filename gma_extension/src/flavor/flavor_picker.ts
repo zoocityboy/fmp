@@ -41,7 +41,7 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
 
     async function step1(input: MultiStepInput, state: Partial<State>) {
         const items = await getItems<Country>(flavorConfig.countries);
-        state.runtime = await input.showQuickPick({
+        let _country = await input.showQuickPick({
             title,
             step: 1,
             totalSteps: 3,
@@ -50,13 +50,14 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
             activeItem: state.runtime,
             shouldResume: shouldResume
         });
-        state.country = state.runtime as Country;
+        state.country = _country as Country;
+        state.step = 1;
         return step2(input, state);
     }
 
     async function step2(input: MultiStepInput, state: Partial<State>) {
         const items = await getItems<App>(flavorConfig.apps);
-        state.runtime = await input.showQuickPick({
+        let _app = await input.showQuickPick({
             title,
             step: 2,
             totalSteps: 3,
@@ -65,13 +66,14 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
             activeItem: state.runtime,
             shouldResume: shouldResume
         });
-        state.app = state.runtime as App;
+        state.app = _app as App;
+        state.step = 2;
         return step3(input, state);
     }
 
     async function step3(input: MultiStepInput, state: Partial<State>) {
         const items = await getItems<Stage>(flavorConfig.stages);
-        state.runtime = await input.showQuickPick({
+        let _stage = await input.showQuickPick({
             title,
             step: 3,
             totalSteps: 3,
@@ -80,7 +82,8 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
             activeItem: state.runtime,
             shouldResume: shouldResume
         });
-        state.stage = state.runtime as Stage;
+        state.stage = _stage as Stage;
+        state.step = 3;
     }
 
     function shouldResume() {
@@ -100,10 +103,11 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
 
     const state = await collectInputs();
     console.log(state);
-    flavorConfig.setApp(state.app);
-    flavorConfig.setCountry(state.country);
-    flavorConfig.setStage(state.stage);
-    flavorConfig.apply();
+    // await flavorConfig.setApp(state.app);
+    // await flavorConfig.setCountry(state.country);
+    // await flavorConfig.setStage(state.stage);
+    await flavorConfig.update(state.app, state.stage, state.country);
+    await flavorConfig.apply();
     window.showInformationMessage(`Picked app ${state.country.label} app ${state.app.label} in ${state.stage.label}`);
 }
 

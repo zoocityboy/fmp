@@ -1,6 +1,8 @@
+import path = require('path');
 import * as vscode from 'vscode';
 import { ProgressState, TaskChangeEvent } from './models';
 export class FlavorTasks {
+    public rootWorkspaceFolder: vscode.WorkspaceFolder | undefined;
     private _onDidChanged: vscode.EventEmitter<TaskChangeEvent>;
     constructor() {
         this._onDidChanged = new vscode.EventEmitter<TaskChangeEvent>();
@@ -11,9 +13,11 @@ export class FlavorTasks {
     private inProgress: boolean = false;
     public changeFlavor(flavor: string, app: string, force: boolean = false) {
         var appPackageName = app === 'capp' ? 'self_care' : 'mapp';
+        console.log(this.rootWorkspaceFolder);
+        console.log(vscode.TaskScope.Global);
         let task = new vscode.Task(
             { type: 'gma.flavor', name: 'change_flavor' },
-            vscode.TaskScope.Workspace,
+            this.rootWorkspaceFolder!,
             "flavor_update",
             "gmat",
             new vscode.ShellExecution(
@@ -27,7 +31,7 @@ export class FlavorTasks {
             reveal: vscode.TaskRevealKind.Silent,
             clear: true,
             showReuseMessage: false,
-            panel: vscode.TaskPanelKind.Dedicated,
+            panel: vscode.TaskPanelKind.New,
             echo: false,
         } as vscode.TaskPresentationOptions;
         task.isBackground = true;
@@ -36,12 +40,7 @@ export class FlavorTasks {
         vscode.tasks.executeTask(task).then((value) => {
             console.log(`executeTask: %s`, value);
         });
-        // vscode.tasks.onDidStartTask((value) => {
-        //     this.message("Change flavor started.");
-        // });
-        // vscode.tasks.onDidEndTask((value) => {
-        //     this.message("Change flavor finished.");
-        // });
+       
         vscode.tasks.onDidStartTaskProcess((value) => {
             if (this.inProgress === true) { return; }
             this.inProgress = true;
@@ -55,9 +54,7 @@ export class FlavorTasks {
             this.inProgress = false;
         });
     }
-    private restartAnalyzer() {
 
-    }
 
     private message(
         message?: string | undefined,
