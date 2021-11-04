@@ -91,7 +91,7 @@ export class WidgetCatalogPanel {
             vscode.Uri.parse(`http://localhost:${dynamicWebServerPort}`)
         );
         const webview = this._panel.webview;
-        this._panel.webview.html = this._getHtmlForWebview(webview, url);
+        this._panel.webview.html = this._genHtmlRunnerWebview(webview);
     }
 
 
@@ -123,36 +123,46 @@ export class WidgetCatalogPanel {
 				<link href="${stylesMainUri}" rel="stylesheet"> 
             </head>
             <body>
-                <iframe id="iframe-content" src="${uri}" frameborder="0"></iframe>      
+                <iframe id="iframe-content" src="${uri}" frameborder="0" color="red"></iframe>      
                 <script type="text/javascript" nonce="${nonce}" src="${scriptUri}"></script>  
             </body>
         </html>
         `;
 
     }
-    private static async _genHtmlRunnerWebview(webview: vscode.Webview) {
+    private _genHtmlRunnerWebview(webview: vscode.Webview) {
+        // Local path to css styles
+        const styleResetPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css');
+        const stylesPathMainPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'webview.css');
+        const scriptUriPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'script.js');
+        // Uri to load styles into webview
+        const stylesResetUri = webview.asWebviewUri(styleResetPath);
+        const stylesMainUri = webview.asWebviewUri(stylesPathMainPath);
+        const scriptUri = webview.asWebviewUri(scriptUriPath);
+        const nonce = getNonce();
         const cspSource = webview.cspSource;
         return `<!DOCTYPE html>
         <html lang="en">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <style>
-                    *,body{
-                        margin:0;padding:0px;
-                    }
-                    iframe{
-                        display: block;       /* iframes are inline by default */
-                        border: none;         /* Reset default border */
-                        height: 100vh;        /* Viewport-relative units */
-                        width: 100vw;
-                    }
-                </style>
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${cspSource} http: https:; img-src ${cspSource}; style-src ${cspSource}; script-src 'nonce-${nonce}';">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link href="${stylesResetUri}" rel="stylesheet">
+				<link href="${stylesMainUri}" rel="stylesheet"> 
             </head>
             <body>
-                <h1>Widget catalog is not ready yet.</h1>
-                <p>you can simply run build of the widget catalog</p>
-
+                <div class="iframe">
+                    <div class="vertical-center">
+                        <h1>Widget catalog is not ready yet.</h1>
+                        <p>you can simply run build of the widget catalog</p>
+                        <p>&nbsp;</p>
+                        <div>
+                            <button onclick="doRefactor()" class="secondary">Refactor</button>
+                            <button onclick="doRefactor()">Refactor</button>
+                        </div>
+                    </div>
+                </div> 
             </body>
         </html>
         `;

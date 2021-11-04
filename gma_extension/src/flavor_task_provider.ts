@@ -27,25 +27,6 @@ export class FlavorTaskProvider implements TaskProvider {
         // return undefined;
         return undefined;
     }
-    private getUpdateTask() {
-
-        // let tasks = configuration.get('tasks', {});
-        // let app = getSelected(apps);
-        // let flavor = getFlavorTag();
-        // const workspaceRoot = getApplicationWorkspaceFolder();
-        // if (!workspaceRoot || !app || !flavor) {
-        //     return;
-        // }
-        // let command = `dart tools/koyal.dart f ${flavor} ${app.key}`;
-        // let task = new vscode.Task({ type: 'gma.flavor' }, vscode.TaskScope.Workspace, "flavor:update", "dart", new vscode.ShellExecution("dart", ["tools/koyal.dart",
-        //     "f",
-        //     flavor,
-        //     app.key]), "$dart-build_runner");
-
-
-
-
-    }
 
     private getTasks(): Task[] {
         if (this.tasks !== undefined) {

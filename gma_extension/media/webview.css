@@ -1,5 +1,5 @@
 :root {
-	--container-paddding: 20px;
+	--container-padding: 20px;
 	--input-padding-vertical: 6px;
 	--input-padding-horizontal: 4px;
 	--input-margin-vertical: 4px;
@@ -7,7 +7,7 @@
 }
 
 body {
-	padding: 0 var(--container-paddding);
+	padding: 0 var(--container-padding);
 	color: var(--vscode-foreground);
 	font-size: var(--vscode-font-size);
 	font-weight: var(--vscode-font-weight);
@@ -17,7 +17,7 @@ body {
 
 ol,
 ul {
-	padding-left: var(--container-paddding);
+	padding-left: var(--container-padding);
 }
 
 body > *,
@@ -42,6 +42,13 @@ a:active {
 code {
 	font-size: var(--vscode-editor-font-size);
 	font-family: var(--vscode-editor-font-family);
+}
+p{
+	color: var(--vscode-foreground);
+	font-size: var(--vscode-font-size);
+	font-weight: var(--vscode-font-weight);
+	font-family: var(--vscode-font-family);
+	padding: var(--input-padding-vertical) var(--input-padding-horizontal);
 }
 
 button {
@@ -94,4 +101,15 @@ iframe{
   border: none;         /* Reset default border */
   height: 100vh;        /* Viewport-relative units */
   width: 100vw;
+}
+
+.vertical-center {
+	margin: 0;
+	padding: 2em;
+	position: absolute;
+	top: 50%;
+	-ms-transform: translateY(-50%);
+	transform: translateY(-50%);
+	text-align: center;
+	justify-content: center;
 }

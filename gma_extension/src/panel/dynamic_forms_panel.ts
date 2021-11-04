@@ -20,7 +20,7 @@ export class DynamicPlaygroundPanel {
         }
         const panel = vscode.window.createWebviewPanel(
             DynamicPlaygroundPanel.viewType,
-            "Dynamic Forms Playgroun",
+            "Dynamic Forms Playground",
             column || vscode.ViewColumn.One,
             DynamicPlaygroundPanel.getWebviewOptions(extensionUri),
         );
@@ -92,7 +92,8 @@ export class DynamicPlaygroundPanel {
             vscode.Uri.parse(`http://localhost:${dynamicWebServerPort}`)
         );
         const webview = this._panel.webview;
-        this._panel.webview.html = this._getHtmlForWebview(webview, url);
+        this._panel.webview.html = this._genHtmlRunnerWebview(webview);
+        // this._panel.webview.html = this._getHtmlForWebview(webview, url);
     }
 
 
@@ -118,13 +119,7 @@ export class DynamicPlaygroundPanel {
         <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="
-                    default-src 'none'; 
-                    frame-src ${uri} ${cspSource} http: https:; 
-                    img-src ${cspSource}; 
-                    style-src ${cspSource}; 
-                    script-src 'nonce-${nonce}';
-                ">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${uri} ${cspSource} http: https:; img-src ${cspSource}; style-src ${cspSource}; script-src 'nonce-${nonce}';">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link href="${stylesResetUri}" rel="stylesheet">
 				<link href="${stylesMainUri}" rel="stylesheet"> 
@@ -137,7 +132,7 @@ export class DynamicPlaygroundPanel {
         `;
 
     }
-    private static async _genHtmlRunnerWebview(webview: vscode.Webview) {
+    private _genHtmlRunnerWebview(webview: vscode.Webview) {
         const cspSource = webview.cspSource;
         return `<!DOCTYPE html>
         <html lang="en">

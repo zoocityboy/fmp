@@ -63,9 +63,9 @@ export async function registerWidgetCatalogPanel(context: vscode.ExtensionContex
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(Constants.showWidgetCatalogCommandId, () => {
-			// if (WidgetCatalogPanel.currentPanel !== undefined) {
-			// 	WidgetCatalogPanel.currentPanel.doRefactor();
-			// }
+			if (WidgetCatalogPanel.currentPanel !== undefined) {
+				WidgetCatalogPanel.currentPanel.doRefactor();
+			}
 			WidgetCatalogPanel.show(context.extensionUri);
 		})
 	);
