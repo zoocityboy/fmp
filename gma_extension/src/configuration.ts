@@ -59,6 +59,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         }
 
     }
+
     private loadStages(): Stage[] {
         try {
             return this.configuration
@@ -68,6 +69,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
             return [];
         }
     }
+
     private loadCountries(): Country[] {
         try {
             return this.configuration
@@ -77,6 +79,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
             return [];
         }
     }
+
     private async setSelected<T extends Selectable>(item: T, items: T[]): Promise<boolean> {
         items.forEach((value) => {
             value.picked = value.key === item.key;
@@ -112,6 +115,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     public async setCountry(item: Country): Promise<boolean> {
         return await this.setSelected<Country>(item, this._countries);
     }
+
     public getCountry(reload: Boolean = false): Country | undefined {
         var _items = this._countries;
         if (reload) {
@@ -123,6 +127,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     public async setApp(item: App): Promise<boolean> {
         return await this.setSelected<App>(item, this._apps);
     }
+
     public getApp(reload: Boolean = false): App | undefined {
         var _items = this._apps;
         if (reload) {
@@ -134,6 +139,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     public async setStage(item: Stage): Promise<boolean> {
         return await this.setSelected<Stage>(item, this._stages);
     }
+
     public getStage(reload: Boolean = false): Stage | undefined {
         var _items = this._stages;
         if (reload) {

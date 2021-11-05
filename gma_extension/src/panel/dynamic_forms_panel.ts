@@ -92,8 +92,8 @@ export class DynamicPlaygroundPanel {
             vscode.Uri.parse(`http://localhost:${dynamicWebServerPort}`)
         );
         const webview = this._panel.webview;
-        this._panel.webview.html = this._genHtmlRunnerWebview(webview);
-        // this._panel.webview.html = this._getHtmlForWebview(webview, url);
+        // this._panel.webview.html = this._genHtmlRunnerWebview(webview);
+        this._panel.webview.html = this._getHtmlForWebview(webview, url);
     }
 
 
@@ -125,7 +125,7 @@ export class DynamicPlaygroundPanel {
 				<link href="${stylesMainUri}" rel="stylesheet"> 
             </head>
             <body>
-                <iframe id="iframe-content" src="${uri}" frameborder="0"></iframe>      
+                <iframe id="iframe-content" src="${uri}" frameborder="0" color="red"></iframe>
                 <script type="text/javascript" nonce="${nonce}" src="${scriptUri}"></script>  
             </body>
         </html>

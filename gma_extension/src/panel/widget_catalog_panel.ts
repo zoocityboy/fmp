@@ -91,7 +91,8 @@ export class WidgetCatalogPanel {
             vscode.Uri.parse(`http://localhost:${dynamicWebServerPort}`)
         );
         const webview = this._panel.webview;
-        this._panel.webview.html = this._genHtmlRunnerWebview(webview);
+        // this._panel.webview.html = this._genHtmlRunnerWebview(webview);
+        this._panel.webview.html = this._getHtmlForWebview(webview, url);
     }
 
 
