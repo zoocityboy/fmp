@@ -36,7 +36,6 @@ export const scanFile = async (): Promise<TreeModel[]> => {
             name: workspace.name,
             uri: workspace.uri,
             children: _filtred.map((e, i) => {
-                console.log(`pubspec: ${e[1].name} ${e[0]}`);
                 return {
                     name: e[1].name,
                     uri: e[0],

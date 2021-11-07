@@ -1,6 +1,8 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as net from 'net';
+import { networkInterfaces } from 'os';
 const dynamicWebServerPort = 9001;
 
 export class WidgetCatalogPanel {
@@ -14,6 +16,7 @@ export class WidgetCatalogPanel {
         const column = vscode.window.activeTextEditor
             ? vscode.window.activeTextEditor.viewColumn
             : undefined;
+            
         // If we already have a panel, show it.
         if (WidgetCatalogPanel.currentPanel) {
             WidgetCatalogPanel.currentPanel._panel.reveal(column);
@@ -26,6 +29,7 @@ export class WidgetCatalogPanel {
             WidgetCatalogPanel.getWebviewOptions(extensionUri),
         );
         WidgetCatalogPanel.currentPanel = new WidgetCatalogPanel(panel, extensionUri);
+        WidgetCatalogPanel.checkSever();
     }
     public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
         WidgetCatalogPanel.currentPanel = new WidgetCatalogPanel(panel, extensionUri);
@@ -71,7 +75,23 @@ export class WidgetCatalogPanel {
         // You can send any JSON serializable data.
         this._panel.webview.postMessage({ command: 'refactor' });
     }
-
+    public static checkSever(){
+        let server = new net.Server(socket => {
+            console.log('socket: %s', socket?.remoteAddress);
+        });
+        server.listen(
+            dynamicWebServerPort,
+            'localhost', () =>{
+                console.log('listener');
+            }
+        );
+        server.getConnections((error, count)=>{
+            if (error !== undefined){
+                console.error(`get connections error: ${error?.message}`);
+            }
+            console.warn(`connections: ${count}`);
+        });
+    }
     public dispose() {
         WidgetCatalogPanel.currentPanel = undefined;
 
@@ -118,13 +138,16 @@ export class WidgetCatalogPanel {
         <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${uri} ${cspSource} http: https:; img-src ${cspSource}; style-src ${cspSource}; script-src 'nonce-${nonce}';">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${uri} ${cspSource} http: https:; img-src ${cspSource}; style-src ${cspSource}; script-src  ${uri} 'nonce-${nonce}';">
+                <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+                <meta http-equiv="Pragma" content="no-cache" />
+                <meta http-equiv="Expires" content="0" />
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link href="${stylesResetUri}" rel="stylesheet">
 				<link href="${stylesMainUri}" rel="stylesheet"> 
             </head>
             <body>
-                <iframe id="iframe-content" src="${uri}" frameborder="0" color="red"></iframe>      
+                <iframe id="iframe-content" src="${uri}" frameborder="0" scroll="no"/>
                 <script type="text/javascript" nonce="${nonce}" src="${scriptUri}"></script>  
             </body>
         </html>

@@ -72,6 +72,9 @@ export class DynamicPlaygroundPanel {
         // You can send any JSON serializable data.
         this._panel.webview.postMessage({ command: 'refactor' });
     }
+    public checkServer(){
+        
+    }
 
     public dispose() {
         DynamicPlaygroundPanel.currentPanel = undefined;
@@ -125,7 +128,7 @@ export class DynamicPlaygroundPanel {
 				<link href="${stylesMainUri}" rel="stylesheet"> 
             </head>
             <body>
-                <iframe id="iframe-content" src="${uri}" frameborder="0" color="red"></iframe>
+                <iframe id="iframe-content" src="${uri}" frameborder="0"/>
                 <script type="text/javascript" nonce="${nonce}" src="${scriptUri}"></script>  
             </body>
         </html>
