@@ -85,9 +85,9 @@ export async function registerDynamicFormPlaygroundPanel(context: vscode.Extensi
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(Constants.showDynamicPlaygroundCatalogCommandId, () => {
-			// if (DynamicPlaygroundPanel.currentPanel) {
-			// 	DynamicPlaygroundPanel.currentPanel.doRefactor();
-			// }
+			if (DynamicPlaygroundPanel.currentPanel) {
+				DynamicPlaygroundPanel.currentPanel.doRefactor();
+			}
 			DynamicPlaygroundPanel.show(context.extensionUri);
 		})
 	);

@@ -5,7 +5,7 @@
 	"displayName": "GMA Extensions",
 	"description": "GMA Extensions",
 	"repository": "http://github.com/zoocityboy/fmp",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"icon": "media/images/koyal_icon.png",
 	"engines": {
 		"vscode": "^1.46.0"

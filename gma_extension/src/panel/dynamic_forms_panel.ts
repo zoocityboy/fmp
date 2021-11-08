@@ -1,5 +1,7 @@
 
 import * as vscode from 'vscode';
+
+import { WebTemplate } from './template';
 const dynamicWebServerPort = 9002;
 
 export class DynamicPlaygroundPanel {
@@ -31,10 +33,8 @@ export class DynamicPlaygroundPanel {
     }
     public static getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
         return {
-
             enableScripts: true,
             enableCommandUris: true,
-
             localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')]
         };
     }
@@ -45,7 +45,7 @@ export class DynamicPlaygroundPanel {
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
         this._panel.onDidChangeViewState(
             e => {
-                console.log(e);
+                console.log('onDidChangeViewState: ${e}');
                 if (this._panel.visible) {
                     this._update();
                 }
@@ -68,8 +68,6 @@ export class DynamicPlaygroundPanel {
     }
 
     public doRefactor() {
-        // Send a message to the webview webview.
-        // You can send any JSON serializable data.
         this._panel.webview.postMessage({ command: 'refactor' });
     }
     public checkServer(){
@@ -78,10 +76,7 @@ export class DynamicPlaygroundPanel {
 
     public dispose() {
         DynamicPlaygroundPanel.currentPanel = undefined;
-
-        // Clean up our resources
         this._panel.dispose();
-
         while (this._disposables.length) {
             const x = this._disposables.pop();
             if (x) {
@@ -99,7 +94,6 @@ export class DynamicPlaygroundPanel {
         this._panel.webview.html = this._getHtmlForWebview(webview, url);
     }
 
-
     private _getHtmlForWebview(webview: vscode.Webview, uri: vscode.Uri) {
         // Local path to css styles
         const styleResetPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css');
@@ -111,10 +105,6 @@ export class DynamicPlaygroundPanel {
         const scriptUri = webview.asWebviewUri(scriptUriPath);
         const nonce = getNonce();
 
-        console.log(`stylesResetUri: ${stylesResetUri}`);
-        console.log(`stylesMainUri: ${stylesMainUri}`);
-        console.log(`script: ${scriptUri}`);
-
         const cspSource = webview.cspSource;
 
 
@@ -122,42 +112,63 @@ export class DynamicPlaygroundPanel {
         <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${uri} ${cspSource} http: https:; img-src ${cspSource}; style-src ${cspSource}; script-src 'nonce-${nonce}';">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${uri} ${cspSource} http: https:; img-src ${cspSource}; style-src ${uri} ${cspSource}; script-src ${uri} 'nonce-${nonce}';">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta http-equiv="cache-control" content="max-age=0" />
+                <meta http-equiv="cache-control" content="no-cache" />
+                <meta http-equiv="expires" content="0" />
+                <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+                <meta http-equiv="pragma" content="no-cache" />
                 <link href="${stylesResetUri}" rel="stylesheet">
 				<link href="${stylesMainUri}" rel="stylesheet"> 
             </head>
             <body>
-                <iframe id="iframe-content" src="${uri}" frameborder="0"/>
+                <iframe id="iframe-content" src="${uri}" frameborder="0" scroll="no"/>
                 <script type="text/javascript" nonce="${nonce}" src="${scriptUri}"></script>  
             </body>
         </html>
         `;
 
+
     }
     private _genHtmlRunnerWebview(webview: vscode.Webview) {
+        // Local path to css styles
+        const styleResetPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css');
+        const stylesPathMainPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'webview.css');
+        const scriptUriPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'script.js');
+        // Uri to load styles into webview
+        const stylesResetUri = webview.asWebviewUri(styleResetPath);
+        const stylesMainUri = webview.asWebviewUri(stylesPathMainPath);
+        const scriptUri = webview.asWebviewUri(scriptUriPath);
+        const nonce = getNonce();
         const cspSource = webview.cspSource;
         return `<!DOCTYPE html>
         <html lang="en">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <style>
-                    *,body{
-                        margin:0;padding:0px;
-                    }
-                    iframe{
-                        display: block;       /* iframes are inline by default */
-                        border: none;         /* Reset default border */
-                        height: 100vh;        /* Viewport-relative units */
-                        width: 100vw;
-                    }
-                </style>
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${cspSource} http: https:; img-src ${cspSource}; style-src ${cspSource}; script-src 'nonce-${nonce}';">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta http-equiv="cache-control" content="max-age=0" />
+                <meta http-equiv="cache-control" content="no-cache" />
+                <meta http-equiv="expires" content="0" />
+                <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+                <meta http-equiv="pragma" content="no-cache" />
+                <link href="${stylesResetUri}" rel="stylesheet">
+				<link href="${stylesMainUri}" rel="stylesheet"> 
             </head>
             <body>
-                <h1>Widget catalog is not ready yet.</h1>
-                <p>you can simply run build of the widget catalog</p>
-
+                <div class="iframe">
+                    <div class="vertical-center">
+                        <h1>Widget catalog is not ready yet.</h1>
+                        <p>you can simply run build of the widget catalog</p>
+                        <p>&nbsp;</p>
+                        <div>
+                            <button onclick="doRefactor()" class="secondary">Refactor</button>
+                            <button onclick="doRefactor()">Refactor</button>
+                        </div>
+                    </div>
+                </div> 
             </body>
         </html>
         `;

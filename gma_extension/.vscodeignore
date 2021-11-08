@@ -10,3 +10,4 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 .DS_Store
+node_modules/

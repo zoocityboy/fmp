@@ -16,7 +16,7 @@ export class WidgetCatalogPanel {
         const column = vscode.window.activeTextEditor
             ? vscode.window.activeTextEditor.viewColumn
             : undefined;
-            
+
         // If we already have a panel, show it.
         if (WidgetCatalogPanel.currentPanel) {
             WidgetCatalogPanel.currentPanel._panel.reveal(column);
@@ -75,22 +75,22 @@ export class WidgetCatalogPanel {
         // You can send any JSON serializable data.
         this._panel.webview.postMessage({ command: 'refactor' });
     }
-    public static checkSever(){
-        let server = new net.Server(socket => {
-            console.log('socket: %s', socket?.remoteAddress);
-        });
-        server.listen(
-            dynamicWebServerPort,
-            'localhost', () =>{
-                console.log('listener');
-            }
-        );
-        server.getConnections((error, count)=>{
-            if (error !== undefined){
-                console.error(`get connections error: ${error?.message}`);
-            }
-            console.warn(`connections: ${count}`);
-        });
+    public static checkSever() {
+        // let server = new net.Server(socket => {
+        //     console.log('socket: %s', socket?.remoteAddress);
+        // });
+        // server.listen(
+        //     dynamicWebServerPort,
+        //     'localhost', () =>{
+        //         console.log('listener');
+        //     }
+        // );
+        // server.getConnections((error, count)=>{
+        //     if (error !== undefined){
+        //         console.error(`get connections error: ${error?.message}`);
+        //     }
+        //     console.warn(`connections: ${count}`);
+        // });
     }
     public dispose() {
         WidgetCatalogPanel.currentPanel = undefined;
@@ -138,11 +138,13 @@ export class WidgetCatalogPanel {
         <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${uri} ${cspSource} http: https:; img-src ${cspSource}; style-src ${cspSource}; script-src  ${uri} 'nonce-${nonce}';">
-                <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-                <meta http-equiv="Pragma" content="no-cache" />
-                <meta http-equiv="Expires" content="0" />
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${uri} ${cspSource} http: https:; img-src ${cspSource}; style-src ${uri} ${cspSource}; script-src ${uri} 'nonce-${nonce}';">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta http-equiv="cache-control" content="max-age=0" />
+                <meta http-equiv="cache-control" content="no-cache" />
+                <meta http-equiv="expires" content="0" />
+                <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+                <meta http-equiv="pragma" content="no-cache" />
                 <link href="${stylesResetUri}" rel="stylesheet">
 				<link href="${stylesMainUri}" rel="stylesheet"> 
             </head>
@@ -152,6 +154,7 @@ export class WidgetCatalogPanel {
             </body>
         </html>
         `;
+
 
     }
     private _genHtmlRunnerWebview(webview: vscode.Webview) {
