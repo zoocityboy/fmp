@@ -55,6 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
+	flavorConfig.dispose();
 	statusBarItem.hide();
 	progressStatusBarItem.hide();
 }
@@ -110,6 +111,8 @@ export async function registerChangeFlavorMultiStep(context: vscode.ExtensionCon
 	context.subscriptions.push(disposableCommand);
 	vscode.workspace.onDidChangeConfiguration((value) => {
 		console.log(value.affectsConfiguration.name);
+		flavorConfig.reload();
+		updateStatusBarItem();
 	});
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
 	statusBarItem.command = Constants.changeFlavorCommandId;
@@ -117,7 +120,7 @@ export async function registerChangeFlavorMultiStep(context: vscode.ExtensionCon
 	progressStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
 
 	flavorConfig.apply();
-	await runUpdateFlavor(context);
+	await runUpdateFlavor(context, false);
 }
 
 export async function showSelect<T extends vscode.QuickPickItem>(placeholder: string, items: T[]): Promise<T | undefined> {
@@ -134,15 +137,15 @@ export async function showSelect<T extends vscode.QuickPickItem>(placeholder: st
 
 export async function changeFlavorFlow(context: vscode.ExtensionContext) {
 	await multiStepInput(context, flavorConfig);
-	await runUpdateFlavor(context);
+	await runUpdateFlavor(context, false);
 }
 
-export async function runUpdateFlavor(context: vscode.ExtensionContext) {
+export async function runUpdateFlavor(context: vscode.ExtensionContext, force: boolean | undefined) {
 	const shortTag = flavorConfig.getFlavorShortTag();
 	const app = flavorConfig.getApp();
 	if (shortTag !== undefined && app !== undefined) {
 		updateProgressStatusBarItem(ProgressState.loading, "Change flavor started.");
-		flavorTask.changeFlavor(shortTag, app.key);
+		flavorTask.changeFlavor(shortTag, app.key, force);
 	}
 }
 

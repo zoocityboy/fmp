@@ -1,6 +1,7 @@
 import { App, ConfiguratorChangeEvent, Country, LaunchConfiguration, ProgressState, Selectable, Stage } from "./models";
 import { Constants } from './constants';
 import * as vscode from 'vscode';
+import { watchFile } from "fs";
 
 export interface IWorkspaceConfigurator {
     // readonly onDidChangeSelection: vscode.Event<ConfiguratorChangeEvent[]>;
@@ -10,6 +11,7 @@ export interface IWorkspaceConfigurator {
  * 
  */
 export class WorkspaceConfigurator implements IWorkspaceConfigurator {
+    private workspaceWatcher: vscode.FileSystemWatcher | undefined;
     private target: vscode.ConfigurationTarget = vscode.ConfigurationTarget.Workspace;
     private appWorkspaceFolder: vscode.WorkspaceFolder | undefined;
     public rootWorkspaceFolder: vscode.WorkspaceFolder | undefined;
@@ -35,9 +37,25 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         this.appWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.applicationFolder);
         this.rootWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.rootFolder);
         this.loadConfig();
+      
+        this.workspaceWatcher = vscode.workspace.createFileSystemWatcher(
+            '**/gma.code-workspace'
+        , true, false, true);
+        this.workspaceWatcher.onDidChange(() => {
+            // this.onDidChanged();
+            console.log('file did changed');
+        });
     }
     get onDidChanged(): vscode.Event<ConfiguratorChangeEvent> {
         return this._onDidChanged.event;
+    }
+
+    public reload(){
+        this.configuration = vscode.workspace.getConfiguration();
+        this.loadConfig();
+    }
+    public dispose(){
+        this.workspaceWatcher?.dispose();
     }
 
     private loadConfig() {
