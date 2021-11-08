@@ -22,7 +22,7 @@ export class FlavorTasks {
             "gmat",
             new vscode.ShellExecution(
                 "gmat",
-                ['flavor', appPackageName, '--change', flavor,'--from-extension'],
+                ['flavor', appPackageName, '--change', flavor,'--from-extension', '-v'],
             ),
             "$dart-build_runner",
 

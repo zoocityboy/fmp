@@ -192,7 +192,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         }
         let launchers: LaunchConfiguration[] | undefined = this.configuration.get<LaunchConfiguration[]>('launch.configurations', []);
         let updated: LaunchConfiguration[] | undefined = this.configuration.get<LaunchConfiguration[]>('launch.configurations', []);
-        let program = "${workspaceFolder:Application}/lib/main_" + stage.key + ".dart";
+        let program = "lib/main_" + stage.key + ".dart";
         let args = ["--flavor", shortTag];
         launchers.forEach((value) => {
             value.args = args;
