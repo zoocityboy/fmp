@@ -64,7 +64,9 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
             placeholder: 'Pick application',
             items: items,
             activeItem: state.runtime,
-            shouldResume: shouldResume
+            shouldResume: shouldResume,
+            buttons: [QuickInputButtons.Back]
+
         });
         state.app = _app as App;
         state.step = 2;
@@ -80,7 +82,7 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
             placeholder: 'Pick a flavor',
             items: items,
             activeItem: state.runtime,
-            shouldResume: shouldResume
+            shouldResume: shouldResume,
         });
         state.stage = _stage as Stage;
         state.step = 3;

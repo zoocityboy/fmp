@@ -107,7 +107,7 @@ export class Process {
             output?.write(`exit ${code}`);
             output?.invalidate();
             delete this.processes[cwd];
-            // console.log('this.processes[cwd]=' + this.processes[cwd]);
+            console.log('this.processes[cwd]=' + this.processes[cwd]);
         });
     }
 

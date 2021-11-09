@@ -16,6 +16,7 @@ let flavorTask: FlavorTasks;
 const wait = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 export function activate(context: vscode.ExtensionContext) {
+	console.log('Congratulations, your extension "GMA Studio" is now active!');
 	flavorConfig = new WorkspaceConfigurator();
 	flavorTask = new FlavorTasks();
 	flavorTask.onDidChanged((value) => {
@@ -123,18 +124,6 @@ export async function registerChangeFlavorMultiStep(context: vscode.ExtensionCon
 	await runUpdateFlavor(context, false);
 }
 
-export async function showSelect<T extends vscode.QuickPickItem>(placeholder: string, items: T[]): Promise<T | undefined> {
-	return vscode.window.showQuickPick(items, {
-		placeHolder: placeholder,
-		onDidSelectItem: item => {
-			const _item: vscode.QuickPickItem = item as vscode.QuickPickItem;
-			items.forEach((value) => {
-				value.picked = value.label === _item.label;
-			});
-		}
-	});
-}
-
 export async function changeFlavorFlow(context: vscode.ExtensionContext) {
 	await multiStepInput(context, flavorConfig);
 	await runUpdateFlavor(context, false);
@@ -172,6 +161,7 @@ async function updateProgressStatusBarItem(state: ProgressState, message: string
 			statusBarItem.text = `$(sync~spin) ${message}`;
 			wait(3000).then(() => {
 				updateStatusBarItem();
+				vscode.commands.executeCommand('dart.restartAnalysisServer');
 			});
 			break;
 	}
