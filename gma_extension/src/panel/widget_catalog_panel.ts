@@ -60,6 +60,9 @@ export class WidgetCatalogPanel {
             message => {
                 console.log(message);
                 switch (message.command) {
+                    case 'start':
+                        vscode.window.showErrorMessage(message.text);
+                        return;
                     case 'alert':
                         vscode.window.showErrorMessage(message.text);
                         return;
@@ -126,30 +129,25 @@ export class WidgetCatalogPanel {
         const stylesMainUri = webview.asWebviewUri(stylesPathMainPath);
         const scriptUri = webview.asWebviewUri(scriptUriPath);
         const nonce = getNonce();
-
-        console.log(`stylesResetUri: ${stylesResetUri}`);
-        console.log(`stylesMainUri: ${stylesMainUri}`);
-        console.log(`script: ${scriptUri}`);
-
         const cspSource = webview.cspSource;
 
 
         return `<!DOCTYPE html>
         <html lang="en">
             <head>
-                <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${uri} ${cspSource} http: https:; img-src ${cspSource}; style-src ${uri} ${cspSource}; script-src ${uri} 'nonce-${nonce}';">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta charset="UTF-8" />
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-ancestors ${uri} ${cspSource}; frame-src ${uri} ${cspSource} http: https:; img-src ${cspSource}; style-src ${uri} ${cspSource}; script-src ${uri} ${cspSource} 'nonce-${nonce}';"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
                 <meta http-equiv="cache-control" content="max-age=0" />
                 <meta http-equiv="cache-control" content="no-cache" />
                 <meta http-equiv="expires" content="0" />
                 <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
                 <meta http-equiv="pragma" content="no-cache" />
-                <link href="${stylesResetUri}" rel="stylesheet">
-				<link href="${stylesMainUri}" rel="stylesheet"> 
+                <link href="${stylesResetUri}" rel="stylesheet"></link>
+				<link href="${stylesMainUri}" rel="stylesheet"></link>
             </head>
             <body>
-                <iframe id="iframe-content" src="${uri}" frameborder="0" scroll="no"/>
+                <iframe id="iframe-content" src="${uri}" frameborder="0" scroll="no"></iframe>
                 <script type="text/javascript" nonce="${nonce}" src="${scriptUri}"></script>  
             </body>
         </html>
