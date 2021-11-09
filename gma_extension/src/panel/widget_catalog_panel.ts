@@ -1,8 +1,5 @@
 
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as net from 'net';
-import { networkInterfaces } from 'os';
 const dynamicWebServerPort = 9001;
 
 export class WidgetCatalogPanel {

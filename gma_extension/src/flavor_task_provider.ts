@@ -2,7 +2,7 @@ import path = require("path");
 import * as vscode from 'vscode';
 import { CancellationToken, CustomExecution, Event, EventEmitter, FileSystemWatcher, ProviderResult, Pseudoterminal, Task, TaskDefinition, TaskProvider, TaskScope, TerminalDimensions, workspace } from "vscode";
 let configuration: vscode.WorkspaceConfiguration;
-interface FlavorBuildTaskDedfinition extends TaskDefinition {
+interface FlavorBuildTaskDefinition extends TaskDefinition {
 
     flavor: string;
     flags?: string[];
@@ -21,7 +21,7 @@ export class FlavorTaskProvider implements TaskProvider {
     resolveTask(_task: Task, token: CancellationToken): ProviderResult<Task> {
         // const flavor: string = _task.definition.flavor;
         // if (flavor) {
-        //     const definition: FlavorBuildTaskDedfinition = <any>_task.definition;
+        //     const definition: FlavorBuildTaskDefinition = <any>_task.definition;
         //     return this.getTask(definition.flavor, definition.flags ? definition.flags : [], definition);
         // }
         // return undefined;
@@ -44,7 +44,7 @@ export class FlavorTaskProvider implements TaskProvider {
         return this.tasks;
     }
 
-    private getTask(flavor: string, flags: string[], definition?: FlavorBuildTaskDedfinition): Task {
+    private getTask(flavor: string, flags: string[], definition?: FlavorBuildTaskDefinition): Task {
         if (definition === undefined) {
             definition = {
                 type: FlavorTaskProvider.flavorTaskType,

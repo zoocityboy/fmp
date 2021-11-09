@@ -56,6 +56,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
+	console.log('Congratulations, your extension "GMA Studio" is now de-active!');
 	flavorConfig.dispose();
 	statusBarItem.hide();
 	progressStatusBarItem.hide();

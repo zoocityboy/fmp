@@ -1,4 +1,3 @@
-import path = require('path');
 import * as vscode from 'vscode';
 import { ProgressState, TaskChangeEvent } from './models';
 export class FlavorTasks {

@@ -1,7 +1,6 @@
 import { App, ConfiguratorChangeEvent, Country, LaunchConfiguration, ProgressState, Selectable, Stage } from "./models";
 import { Constants } from './constants';
 import * as vscode from 'vscode';
-import { watchFile } from "fs";
 
 export interface IWorkspaceConfigurator {
     // readonly onDidChangeSelection: vscode.Event<ConfiguratorChangeEvent[]>;
@@ -213,7 +212,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         await this.configuration.update('files.exclude', newValue, this.target);
     }
     /***
-     * Override workspace Folder with Appplication
+     * Override workspace Folder with Application
      * based on selected app
      */
     private async updateAppFolder(): Promise<boolean> {

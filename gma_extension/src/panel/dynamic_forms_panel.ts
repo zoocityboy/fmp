@@ -1,7 +1,6 @@
 
 import * as vscode from 'vscode';
 
-import { WebTemplate } from './template';
 const dynamicWebServerPort = 9002;
 
 export class DynamicPlaygroundPanel {

@@ -1,4 +1,4 @@
-import { QuickInputButton, QuickPickItem, TaskDefinition, Uri } from 'vscode';
+import { QuickPickItem} from 'vscode';
 export interface Selectable extends QuickPickItem {
     key: string;
     toConfiguration(): Object;
