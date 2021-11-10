@@ -1,0 +1,316 @@
+{
+    "folders": [
+        {
+            "name": "Application",
+            "path": "capp"
+        },
+        {
+            "name": "Packages",
+            "path": "packages"
+        },
+        {
+            "name": "Plugins",
+            "path": "plugins"
+        },
+        {
+            "name": "Documentation",
+            "path": "docs"
+        },
+        {
+            "name": "Pipelines",
+            "path": "ci"
+        },
+        {
+            "name": "Root",
+            "path": "."
+        }
+    ],
+    "extensions": {
+        "recommendations": [
+            "dart-code.flutter",
+            "dart-code.dart-code",
+            "felixangelov.bloc",
+            "yt1997kt.flutter-bloc",
+            "blaxou.freezed",
+            "qaqyzk.freezed-bloc",
+            "github.github-vscode-theme",
+            "eamodio.gitlens",
+            "developer2006.svg-gallery",
+            "usernamehw.errorlens",
+            "hnw.vscode-auto-open-markdown-preview",
+            "visualstudioexptteam.vscodeintellicode",
+            "ms-azure-devops.azure-pipelines"
+        ]
+    },
+    "settings": {
+        "window.zoomLevel": 0,
+        "files.autoSave": "afterDelay",
+        "conventionalCommits.scopes": [
+            "merchant",
+            "customer",
+            "ui",
+            "system",
+            "feature",
+            "bug"
+        ],
+        "dart.analysisExcludedFolders": [
+            "Root",
+            "Plugins",
+            "Pipelines",
+            "Application"
+        ],
+        "dart.runPubGetOnPubspecChanges": false,
+        "dart.promptToGetPackages": false,
+        "files.exclude": {
+            "**/.git": true,
+            "**/.svn": true,
+            "**/.hg": true,
+            "**/CVS": true,
+            "**/.DS_Store": true,
+            "**/Thumbs.db": true,
+            "**/localizations_processor": true,
+            "**/build/**": true,
+            "**/.git/**": true,
+            "**/.idea/**": true,
+            "**/.vscode/**": true,
+            "**/.dart_tool/**": true,
+            "**/.flutter-plugins": true,
+            "**/.flutter-plugins-dependencies": true,
+            "**/.packages": true,
+            "**/.metadata": true,
+            "**/*.lock": true,
+            "**/*.freezed.dart": true,
+            "**/*.g.dart": true,
+            "capp_*/": false,
+            "mapp_*/": true,
+            "koyal_*/": false
+        },
+        "files.watcherExclude": {
+            "**/.git/objects/**": true,
+            "**/.git/subtree-cache/**": true,
+            "**/node_modules/*/**": true,
+            "**/.hg/store/**": true,
+            "**/build/**": true,
+            "**/*.freezed.dart": true,
+            "**/*.g.dart": true
+        },
+        "files.associations": {
+            "**/ci/*.yml": "azure-pipelines",
+            "**/azure-pipelines*.yml": "azure-pipelines"
+        },
+        "gma": {
+            "app": {
+                "type": "string",
+                "default": "Customer",
+                "enum": [
+                    "Customer",
+                    "Merchant"
+                ],
+                "enumDescriptions": [
+                    "Application for customers [capp]",
+                    "Application for merchants [mapp]"
+                ],
+                "enumKeys": [
+                    "capp",
+                    "mapp"
+                ]
+            },
+            "contries": [
+                {
+                    "label": "India",
+                    "detail": "Application for Indian market",
+                    "key": "in",
+                    "picked": true
+                },
+                {
+                    "label": "Vietnam",
+                    "detail": "Application for Vietnam market",
+                    "key": "vn",
+                    "picked": false
+                },
+                {
+                    "label": "Philipines",
+                    "detail": "Application for Philipines market",
+                    "key": "ph",
+                    "picked": false
+                },
+                {
+                    "label": "Indonesia",
+                    "detail": "Application for Indonesian market",
+                    "key": "id",
+                    "picked": false
+                }
+            ],
+            "apps": [
+                {
+                    "label": "Customer",
+                    "detail": "Application for customers [capp]",
+                    "key": "capp",
+                    "exclude": {
+                        "capp_*/": false,
+                        "mapp_*/": true,
+                        "koyal_*/": false
+                    },
+                    "picked": true
+                },
+                {
+                    "label": "Merchant",
+                    "detail": "Application for merchants [mapp]",
+                    "key": "mapp",
+                    "exclude": {
+                        "capp_*/": true,
+                        "mapp_*/": false,
+                        "koyal_*/": false
+                    },
+                    "picked": false
+                }
+            ],
+            "stages": [
+                {
+                    "label": "Fake",
+                    "detail": "Application can be run without internet connection. will use fake data/responses.",
+                    "key": "fake",
+                    "picked": true
+                },
+                {
+                    "label": "Production",
+                    "detail": "Application will be connected to the real API",
+                    "key": "prod",
+                    "picked": false
+                }
+            ]
+        },
+        "gma.flavor.countries": [
+            {
+                "label": "India",
+                "detail": "Application for Indian market",
+                "key": "in",
+                "picked": true
+            },
+            {
+                "label": "Vietnam",
+                "detail": "Application for Vietnam market",
+                "key": "vn",
+                "picked": false
+            },
+            {
+                "label": "Philipines",
+                "detail": "Application for Philipines market",
+                "key": "ph",
+                "picked": false
+            },
+            {
+                "label": "Indonesia",
+                "detail": "Application for Indonesian market",
+                "key": "id",
+                "picked": false
+            }
+        ],
+        "gma.flavor.stages": [
+            {
+                "label": "Fake",
+                "detail": "Application can be run without internet connection. will use fake data/responses.",
+                "key": "fake",
+                "picked": true
+            },
+            {
+                "label": "Production",
+                "detail": "Application will be connected to the real API",
+                "key": "prod",
+                "picked": false
+            }
+        ],
+        "gma.flavor.apps": [
+            {
+                "label": "Customer",
+                "detail": "Application for customers [capp]",
+                "key": "capp",
+                "exclude": {
+                    "capp_*/": false,
+                    "mapp_*/": true,
+                    "koyal_*/": false
+                },
+                "picked": true
+            },
+            {
+                "label": "Merchant",
+                "detail": "Application for merchants [mapp]",
+                "key": "mapp",
+                "exclude": {
+                    "capp_*/": true,
+                    "mapp_*/": false,
+                    "koyal_*/": false
+                },
+                "picked": false
+            }
+        ],
+        "explorer.compactFolders": false,
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+        "dartImport.fixOnSave": true,
+        "window.title": "GMA Studio ~ ${activeEditorShort}${separator}${rootName}",
+        "editor.fontFamily": "'JetBrains Mono Nl','Fira Code Regular',monospace, Consolas, 'Courier New'",
+        "editor.fontLigatures": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll": true,
+            "source.organizeImports": true
+        }
+    },
+    "launch": {
+        "configurations": [
+            {
+                "name": "Debug",
+                "request": "launch",
+                "type": "dart",
+                "program": "lib/main_fake.dart",
+                "cwd": "${workspaceFolder:Application}",
+                "args": [
+                    "--flavor",
+                    "fakein"
+                ]
+            },
+            {
+                "name": "Profile",
+                "request": "launch",
+                "type": "dart",
+                "program": "lib/main_fake.dart",
+                "cwd": "${workspaceFolder:Application}",
+                "args": [
+                    "--flavor",
+                    "fakein"
+                ]
+            },
+            {
+                "name": "Release",
+                "request": "launch",
+                "type": "dart",
+                "program": "lib/main_fake.dart",
+                "cwd": "${workspaceFolder:Application}",
+                "args": [
+                    "--flavor",
+                    "fakein"
+                ]
+            },
+            {
+                "name": "Test",
+                "request": "launch",
+                "type": "dart",
+                "program": "lib/main_fake.dart",
+                "cwd": "${workspaceFolder:Application}",
+                "args": [
+                    "--flavor",
+                    "fakein"
+                ]
+            }
+        ]
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "GMA: Restart",
+                "command": "${command:dart.restartAnalysisServer}"
+            }
+        ]
+    }
+}

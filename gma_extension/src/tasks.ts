@@ -35,9 +35,11 @@ export class FlavorTasks {
         } as vscode.TaskPresentationOptions;
         task.isBackground = true;
 
-        // this.message('Preparing flavor...');
+
         vscode.tasks.executeTask(task).then((value) => {
-            console.log(`executeTask: %s`, value);
+            console.log(`executeTask success: %s`, value);
+        }, (reason) => {
+            console.log(`executeTask fauked: %s`, reason);
         });
        
         vscode.tasks.onDidStartTaskProcess((value) => {

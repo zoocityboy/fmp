@@ -15,6 +15,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     private appWorkspaceFolder: vscode.WorkspaceFolder | undefined;
     public rootWorkspaceFolder: vscode.WorkspaceFolder | undefined;
     private configuration: vscode.WorkspaceConfiguration;
+
     private _stages: Stage[] = [];
     public get stages() {
         return this._stages;
@@ -37,13 +38,13 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         this.rootWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.rootFolder);
         this.loadConfig();
       
-        this.workspaceWatcher = vscode.workspace.createFileSystemWatcher(
-            '**/gma.code-workspace'
-        , true, false, true);
-        this.workspaceWatcher.onDidChange(() => {
-            // this.onDidChanged();
-            console.log('file did changed');
-        });
+        // this.workspaceWatcher = vscode.workspace.createFileSystemWatcher(
+        //     '**/gma.code-workspace'
+        // , true, false, true);
+        // this.workspaceWatcher.onDidChange(() => {
+        //     // this.onDidChanged();
+        //     console.log('file did changed');
+        // });
     }
     get onDidChanged(): vscode.Event<ConfiguratorChangeEvent> {
         return this._onDidChanged.event;
@@ -97,19 +98,22 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         }
     }
 
-    private async setSelected<T extends Selectable>(item: T, items: T[]): Promise<boolean> {
+    private async setSelected<T extends Selectable>(item: T, items: T[], save: boolean): Promise<boolean> {
         items.forEach((value) => {
             value.picked = value.key === item.key;
         });
         let key = this.getSettingsKey<T>(item);
         let values = items.map((value) => value.toConfiguration());
-        try {
-            await this.configuration.update(key, values, this.target);
-            return true;
-        } catch (error) {
-            this.message(undefined, error);
-            return false;
+        if (save === true) {
+            try {
+                await this.configuration.update(key, values, this.target);
+                return true;
+            } catch (error) {
+                this.message('setSelected failed', error);
+                return false;
+            }
         }
+        return true;
 
     }
 
@@ -129,8 +133,8 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         return 'gma.flavor.uups';
     }
 
-    public async setCountry(item: Country): Promise<boolean> {
-        return await this.setSelected<Country>(item, this._countries);
+    public async setCountry(item: Country, save: boolean = false): Promise<boolean> {
+        return await this.setSelected<Country>(item, this._countries, save);
     }
 
     public getCountry(reload: Boolean = false): Country | undefined {
@@ -141,8 +145,8 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         return this.getSelected<Country>(_items);
     }
 
-    public async setApp(item: App): Promise<boolean> {
-        return await this.setSelected<App>(item, this._apps);
+    public async setApp(item: App, save: boolean = false): Promise<boolean> {
+        return await this.setSelected<App>(item, this._apps, save);
     }
 
     public getApp(reload: Boolean = false): App | undefined {
@@ -153,8 +157,8 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         return this.getSelected<App>(_items);
     }
 
-    public async setStage(item: Stage): Promise<boolean> {
-        return await this.setSelected<Stage>(item, this._stages);
+    public async setStage(item: Stage, save: boolean = false): Promise<boolean> {
+        return await this.setSelected<Stage>(item, this._stages, save);
     }
 
     public getStage(reload: Boolean = false): Stage | undefined {
@@ -231,6 +235,9 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         let app = this.getApp();
         let stage = this.getStage();
         let country = this.getCountry();
+        console.log(this._apps);
+        console.log(this._countries);
+        console.log(this._stages);
         if (!app || !stage || !country) {
             this.message(undefined, new Error('not selected'), ProgressState.complete);
             return false;
@@ -244,9 +251,9 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
             this.message(undefined, new Error('not selected'), ProgressState.complete);
             return false;
         }
-        await this.setApp(app);
-        await this.setCountry(country);
-        await this.setStage(stage);
+        await this.setApp(app, true);
+        await this.setCountry(country, true);
+        await this.setStage(stage, true);
         await this.updateExclude();
         await this.updateAppFolder();
         await this.updateLauncher();

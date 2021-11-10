@@ -13,11 +13,6 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
         constructor(public iconPath: { light: Uri; dark: Uri; }, public tooltip: string) { }
     }
 
-    const createResourceGroupButton = new MyButton({
-        dark: Uri.file(context.asAbsolutePath('media/dark/add.svg')),
-        light: Uri.file(context.asAbsolutePath('media/light/add.svg')),
-    }, 'Change flavor group');
-
     interface State {
         title: string;
         step: number;

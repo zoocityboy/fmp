@@ -1,4 +1,3 @@
-import path = require('path');
 import * as vscode from 'vscode';
 import { WorkspaceConfigurator } from './configuration';
 import { ProgressState } from './models';
@@ -12,54 +11,66 @@ let statusBarItem: vscode.StatusBarItem;
 let progressStatusBarItem: vscode.StatusBarItem;
 let flavorConfig: WorkspaceConfigurator;
 let flavorTask: FlavorTasks;
-
+let isGmaWorkspace: boolean = false;
 const wait = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 export function activate(context: vscode.ExtensionContext) {
-	console.log('Congratulations, your extension "GMA Studio" is now active!');
-	flavorConfig = new WorkspaceConfigurator();
-	flavorTask = new FlavorTasks();
-	flavorTask.onDidChanged((value) => {
-		console.log(`FlavorTasks: ${value.message} ${value.state} ${value.failed}`);
-		switch (value.state) {
-			case ProgressState.loading:
-				updateProgressStatusBarItem(value.state, value.message ?? 'Building flavor...');
-
-				break;
-			case ProgressState.complete:
-				if (value.failed) {
-					updateProgressStatusBarItem(value.state, value.failed.message ?? 'Error...');
-				} else {
+	isGmaWorkspace = vscode.workspace.workspaceFile?.path.endsWith('gma.code-workspace') ?? false;
+	if (isGmaWorkspace) {
+		console.log('Congratulations, your extension "GMA Studio" is now active!');
+		flavorConfig = new WorkspaceConfigurator();
+		flavorTask = new FlavorTasks();
+		flavorTask.onDidChanged((value) => {
+			console.log(`FlavorTasks: ${value.message} ${value.state} ${value.failed}`);
+			switch (value.state) {
+				case ProgressState.loading:
 					updateProgressStatusBarItem(value.state, value.message ?? 'Building flavor...');
-				}
 
-				break;
-			default:
-				updateProgressStatusBarItem(value.state, value.message ?? 'Building flavor...');
-				break;
-		}
-	});
+					break;
+				case ProgressState.complete:
+					if (value.failed) {
+						updateProgressStatusBarItem(value.state, value.failed.message ?? 'Error...');
+					} else {
+						updateProgressStatusBarItem(value.state, value.message ?? 'Building flavor...');
+					}
 
-	flavorTask.rootWorkspaceFolder = flavorConfig.rootWorkspaceFolder;
-	flavorConfig.onDidChanged((value) => {
-		console.log(value);
-		if (value.state === ProgressState.complete) {
-			updateStatusBarItem();
-		}
-	});
+					break;
+				default:
+					updateProgressStatusBarItem(value.state, value.message ?? 'Building flavor...');
+					break;
+			}
+		});
 
-	registerWidgetCatalogPanel(context);
-	registerDynamicFormPlaygroundPanel(context);
-	registerBuildRunner(context);
-	registerChangeFlavorMultiStep(context);
+		flavorTask.rootWorkspaceFolder = flavorConfig.rootWorkspaceFolder;
+		flavorConfig.onDidChanged((value) => {
+			console.log(value);
+			if (value.state === ProgressState.complete) {
+				updateStatusBarItem();
+			}
+		});
+
+		registerWidgetCatalogPanel(context);
+		registerDynamicFormPlaygroundPanel(context);
+		registerBuildRunner(context);
+		registerChangeFlavorMultiStep(context);
+	} else {
+		console.log('Cant use GMA Studio without correct gma.code-workspace.');
+		statusBarItem.hide();
+		progressStatusBarItem.hide();
+	}
 
 }
 
 export function deactivate() {
-	console.log('Congratulations, your extension "GMA Studio" is now de-active!');
-	flavorConfig.dispose();
-	statusBarItem.hide();
-	progressStatusBarItem.hide();
+	if (isGmaWorkspace === true) {
+		console.log('Congratulations, your extension "GMA Studio" is now de-active!');
+		flavorConfig.dispose();
+		statusBarItem.hide();
+		progressStatusBarItem.hide();
+	} else {
+
+	}
+
 }
 
 export async function registerWidgetCatalogPanel(context: vscode.ExtensionContext) {
@@ -113,8 +124,8 @@ export async function registerChangeFlavorMultiStep(context: vscode.ExtensionCon
 	context.subscriptions.push(disposableCommand);
 	vscode.workspace.onDidChangeConfiguration((value) => {
 		console.log(value.affectsConfiguration.name);
-		flavorConfig.reload();
-		updateStatusBarItem();
+		// flavorConfig.reload();
+		// updateStatusBarItem();
 	});
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
 	statusBarItem.command = Constants.changeFlavorCommandId;
@@ -144,6 +155,7 @@ async function updateStatusBarItem() {
 	const app = flavorConfig.getApp();
 	const stage = flavorConfig.getStage();
 	const country = flavorConfig.getCountry();
+	console.log(`updateStatusBarItem: $(globe~spin) ${country?.label ?? ''} ${app?.label ?? ''} app in ${stage?.label ?? ''}`);
 	statusBarItem.text = `$(globe~spin) ${country?.label ?? ''} ${app?.label ?? ''} app in ${stage?.label ?? ''}`;
 	statusBarItem.show();
 
@@ -162,7 +174,7 @@ async function updateProgressStatusBarItem(state: ProgressState, message: string
 			statusBarItem.text = `$(sync~spin) ${message}`;
 			wait(3000).then(() => {
 				updateStatusBarItem();
-				vscode.commands.executeCommand('dart.restartAnalysisServer');
+				// vscode.commands.executeCommand('dart.restartAnalysisServer');
 			});
 			break;
 	}
