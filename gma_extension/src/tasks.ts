@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
 import { ProgressState, TaskChangeEvent } from './models';
 export class FlavorTasks {
-    public rootWorkspaceFolder: vscode.WorkspaceFolder | undefined;
+    private rootWorkspaceFolder: vscode.WorkspaceFolder | undefined;
     private _onDidChanged: vscode.EventEmitter<TaskChangeEvent>;
-    constructor() {
+    constructor(workspaceFolder: vscode.WorkspaceFolder | undefined) {
+        this.rootWorkspaceFolder = workspaceFolder;
         this._onDidChanged = new vscode.EventEmitter<TaskChangeEvent>();
     }
     get onDidChanged(): vscode.Event<TaskChangeEvent> {

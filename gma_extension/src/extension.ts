@@ -18,8 +18,9 @@ export function activate(context: vscode.ExtensionContext) {
 	isGmaWorkspace = vscode.workspace.workspaceFile?.path.endsWith('gma.code-workspace') ?? false;
 	if (isGmaWorkspace) {
 		console.log('Congratulations, your extension "GMA Studio" is now active!');
+
 		flavorConfig = new WorkspaceConfigurator();
-		flavorTask = new FlavorTasks();
+		flavorTask = new FlavorTasks(flavorConfig.rootWorkspaceFolder);
 		flavorTask.onDidChanged((value) => {
 			console.log(`FlavorTasks: ${value.message} ${value.state} ${value.failed}`);
 			switch (value.state) {
@@ -33,22 +34,20 @@ export function activate(context: vscode.ExtensionContext) {
 					} else {
 						updateProgressStatusBarItem(value.state, value.message ?? 'Building flavor...');
 					}
-
+					updateStatusBarItem();
+					flavorConfig.isChangeTriggerFromExtension = false;
 					break;
 				default:
 					updateProgressStatusBarItem(value.state, value.message ?? 'Building flavor...');
 					break;
 			}
 		});
-
-		flavorTask.rootWorkspaceFolder = flavorConfig.rootWorkspaceFolder;
 		flavorConfig.onDidChanged((value) => {
 			console.log(value);
 			if (value.state === ProgressState.complete) {
 				updateStatusBarItem();
 			}
 		});
-
 		registerWidgetCatalogPanel(context);
 		registerDynamicFormPlaygroundPanel(context);
 		registerBuildRunner(context);
@@ -67,10 +66,7 @@ export function deactivate() {
 		flavorConfig.dispose();
 		statusBarItem.hide();
 		progressStatusBarItem.hide();
-	} else {
-
 	}
-
 }
 
 export async function registerWidgetCatalogPanel(context: vscode.ExtensionContext) {
@@ -146,15 +142,16 @@ export async function runUpdateFlavor(context: vscode.ExtensionContext, force: b
 	const app = flavorConfig.getApp();
 	if (shortTag !== undefined && app !== undefined) {
 		updateProgressStatusBarItem(ProgressState.loading, "Change flavor started.");
+		flavorConfig.isChangeTriggerFromExtension = true;
 		flavorTask.changeFlavor(shortTag, app.key, force);
 	}
 }
 
 async function updateStatusBarItem() {
 	statusBarItem.text = '....';
-	const app = flavorConfig.getApp();
-	const stage = flavorConfig.getStage();
-	const country = flavorConfig.getCountry();
+	const app = flavorConfig.getApp(true);
+	const stage = flavorConfig.getStage(true);
+	const country = flavorConfig.getCountry(true);
 	console.log(`updateStatusBarItem: $(globe~spin) ${country?.label ?? ''} ${app?.label ?? ''} app in ${stage?.label ?? ''}`);
 	statusBarItem.text = `$(globe~spin) ${country?.label ?? ''} ${app?.label ?? ''} app in ${stage?.label ?? ''}`;
 	statusBarItem.show();

@@ -15,6 +15,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     private appWorkspaceFolder: vscode.WorkspaceFolder | undefined;
     public rootWorkspaceFolder: vscode.WorkspaceFolder | undefined;
     private configuration: vscode.WorkspaceConfiguration;
+    public isChangeTriggerFromExtension: boolean = false;
 
     private _stages: Stage[] = [];
     public get stages() {
@@ -37,17 +38,26 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         this.appWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.applicationFolder);
         this.rootWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.rootFolder);
         this.loadConfig();
+        this.runWatcher();
       
-        // this.workspaceWatcher = vscode.workspace.createFileSystemWatcher(
-        //     '**/gma.code-workspace'
-        // , true, false, true);
-        // this.workspaceWatcher.onDidChange(() => {
-        //     // this.onDidChanged();
-        //     console.log('file did changed');
-        // });
+
     }
     get onDidChanged(): vscode.Event<ConfiguratorChangeEvent> {
         return this._onDidChanged.event;
+    }
+    private runWatcher() {
+        this.workspaceWatcher = vscode.workspace.createFileSystemWatcher(
+            '**/gma.code-workspace'
+            , false, false, false);
+        this.workspaceWatcher.onDidChange(() => {
+            // this.onDidChanged();
+
+            if (!this.isChangeTriggerFromExtension) {
+                this.reload();
+                this.message("success", undefined, ProgressState.complete);
+            }
+            console.log(`workspace file did changed ${this.isChangeTriggerFromExtension}`);
+        });
     }
 
     public reload(){
@@ -257,9 +267,6 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         await this.updateExclude();
         await this.updateAppFolder();
         await this.updateLauncher();
-
-
-        await this.wait(1000);
         this.message("success", undefined, ProgressState.complete);
         return true;
     }
