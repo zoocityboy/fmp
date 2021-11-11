@@ -52,6 +52,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         this.workspaceWatcher.onDidChange(() => {
             // this.onDidChanged();
 
+
             if (!this.isChangeTriggerFromExtension) {
                 this.reload();
                 this.message("success", undefined, ProgressState.complete);
@@ -61,7 +62,10 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     }
 
     public reload(){
+        console.log('reload');
         this.configuration = vscode.workspace.getConfiguration();
+        this.appWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.applicationFolder);
+        this.rootWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.rootFolder);
         this.loadConfig();
     }
     public dispose(){
@@ -69,6 +73,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     }
 
     private loadConfig() {
+        console.log('loadConfig');
         this._apps = this.loadApps();
         this._countries = this.loadCountries();
         this._stages = this.loadStages();
@@ -114,16 +119,20 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         });
         let key = this.getSettingsKey<T>(item);
         let values = items.map((value) => value.toConfiguration());
-        if (save === true) {
-            try {
-                await this.configuration.update(key, values, this.target);
-                return true;
-            } catch (error) {
-                this.message('setSelected failed', error);
-                return false;
-            }
+        if (item instanceof App) {
+            this._apps = items.map((value) => value as unknown as App);
+        } else if (item instanceof Country) {
+            this._countries = items.map((value) => value as Country);
+        } else if (item instanceof Stage) {
+            this._stages = items.map((value) => value as Stage);
         }
-        return true;
+        try {
+            await this.configuration.update(key, values, this.target);
+            return true;
+        } catch (error) {
+            this.message('setSelected failed', error);
+            return false;
+        }
 
     }
 
@@ -245,6 +254,8 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         let app = this.getApp();
         let stage = this.getStage();
         let country = this.getCountry();
+        console.log(`apply------------------`);
+        console.log(`app: ${app?.key} stage: ${stage?.key} country: ${country?.key}`);
         console.log(this._apps);
         console.log(this._countries);
         console.log(this._stages);
@@ -252,21 +263,21 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
             this.message(undefined, new Error('not selected'), ProgressState.complete);
             return false;
         }
-        return this.update(app, stage, country);
+        return await this.update(app, stage, country);
     }
     public async update(app: App, stage: Stage, country: Country): Promise<boolean> {
-        this.message("Updating ...", undefined, ProgressState.loading);
-
         if (!app || !stage || !country) {
             this.message(undefined, new Error('not selected'), ProgressState.complete);
             return false;
         }
+        this.message("Updating ...", undefined, ProgressState.loading);
         await this.setApp(app, true);
         await this.setCountry(country, true);
         await this.setStage(stage, true);
         await this.updateExclude();
         await this.updateAppFolder();
         await this.updateLauncher();
+
         this.message("success", undefined, ProgressState.complete);
         return true;
     }

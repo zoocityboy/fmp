@@ -99,9 +99,9 @@ export async function multiStepInput(context: ExtensionContext, flavorConfig: Wo
     }
 
     const state = await collectInputs();
+    console.log('FLAVOR PICKED');
     console.log(state);
     await flavorConfig.update(state.app, state.stage, state.country);
-    await flavorConfig.apply();
     window.showInformationMessage(`Picked app ${state.country.label} app ${state.app.label} in ${state.stage.label}`);
 }
 

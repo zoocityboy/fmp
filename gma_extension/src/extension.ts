@@ -120,8 +120,8 @@ export async function registerChangeFlavorMultiStep(context: vscode.ExtensionCon
 	context.subscriptions.push(disposableCommand);
 	vscode.workspace.onDidChangeConfiguration((value) => {
 		console.log(value.affectsConfiguration.name);
-		// flavorConfig.reload();
-		// updateStatusBarItem();
+		flavorConfig.reload();
+		updateStatusBarItem();
 	});
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
 	statusBarItem.command = Constants.changeFlavorCommandId;

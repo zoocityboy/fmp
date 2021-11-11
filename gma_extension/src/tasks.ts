@@ -13,8 +13,7 @@ export class FlavorTasks {
     private inProgress: boolean = false;
     public changeFlavor(flavor: string, app: string, force: boolean = false) {
         var appPackageName = app === 'capp' ? 'self_care' : 'mapp';
-        console.log(this.rootWorkspaceFolder);
-        console.log(vscode.TaskScope.Global);
+
         let task = new vscode.Task(
             { type: 'gma.flavor', name: 'change_flavor' },
             this.rootWorkspaceFolder!,
