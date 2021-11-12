@@ -6,6 +6,7 @@ export class Constants {
 
     static applicationFolder: string = "Application";
     static rootFolder: string = "Root";
+    static configKeyFlavor: string = "gma.flavor";
     static configKeyApps: string = "gma.flavor.apps";
     static configKeyCountries: string = "gma.flavor.countries";
     static configKeyStages: string = "gma.flavor.stages";

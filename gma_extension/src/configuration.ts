@@ -42,9 +42,11 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
       
 
     }
+
     get onDidChanged(): vscode.Event<ConfiguratorChangeEvent> {
         return this._onDidChanged.event;
     }
+
     private runWatcher() {
         this.workspaceWatcher = vscode.workspace.createFileSystemWatcher(
             '**/gma.code-workspace'
@@ -68,6 +70,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         this.rootWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.rootFolder);
         this.loadConfig();
     }
+
     public dispose(){
         this.workspaceWatcher?.dispose();
     }
@@ -153,7 +156,18 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     }
 
     public async setCountry(item: Country, save: boolean = false): Promise<boolean> {
-        return await this.setSelected<Country>(item, this._countries, save);
+        item.picked = true;
+        let values = this._countries.map((value) =>{
+            value.picked = value.key === item.key;
+            return value;
+        });
+        let config = values.map((value) => value.toConfiguration());
+        this._countries = values;
+        if (save){
+            await this.configuration.update(Constants.configKeyCountries, config, this.target);
+        }
+        return true;
+        // return await this.setSelected<Country>(item, this._countries, save);
     }
 
     public getCountry(reload: Boolean = false): Country | undefined {
@@ -165,7 +179,17 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     }
 
     public async setApp(item: App, save: boolean = false): Promise<boolean> {
-        return await this.setSelected<App>(item, this._apps, save);
+        item.picked = true;
+        let values = this._apps.map((value) =>{
+            value.picked = value.key === item.key;
+            return value;
+        });
+        let config = values.map((value) => value.toConfiguration());
+        this._apps = values;
+        if (save){
+            await this.configuration.update(Constants.configKeyApps, config, this.target);
+        }
+        return true;
     }
 
     public getApp(reload: Boolean = false): App | undefined {
@@ -177,7 +201,19 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     }
 
     public async setStage(item: Stage, save: boolean = false): Promise<boolean> {
-        return await this.setSelected<Stage>(item, this._stages, save);
+        item.picked = true;
+        let values = this._stages.map((value) =>{
+            value.picked = value.key === item.key;
+            return value;
+        });
+        let config = values.map((value) => value.toConfiguration());
+        this._stages = values;
+        if (save){
+            await this.configuration.update(Constants.configKeyStages, config, this.target);
+        }
+        
+        return true;
+        // return await this.setSelected<Stage>(item, this._stages, save);
     }
 
     public getStage(reload: Boolean = false): Stage | undefined {
@@ -203,6 +239,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         let tag = `${stage?.key}${country?.key}`;
         return tag;
     }
+
     /**
      * Update launcher settings with selected app
      */
@@ -234,6 +271,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         const newValue = { ...exclude, ...appExclude };
         await this.configuration.update('files.exclude', newValue, this.target);
     }
+
     /***
      * Override workspace Folder with Application
      * based on selected app
@@ -265,6 +303,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         }
         return await this.update(app, stage, country);
     }
+
     public async update(app: App, stage: Stage, country: Country): Promise<boolean> {
         if (!app || !stage || !country) {
             this.message(undefined, new Error('not selected'), ProgressState.complete);
@@ -279,6 +318,9 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         await this.updateLauncher();
 
         this.message("success", undefined, ProgressState.complete);
+         this.configuration.inspect<App[]>(Constants.configKeyApps);
+         this.configuration.inspect<Country[]>(Constants.configKeyCountries);
+         this.configuration.inspect<Stage[]>(Constants.configKeyStages);
         return true;
     }
     private message(
