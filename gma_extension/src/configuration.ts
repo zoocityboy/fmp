@@ -1,6 +1,16 @@
-import { App, ConfiguratorChangeEvent, Country, LaunchConfiguration, ProgressState, Selectable, Stage } from "./models";
+
 import { Constants } from './constants';
 import * as vscode from 'vscode';
+import { SelectableStage } from './models/SelectableStage';
+import { SelectableCountry } from './models/SelectableCountry';
+import { SelectableApp } from './models/SelectableApp';
+import { IConfiguratorChangeEvent } from './interfaces/IConfiguratorChangeEvent';
+import { ProgressState } from './models/ProgressState';
+import { ISelectable } from './interfaces/ISelectable';
+import { ILaunchConfiguration } from './interfaces/ILaunchConfiguration';
+import { App, listOfApps } from './models/app';
+import { listOfStages, Stage } from './models/stage';
+import { Country, listOfCountries } from './models/country';
 
 export interface IWorkspaceConfigurator {
     // readonly onDidChangeSelection: vscode.Event<ConfiguratorChangeEvent[]>;
@@ -16,34 +26,34 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     public rootWorkspaceFolder: vscode.WorkspaceFolder | undefined;
     private configuration: vscode.WorkspaceConfiguration;
     public isChangeTriggerFromExtension: boolean = false;
+    private _onDidChanged: vscode.EventEmitter<IConfiguratorChangeEvent>;
 
-    private _stages: Stage[] = [];
-    public get stages() {
-        return this._stages;
-    }
-    private _countries: Country[] = [];
-    public get countries() {
-        return this._countries;
-    }
-    private _apps: App[] = [];
-    public get apps() {
-        return this._apps;
+    public apps: App[] = listOfApps;
+    public stages: Stage[] = listOfStages;
+    public countries: Country[] = listOfCountries
+    ;
+    public getApp(): App {
+        return App.fromKey(this.configuration.get<string>(Constants.gmaBuildSelectedApplication));
     }
 
-    private _onDidChanged: vscode.EventEmitter<ConfiguratorChangeEvent>;
-
+    public getCountry(): Country {
+        return Country.fromKey(this.configuration.get<string>(Constants.gmaBuildSelectedCountry));
+    }
+    public getStage(): Stage {
+        return Stage.fromKey(this.configuration.get<string>(Constants.gmaBuildSelectedStage));
+    }
     constructor() {
-        this._onDidChanged = new vscode.EventEmitter<ConfiguratorChangeEvent>();
+        this._onDidChanged = new vscode.EventEmitter<IConfiguratorChangeEvent>();
+        
         this.configuration = vscode.workspace.getConfiguration();
         this.appWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.applicationFolder);
         this.rootWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.rootFolder);
-        this.loadConfig();
         this.runWatcher();
-      
+        this.message("success", undefined, ProgressState.complete);
 
     }
 
-    get onDidChanged(): vscode.Event<ConfiguratorChangeEvent> {
+    get onDidChanged(): vscode.Event<IConfiguratorChangeEvent> {
         return this._onDidChanged.event;
     }
 
@@ -52,9 +62,6 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
             '**/gma.code-workspace'
             , false, false, false);
         this.workspaceWatcher.onDidChange(() => {
-            // this.onDidChanged();
-
-
             if (!this.isChangeTriggerFromExtension) {
                 this.reload();
                 this.message("success", undefined, ProgressState.complete);
@@ -68,161 +75,139 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         this.configuration = vscode.workspace.getConfiguration();
         this.appWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.applicationFolder);
         this.rootWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.rootFolder);
-        this.loadConfig();
+        // this.loadConfig();
+        this.message("success", undefined, ProgressState.complete);
     }
 
     public dispose(){
         this.workspaceWatcher?.dispose();
     }
 
-    private loadConfig() {
-        console.log('loadConfig');
-        this._apps = this.loadApps();
-        this._countries = this.loadCountries();
-        this._stages = this.loadStages();
-        console.log(this._apps);
-        console.log(this._countries);
-        console.log(this._stages);
-    }
+    // private loadConfig() {
+    //     console.log('loadConfig');
+    //     this._apps = this.loadApps();
+    //     this._countries = this.loadCountries();
+    //     this._stages = this.loadStages();
+    //     console.log(this._apps);
+    //     console.log(this._countries);
+    //     console.log(this._stages);
+    // }
 
-    private loadApps(): App[] {
-        try {
-            return this.configuration
-                .get(Constants.configKeyApps, [])
-                .map((item) => App.toModel(item));
-        } catch (e) {
-            return [];
-        }
+    // private loadApps(): SelectableApp[] {
+    //     try {
+    //         return this.configuration
+    //             .get(Constants.configKeyApps, [])
+    //             .map((item) => SelectableApp.toModel(item));
+    //     } catch (e) {
+    //         return [];
+    //     }
 
-    }
+    // }
 
-    private loadStages(): Stage[] {
-        try {
-            return this.configuration
-                .get(Constants.configKeyStages, [])
-                .map((item) => Stage.toModel(item));
-        } catch (e) {
-            return [];
-        }
-    }
+    // private loadStages(): SelectableStage[] {
+    //     try {
+    //         return this.configuration
+    //             .get(Constants.configKeyStages, [])
+    //             .map((item) => SelectableStage.toModel(item));
+    //     } catch (e) {
+    //         return [];
+    //     }
+    // }
 
-    private loadCountries(): Country[] {
-        try {
-            return this.configuration
-                .get(Constants.configKeyCountries, [])
-                .map((item) => Country.toModel(item));
-        } catch (e) {
-            return [];
-        }
-    }
+    // private loadCountries(): SelectableCountry[] {
+    //     try {
+    //         return this.configuration
+    //             .get(Constants.configKeyCountries, [])
+    //             .map((item) => SelectableCountry.toModel(item));
+    //     } catch (e) {
+    //         return [];
+    //     }
+    // }
 
-    private async setSelected<T extends Selectable>(item: T, items: T[], save: boolean): Promise<boolean> {
-        items.forEach((value) => {
-            value.picked = value.key === item.key;
-        });
-        let key = this.getSettingsKey<T>(item);
-        let values = items.map((value) => value.toConfiguration());
-        if (item instanceof App) {
-            this._apps = items.map((value) => value as unknown as App);
-        } else if (item instanceof Country) {
-            this._countries = items.map((value) => value as Country);
-        } else if (item instanceof Stage) {
-            this._stages = items.map((value) => value as Stage);
-        }
-        try {
-            await this.configuration.update(key, values, this.target);
-            return true;
-        } catch (error) {
-            this.message('setSelected failed', error);
-            return false;
-        }
+    // private getSelected<T extends ISelectable>(items: T[]): T | undefined {
+    //     return items.find((value) => value.picked === true);
+    // }
 
-    }
+    // private getSettingsKey<T extends ISelectable>(item: T): string {
+    //     console.log(`getSettingsKey isApp: ${item instanceof SelectableApp} isCountry: ${item instanceof SelectableCountry} isStage: ${item instanceof SelectableStage}`);
+    //     if (item instanceof SelectableApp) {
+    //         return Constants.configKeyApps;
+    //     } else if (item instanceof SelectableCountry) {
+    //         return Constants.configKeyCountries;
+    //     } else if (item instanceof SelectableStage) {
+    //         return Constants.configKeyStages;
+    //     }
+    //     return 'gma.flavor.uups';
+    // }
 
-    private getSelected<T extends Selectable>(items: T[]): T | undefined {
-        return items.find((value) => value.picked === true);
-    }
+    // public async setCountry(item: SelectableCountry, save: boolean = false): Promise<boolean> {
+    //     item.picked = true;
+    //     let values = this._countries.map((value) =>{
+    //         value.picked = value.key === item.key;
+    //         return value;
+    //     });
+    //     let config = values.map((value) => value.toConfiguration());
+    //     this._countries = values;
+    //     if (save){
+    //         await this.configuration.update(Constants.configKeyCountries, config, this.target);
+    //     }
+    //     return true;
+    //     // return await this.setSelected<Country>(item, this._countries, save);
+    // }
 
-    private getSettingsKey<T extends Selectable>(item: T): string {
-        console.log(`getSettingsKey isApp: ${item instanceof App} isCountry: ${item instanceof Country} isStage: ${item instanceof Stage}`);
-        if (item instanceof App) {
-            return Constants.configKeyApps;
-        } else if (item instanceof Country) {
-            return Constants.configKeyCountries;
-        } else if (item instanceof Stage) {
-            return Constants.configKeyStages;
-        }
-        return 'gma.flavor.uups';
-    }
+    // public getCountry(reload: Boolean = false): SelectableCountry | undefined {
+    //     var _items = this._countries;
+    //     if (reload) {
+    //         _items = this.loadCountries();
+    //     }
+    //     return this.getSelected<SelectableCountry>(_items);
+    // }
 
-    public async setCountry(item: Country, save: boolean = false): Promise<boolean> {
-        item.picked = true;
-        let values = this._countries.map((value) =>{
-            value.picked = value.key === item.key;
-            return value;
-        });
-        let config = values.map((value) => value.toConfiguration());
-        this._countries = values;
-        if (save){
-            await this.configuration.update(Constants.configKeyCountries, config, this.target);
-        }
-        return true;
-        // return await this.setSelected<Country>(item, this._countries, save);
-    }
+    // public async setApp(item: SelectableApp, save: boolean = false): Promise<boolean> {
+    //     item.picked = true;
+    //     let values = this._apps.map((value) =>{
+    //         value.picked = value.key === item.key;
+    //         return value;
+    //     });
+    //     let config = values.map((value) => value.toConfiguration());
+    //     this._apps = values;
+    //     if (save){
+    //         await this.configuration.update(Constants.configKeyApps, config, this.target);
+    //     }
+    //     return true;
+    // }
 
-    public getCountry(reload: Boolean = false): Country | undefined {
-        var _items = this._countries;
-        if (reload) {
-            _items = this.loadCountries();
-        }
-        return this.getSelected<Country>(_items);
-    }
+    // public getApp(reload: Boolean = false): SelectableApp | undefined {
+    //     var _items = this._apps;
+    //     if (reload) {
+    //         _items = this.loadApps();
+    //     }
+    //     return this.getSelected<SelectableApp>(_items);
+    // }
 
-    public async setApp(item: App, save: boolean = false): Promise<boolean> {
-        item.picked = true;
-        let values = this._apps.map((value) =>{
-            value.picked = value.key === item.key;
-            return value;
-        });
-        let config = values.map((value) => value.toConfiguration());
-        this._apps = values;
-        if (save){
-            await this.configuration.update(Constants.configKeyApps, config, this.target);
-        }
-        return true;
-    }
-
-    public getApp(reload: Boolean = false): App | undefined {
-        var _items = this._apps;
-        if (reload) {
-            _items = this.loadApps();
-        }
-        return this.getSelected<App>(_items);
-    }
-
-    public async setStage(item: Stage, save: boolean = false): Promise<boolean> {
-        item.picked = true;
-        let values = this._stages.map((value) =>{
-            value.picked = value.key === item.key;
-            return value;
-        });
-        let config = values.map((value) => value.toConfiguration());
-        this._stages = values;
-        if (save){
-            await this.configuration.update(Constants.configKeyStages, config, this.target);
-        }
+    // public async setStage(item: SelectableStage, save: boolean = false): Promise<boolean> {
+    //     item.picked = true;
+    //     let values = this._stages.map((value) =>{
+    //         value.picked = value.key === item.key;
+    //         return value;
+    //     });
+    //     let config = values.map((value) => value.toConfiguration());
+    //     this._stages = values;
+    //     if (save){
+    //         await this.configuration.update(Constants.configKeyStages, config, this.target);
+    //     }
         
-        return true;
-        // return await this.setSelected<Stage>(item, this._stages, save);
-    }
+    //     return true;
+    //     // return await this.setSelected<Stage>(item, this._stages, save);
+    // }
 
-    public getStage(reload: Boolean = false): Stage | undefined {
-        var _items = this._stages;
-        if (reload) {
-            _items = this.loadStages();
-        }
-        return this.getSelected<Stage>(_items);
-    }
+    // public getStage(reload: Boolean = false): SelectableStage | undefined {
+    //     var _items = this._stages;
+    //     if (reload) {
+    //         _items = this.loadStages();
+    //     }
+    //     return this.getSelected<SelectableStage>(_items);
+    // }
 
     /***
      * Simply get short tag from selected country and stage
@@ -237,6 +222,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
             return undefined;
         }
         let tag = `${stage?.key}${country?.key}`;
+        console.log(`getFlavorShortTag: ${tag}`);
         return tag;
     }
 
@@ -244,20 +230,20 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
      * Update launcher settings with selected app
      */
     private async updateLauncher() {
-        let stage: Stage | undefined = this.getStage();
-        let shortTag: string | undefined = this.getFlavorShortTag();
-        if (!stage || !shortTag) {
-            return;
-        }
-        let launchers: LaunchConfiguration[] | undefined = this.configuration.get<LaunchConfiguration[]>('launch.configurations', []);
-        let updated: LaunchConfiguration[] | undefined = this.configuration.get<LaunchConfiguration[]>('launch.configurations', []);
-        let program = "lib/main_" + stage.key + ".dart";
-        let args = ["--flavor", shortTag];
-        launchers.forEach((value) => {
-            value.args = args;
-            value.program = program;
-        });
-        await this.configuration.update('launch.configurations', launchers, this.target);
+        // let stage: SelectableStage | undefined = this.getStage();
+        // let shortTag: string | undefined = this.getFlavorShortTag();
+        // if (!stage || !shortTag) {
+        //     return;
+        // }
+        // let launchers: ILaunchConfiguration[] | undefined = this.configuration.get<ILaunchConfiguration[]>('launch.configurations', []);
+        // let updated: ILaunchConfiguration[] | undefined = this.configuration.get<ILaunchConfiguration[]>('launch.configurations', []);
+        // let program = "lib/main_" + stage.key + ".dart";
+        // let args = ["--flavor", shortTag];
+        // launchers.forEach((value) => {
+        //     value.args = args;
+        //     value.program = program;
+        // });
+        // await this.configuration.update('launch.configurations', launchers, this.target);
 
     }
 
@@ -266,10 +252,10 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
      * based on selected app
      */
     private async updateExclude() {
-        let exclude: {} | undefined = this.configuration.get<{}>('files.exclude', {});
-        let appExclude = this.getApp()?.exclude ?? {};
-        const newValue = { ...exclude, ...appExclude };
-        await this.configuration.update('files.exclude', newValue, this.target);
+        // let exclude: {} | undefined = this.configuration.get<{}>('files.exclude', {});
+        // let appExclude = this.getApp()?.exclude ?? {};
+        // const newValue = { ...exclude, ...appExclude };
+        // await this.configuration.update('files.exclude', newValue, this.target);
     }
 
     /***
@@ -277,50 +263,53 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
      * based on selected app
      */
     private async updateAppFolder(): Promise<boolean> {
-        const folder = this.appWorkspaceFolder;
-        const app = this.getApp();
-        if (!folder || !app) {
-            return false;
-        }
-        return vscode.workspace.updateWorkspaceFolders(0, 1, {
-            uri: vscode.Uri.joinPath(folder.uri, `../${app.key}`),
-            name: Constants.applicationFolder
-        });
+        // const folder = this.appWorkspaceFolder;
+        // const app = this.getApp();
+        // if (!folder || !app) {
+        //     return false;
+        // }
+        // return vscode.workspace.updateWorkspaceFolders(0, 1, {
+        //     uri: vscode.Uri.joinPath(folder.uri, `../${app.key}`),
+        //     name: Constants.applicationFolder
+        // });
+       return Promise.resolve(true);
     }
 
     public async apply(): Promise<boolean> {
-        let app = this.getApp();
-        let stage = this.getStage();
-        let country = this.getCountry();
-        console.log(`apply------------------`);
-        console.log(`app: ${app?.key} stage: ${stage?.key} country: ${country?.key}`);
-        console.log(this._apps);
-        console.log(this._countries);
-        console.log(this._stages);
-        if (!app || !stage || !country) {
-            this.message(undefined, new Error('not selected'), ProgressState.complete);
-            return false;
-        }
-        return await this.update(app, stage, country);
+        // let app = this.getApp();
+        // let stage = this.getStage();
+        // let country = this.getCountry();
+        // console.log(`apply------------------`);
+        // console.log(`app: ${app?.key} stage: ${stage?.key} country: ${country?.key}`);
+        // console.log(this._apps);
+        // console.log(this._countries);
+        // console.log(this._stages);
+        // if (!app || !stage || !country) {
+        //     this.message(undefined, new Error('not selected'), ProgressState.complete);
+        //     return false;
+        // }
+        // return await this.update(app, stage, country);
+        return Promise.resolve(true);
     }
 
     public async update(app: App, stage: Stage, country: Country): Promise<boolean> {
-        if (!app || !stage || !country) {
-            this.message(undefined, new Error('not selected'), ProgressState.complete);
-            return false;
-        }
-        this.message("Updating ...", undefined, ProgressState.loading);
-        await this.setApp(app, true);
-        await this.setCountry(country, true);
-        await this.setStage(stage, true);
-        await this.updateExclude();
-        await this.updateAppFolder();
-        await this.updateLauncher();
+        // if (!app || !stage || !country) {
+        //     this.message(undefined, new Error('not selected'), ProgressState.complete);
+        //     return false;
+        // }
+        // this.message("Updating ...", undefined, ProgressState.loading);
+        // await this.setApp(app, true);
+        // await this.setCountry(country, true);
+        // await this.setStage(stage, true);
+        // await this.updateExclude();
+        // await this.updateAppFolder();
+        // await this.updateLauncher();
 
-        this.message("success", undefined, ProgressState.complete);
-         this.configuration.inspect<App[]>(Constants.configKeyApps);
-         this.configuration.inspect<Country[]>(Constants.configKeyCountries);
-         this.configuration.inspect<Stage[]>(Constants.configKeyStages);
+        // this.message("success", undefined, ProgressState.complete);
+        //  this.configuration.inspect<SelectableApp[]>(Constants.configKeyApps);
+        //  this.configuration.inspect<SelectableCountry[]>(Constants.configKeyCountries);
+        //  this.configuration.inspect<SelectableStage[]>(Constants.configKeyStages);
+        // return true;
         return true;
     }
     private message(
@@ -332,7 +321,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
             message: message,
             failed: error,
             state: state,
-        } as ConfiguratorChangeEvent;
+        } as IConfiguratorChangeEvent;
         this._onDidChanged.fire(_message);
     }
 

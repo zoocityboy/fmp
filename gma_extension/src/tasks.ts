@@ -1,17 +1,21 @@
 import * as vscode from 'vscode';
-import { ProgressState, TaskChangeEvent } from './models';
+import { ITaskChangeEvent } from './interfaces/ITaskChangeEvent';
+import { ProgressState } from './models/ProgressState';
 export class FlavorTasks {
     private rootWorkspaceFolder: vscode.WorkspaceFolder | undefined;
-    private _onDidChanged: vscode.EventEmitter<TaskChangeEvent>;
+    private _onDidChanged: vscode.EventEmitter<ITaskChangeEvent>;
+
     constructor(workspaceFolder: vscode.WorkspaceFolder | undefined) {
         this.rootWorkspaceFolder = workspaceFolder;
-        this._onDidChanged = new vscode.EventEmitter<TaskChangeEvent>();
+        this._onDidChanged = new vscode.EventEmitter<ITaskChangeEvent>();
     }
-    get onDidChanged(): vscode.Event<TaskChangeEvent> {
+    get onDidChanged(): vscode.Event<ITaskChangeEvent> {
         return this._onDidChanged.event;
     }
+
     private inProgress: boolean = false;
-    public changeFlavor(flavor: string, app: string, force: boolean = false) {
+
+    public changeFlavor(flavor: string, app: string) {
         var appPackageName = app === 'capp' ? 'self_care' : 'mapp';
 
         let task = new vscode.Task(
@@ -66,7 +70,7 @@ export class FlavorTasks {
             message: message,
             failed: error,
             state: state,
-        } as TaskChangeEvent;
+        } as ITaskChangeEvent;
         this._onDidChanged.fire(_message);
     }
 }

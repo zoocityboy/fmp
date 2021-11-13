@@ -21,4 +21,10 @@ export class Constants {
 
     static configDynamicFormsPlayground = 'gma.flavor.dynamic_forms_playground';
     static showDynamicPlaygroundCatalogCommandId = 'gma.flavor.showDynamicFormsPlayground';
+
+    /// Build Configuration
+    static gmaBuildSelectedApplication = 'gma.build.selectedApplication';
+    static gmaBuildSelectedCountry = 'gma.build.selectedCountry';
+    static gmaBuildSelectedStage = 'gma.build.selectedStage';
+
 }

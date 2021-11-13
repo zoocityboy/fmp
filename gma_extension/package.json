@@ -3,7 +3,7 @@
 	"private": true,
 	"name": "gma",
 	"displayName": "GMA Extensions",
-	"description": "GMA Extensions",
+	"description": "Settings for GMA Extension. Extension works with GMAT",
 	"repository": "http://github.com/zoocityboy/fmp",
 	"version": "1.0.0",
 	"icon": "media/images/gma_color.png",
@@ -23,7 +23,8 @@
 		"Dart-Code.flutter"
 	],
 	"categories": [
-		"Other"
+		"Other",
+		"Azure","Debuggers"
 	],
 	"activationEvents": [
 		"workspaceContains:gma.yaml",
@@ -147,8 +148,113 @@
 		],
 		"configuration": [
 			{
+				"title": "Flavor configuration",
+				"description": "This is a sample configuration",
+				"properties": {
+					"gma.list.apps": {
+						"description": "List of apps",
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"key": {
+									"type": "string",
+									"description": "Pubspec package name"
+									
+								},
+								"name": {
+									"type": "string",
+									"description": "Name of the application"
+								},
+								"description": {
+									"type": "string",
+									"description": "App Description"
+								},
+								"folder": {
+									"type": "string",
+									"description": "Folder name"
+								},
+								"selected": {
+									"type": "boolean",
+									"description": "Selected"
+								}
+							}
+						},
+						"uniqueItems": true,
+						"default": [
+							{
+								"key": "self_care",
+								"name": "Customer",
+								"description": "Application used by Customers of HCI.",
+								"folder": "capp",
+								"selected": true
+							},{
+								"key": "mapp",
+								"name": "Merchant",
+								"description": "Application used by Merchants for managing POS.",
+								"folder": "mapp",
+								"selected": false
+							}
+						]
+
+					},
+					"gma.build.selectApplication": {
+						"type": "string",
+						"description": "Apps to show in the flavor",
+						"default": "self_care",
+						"enum": [
+							"self_care",
+							"mapp"
+						],
+						"enumDescription": [
+							"Customer application well known as CAPP",
+							"Merchant application well known as MAPP"
+						],
+						"scope": "window"
+					},
+					"gma.build.selectedStage": {
+						"type": "string",
+						"description": "Stages used as flavor",
+						"default": "prod",
+						"enum": [
+							"prod",
+							"fake"
+						],
+						"enumDescription": [
+							"Production will be connected to the public APIs.",
+							"Fake will work offline, with mocked API responses."
+						],
+						"scope": "window"
+					},
+					"gma.build.selectedCountry": {
+						"type": "string",
+						"description": "App published in country",
+						"default": "in",
+						"enum": [
+							"in",
+							"vn",
+							"ph",
+							"id"
+						],
+						"enumDescription": [
+							"India",
+							"Vietnam",
+							"Philippines",
+							"Indonesia"
+						],
+						"scope": "window"
+					}
+				},
+				"default": {
+					"gma.build.selectApplication": "Customer",
+					"gma.build.selectedStage": "prod",
+					"gma.build.selectedCountry": "in"
+				}
+			},
+			{
 				"title": "GMA Studio",
 				"type": "object",
+				"order": 2,
 				"properties": {
 					"gma.flavor.apps": {
 						"type": "array",
@@ -201,6 +307,18 @@
 				"command": "gma.build_runner.terminate",
 				"title": "terminate",
 				"icon": "$(debug-stop)"
+			},
+			{
+				"category": "gma.server-runner",
+				"command": "gma.server_runner.run",
+				"title": "watch",
+				"icon": "$(debug-start)"
+			},
+			{
+				"category": "gma.server-runner",
+				"command": "gma.server_runner.stop",
+				"title": "terminate",
+				"icon": "$(debug-stop)"
 			}
 		],
 		"viewsContainers": {
@@ -208,7 +326,8 @@
 				{
 					"id": "gma-activity",
 					"title": "GMA Tools",
-					"icon": "media/images/koyal_icon.svg"
+					"icon": "media/images/koyal_icon.svg",
+					"order": 1
 				}
 			],
 			"panel": [
@@ -222,14 +341,38 @@
 		"views": {
 			"gma-activity": [
 				{
-					"id": "gma_web_servers_view",
-					"name": "Servers",
-					"contextualTitle": "Servers"
+					"id": "gma_web_servers_view1",
+					"name": "Flutter Web App",
+					"contextualTitle": "Flutter Web App",
+					"type": "tree"
 				},
 				{
 					"id": "gma_build_runner_view",
 					"name": "Project build runners",
 					"type": "tree"
+				}
+			],
+			"explorer": [
+				{
+					"id": "_gma_web_servers_view",
+					"name": "GMA Explorer",
+					"contextualTitle": "GMA Explorer",
+					"type": "tree",
+					"order": 0
+				},
+				{
+					"id": "_gma_web_servers_view_a",
+					"name": "Documentation",
+					"contextualTitle": "GMA Documentation",
+					"type": "tree",
+					"order": 1
+				},
+				{
+					"id": "_gma_web_servers_view_b",
+					"name": "CI/CD",
+					"contextualTitle": "Shared Azure Pipelines",
+					"type": "tree",
+					"order": 2
 				}
 			]
 		},
@@ -267,6 +410,16 @@
 				{
 					"command": "gma.build_runner.build",
 					"when": "view == gma_build_runner_view && viewItem == file",
+					"group": "inline"
+				},
+				{
+					"command": "gma.server_runner.run",
+					"when": "view == gma_web_servers_view",
+					"group": "inline"
+				},
+				{
+					"command": "gma.server_runner.stop",
+					"when": "view == gma_web_servers_view",
 					"group": "inline"
 				}
 			]

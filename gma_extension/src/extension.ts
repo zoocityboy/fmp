@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
 import { WorkspaceConfigurator } from './configuration';
-import { ProgressState } from './models';
 import { FlavorTasks } from './tasks';
 import { WidgetCatalogPanel } from './panel/widget_catalog_panel';
 import { DynamicPlaygroundPanel } from './panel/dynamic_forms_panel';
 import { Constants } from './constants';
 import { multiStepInput } from './flavor/flavor_picker';
 import { registerBuildRunner } from './build_runner/build_runner';
+import { ProgressState } from './models/ProgressState';
 let statusBarItem: vscode.StatusBarItem;
 let progressStatusBarItem: vscode.StatusBarItem;
 let flavorConfig: WorkspaceConfigurator;
@@ -143,16 +143,16 @@ export async function runUpdateFlavor(context: vscode.ExtensionContext, force: b
 	if (shortTag !== undefined && app !== undefined) {
 		updateProgressStatusBarItem(ProgressState.loading, "Change flavor started.");
 		flavorConfig.isChangeTriggerFromExtension = true;
-		flavorTask.changeFlavor(shortTag, app.key, force);
+		flavorTask.changeFlavor(shortTag, app.key);
 	}
 }
 
 async function updateStatusBarItem() {
 	statusBarItem.text = '....';
-	const app = flavorConfig.getApp(true);
-	const stage = flavorConfig.getStage(true);
-	const country = flavorConfig.getCountry(true);
-	console.log(`updateStatusBarItem: $(globe~spin) ${country?.label ?? ''} ${app?.label ?? ''} app in ${stage?.label ?? ''}`);
+	const app = flavorConfig.getApp();
+	const stage = flavorConfig.getStage();
+	const country = flavorConfig.getCountry();
+	console.log(`updateStatusBarItem: $(globe~spin) ${country?.key ?? ''} ${app?.key ?? ''} app in ${stage?.key ?? ''}`);
 	statusBarItem.text = `$(globe~spin) ${country?.label ?? ''} ${app?.label ?? ''} app in ${stage?.label ?? ''}`;
 	statusBarItem.show();
 
