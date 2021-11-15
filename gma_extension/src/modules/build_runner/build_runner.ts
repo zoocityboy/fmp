@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { scanFile as scanFilesystem } from './build_runner_files';
 import { Process } from './build_runner_process';
 import { NestTreeItem, NestTreeProvider } from './build_runner_tree';
-import { TreeModel } from './models/pubspec';
+import { TreeModel } from '../../models/dto/pubspec';
 export async function registerBuildRunner(context: vscode.ExtensionContext,) {
 
     vscode.window.registerTreeDataProvider('gma_build_runner_view', NestTreeProvider.instance);

@@ -151,54 +151,7 @@
 				"title": "Flavor configuration",
 				"description": "This is a sample configuration",
 				"properties": {
-					"gma.list.apps": {
-						"description": "List of apps",
-						"type": "array",
-						"items": {
-							"type": "object",
-							"properties": {
-								"key": {
-									"type": "string",
-									"description": "Pubspec package name"
-									
-								},
-								"name": {
-									"type": "string",
-									"description": "Name of the application"
-								},
-								"description": {
-									"type": "string",
-									"description": "App Description"
-								},
-								"folder": {
-									"type": "string",
-									"description": "Folder name"
-								},
-								"selected": {
-									"type": "boolean",
-									"description": "Selected"
-								}
-							}
-						},
-						"uniqueItems": true,
-						"default": [
-							{
-								"key": "self_care",
-								"name": "Customer",
-								"description": "Application used by Customers of HCI.",
-								"folder": "capp",
-								"selected": true
-							},{
-								"key": "mapp",
-								"name": "Merchant",
-								"description": "Application used by Merchants for managing POS.",
-								"folder": "mapp",
-								"selected": false
-							}
-						]
-
-					},
-					"gma.build.selectApplication": {
+					"gma.build.selectedApplication": {
 						"type": "string",
 						"description": "Apps to show in the flavor",
 						"default": "self_care",
@@ -210,7 +163,7 @@
 							"Customer application well known as CAPP",
 							"Merchant application well known as MAPP"
 						],
-						"scope": "window"
+						"scope": "application"
 					},
 					"gma.build.selectedStage": {
 						"type": "string",
@@ -224,7 +177,7 @@
 							"Production will be connected to the public APIs.",
 							"Fake will work offline, with mocked API responses."
 						],
-						"scope": "window"
+						"scope": "application"
 					},
 					"gma.build.selectedCountry": {
 						"type": "string",
@@ -242,38 +195,13 @@
 							"Philippines",
 							"Indonesia"
 						],
-						"scope": "window"
+						"scope": "application"
 					}
 				},
 				"default": {
-					"gma.build.selectApplication": "Customer",
+					"gma.build.selectedApplication": "Customer",
 					"gma.build.selectedStage": "prod",
 					"gma.build.selectedCountry": "in"
-				}
-			},
-			{
-				"title": "GMA Studio",
-				"type": "object",
-				"order": 2,
-				"properties": {
-					"gma.flavor.apps": {
-						"type": "array",
-						"items": {
-							"type": "object"
-						}
-					},
-					"gma.flavor.stages": {
-						"type": "array",
-						"items": {
-							"type": "object"
-						}
-					},
-					"gma.flavor.countries": {
-						"type": "array",
-						"items": {
-							"type": "object"
-						}
-					}
 				}
 			}
 		],
@@ -354,54 +282,65 @@
 			],
 			"explorer": [
 				{
-					"id": "_gma_web_servers_view",
-					"name": "GMA Explorer",
-					"contextualTitle": "GMA Explorer",
-					"type": "tree",
-					"order": 0
+					"id": "outline-view",
+					"name": "OUTLINE",
+					"visibility": "hidden"
 				},
+
 				{
-					"id": "_gma_web_servers_view_a",
+					"id": "gma_documentation_view",
 					"name": "Documentation",
 					"contextualTitle": "GMA Documentation",
 					"type": "tree",
+					"visibility": "collapsed",
 					"order": 1
 				},
 				{
-					"id": "_gma_web_servers_view_b",
+					"id": "gma_cicd_view",
 					"name": "CI/CD",
 					"contextualTitle": "Shared Azure Pipelines",
 					"type": "tree",
+					"visibility": "collapsed",
 					"order": 2
+				},
+				{
+					"id": "gma_help_quicklinks_view",
+					"name": "Help & Quick links",
+					"contextualTitle": "Help & Quick links",
+					"type": "tree",
+					"order": 3,
+					"visibility": "visible"
 				}
 			]
 		},
-		"viewsWelcome": [
-			{
-				"view": "gma_web_servers_view",
-				"contents": "[Widget Catalog](command:gma.flavor.showCatalog)"
-			},
-			{
-				"view": "gma_web_servers_view",
-				"contents": "[Dynamic Forms Playground](command:gma.flavor.showDynamicFormsPlayground)"
-			}
-		],
 		"menus": {
 			"commandPalette": [
 				{
 					"command": "gma.build_runner.watch",
-					"when": "false"
+					"when": "false",
+					"group": "gma.build-runner",
+					"visibility": "hidden"
+
 				},
 				{
 					"command": "gma.build_runner.build",
-					"when": "false"
+					"when": "false",
+					"group": "gma.build-runner",
+					"visibility": "hidden"
 				},
 				{
 					"command": "gma.build_runner.terminate",
-					"when": "false"
+					"when": "false",
+					"group": "gma.build-runner",
+					"visibility": "hidden"
 				}
 			],
 			"view/item/context": [
+				{
+					"command": "gma.build_runner.watch",
+					"when": "viewItem == folder",
+					"group": "inline"
+				},
 				{
 					"command": "gma.build_runner.watch",
 					"when": "view == gma_build_runner_view && viewItem == file",

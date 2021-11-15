@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as yaml from 'yaml';
-import { Constants } from '../constants';
-import { PubspecModel, TreeModel } from './models/pubspec';
+import { Constants } from '../../models/constants';
+import { PubspecModel, TreeModel } from '../../models/dto/pubspec';
 
 const readYaml = async (uri: vscode.Uri) => {
     const uint8Array = await vscode.workspace.fs.readFile(uri);

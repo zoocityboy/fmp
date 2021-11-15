@@ -1,0 +1,19 @@
+[
+    {
+        "title": "Link title",
+        "url": "http://example.com",
+        "icon": "$(globe)"
+    },{
+        "title": "Link title",
+        "url": "http://example.com",
+        "icon": "$(globe)"
+    },{
+        "title": "Link title",
+        "url": "http://example.com",
+        "icon": "$(globe)"
+    },{
+        "title": "Link title",
+        "url": "http://example.com",
+        "icon": "$(globe)"
+    }
+]
