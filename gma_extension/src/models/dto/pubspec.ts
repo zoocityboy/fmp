@@ -24,5 +24,5 @@ export interface PubspecTreePubspecModel {
 export interface TreeModel {
     name: string;
     uri: vscode.Uri;
-    children?: TreeModel[];
+    children?: TreeModel[] | undefined;
 }

@@ -1,4 +1,3 @@
-import { QuickPickItem } from "vscode";
 import { App } from "../dto/app";
 import { Country } from "../dto/country";
 import { Stage } from "../dto/stage";

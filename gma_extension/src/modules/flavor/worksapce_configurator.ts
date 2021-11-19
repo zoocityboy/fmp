@@ -1,17 +1,14 @@
 
 import { Constants } from '../../models/constants';
 import * as vscode from 'vscode';
+import { Uri } from 'vscode';
 import * as fs from 'fs';
-import { IMessageEvent } from '../../models/interfaces/IMessageEvent';
-import { ProgressStatus } from '../../models/dto/ProgressState';
-import { App, listOfApps } from '../../models/dto/app';
-import { listOfStages, Stage } from '../../models/dto/stage';
-import { Country, listOfCountries } from '../../models/dto/country';
-import { IState } from '../../models/interfaces/IState';
-import { ILaunchConfiguration } from '../../models/interfaces/ILaunchConfiguration';
-import { IWorkspaceConfigurator } from '../../models/interfaces/IWorkspaceConfigurator';
+import * as path from 'path';
+
 import { ChangeFlavorTask } from './tasks';
-import * as yaml from 'yaml';
+import { YamlUtils } from '../../core/YamlUtils';
+import { IWorkspaceConfigurator, IMessageEvent, App, listOfApps, Stage, listOfStages, Country, listOfCountries, ProgressStatus, IState, IBuildSettings, ILaunchConfiguration, GmaConfigurationFile } from '../../models';
+import { basename } from 'path';
 
 /**
  * Configuration class which works over the current Workspace
@@ -19,10 +16,7 @@ import * as yaml from 'yaml';
  */
 export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     private target: vscode.ConfigurationTarget = vscode.ConfigurationTarget.Workspace;
-    private gmaYaml: any;
-
-    private appWorkspaceFolder: vscode.WorkspaceFolder | undefined;
-    public rootWorkspaceFolder: vscode.WorkspaceFolder | undefined;
+    private gmaYaml: GmaConfigurationFile | undefined;
 
     private workspaceWatcher: vscode.FileSystemWatcher | undefined;
     private configuration: vscode.WorkspaceConfiguration;
@@ -36,77 +30,94 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     private task: ChangeFlavorTask | undefined;
 
     public getApp(): App {
-        return App.fromKey(this.configuration.get<string>(Constants.gmaBuildSelectedApplication) ?? Constants.defaultAppKey);
+        return App.fromKey(this.configuration.get<string>(Constants.gmaConfigBuildSelectedApplication) ?? Constants.defaultAppKey);
     }
 
     public getCountry(): Country {
-        return Country.fromKey(this.configuration.get<string>(Constants.gmaBuildSelectedCountry) ?? Constants.defaultCountryKey);
+        return Country.fromKey(this.configuration.get<string>(Constants.gmaConfigBuildSelectedCountry) ?? Constants.defaultCountryKey);
     }
 
     public getStage(): Stage {
-        return Stage.fromKey(this.configuration.get<string>(Constants.gmaBuildSelectedStage) ?? Constants.defaultStageKey);
+        return Stage.fromKey(this.configuration.get<string>(Constants.gmaConfigBuildSelectedStage) ?? Constants.defaultStageKey);
     }
+
     getDirPath(uri: vscode.Uri) {
         return fs.statSync(uri.fsPath).isFile() ? vscode.Uri.joinPath(uri, '../').fsPath : uri.fsPath;
     }
-    private loadFromGmaYaml() {
-        const filePath = vscode.Uri.joinPath(this.rootWorkspaceFolder!.uri, 'gma.yaml').fsPath;
-        if (fs.existsSync(filePath)) {
-            try{
-                const yamlFile = fs.readFileSync(filePath, 'utf8');
-                console.log(yamlFile);
-                this.gmaYaml = yaml.parse(yamlFile);
-                let apps = this.gmaYaml.apps;
-                console.log(apps);
-            } catch (error) {
-                console.error(error);
-            }
-        } else {
-            console.log(`${filePath} not found`);
+
+    getFileFolder(uri: vscode.Uri): vscode.Uri {
+        const stats = fs.statSync(uri.fsPath);
+        if (stats.isDirectory()) {
+            return uri;
+        } else if (stats.isFile()) {
+            const dirname = path.dirname(uri.fsPath);
+            return vscode.Uri.parse(dirname);
         }
+        return uri;
+    }
+
+    getRootFolder(): vscode.Uri | undefined {
+        if (vscode.workspace.workspaceFile === undefined) {
+            console.log('No workspace opened');
+            return undefined;
+        }
+        return this.getFileFolder(vscode.workspace.workspaceFile);
+    }
+
+    getGmaYaml(): vscode.Uri | undefined {
+        const rootFolder = this.getRootFolder();
+        if (rootFolder === undefined) {
+            console.log('No workspace opened');
+            return undefined;
+        }
+        return vscode.Uri.joinPath(rootFolder, Constants.workspaceGmaYaml);
     }
 
     constructor(context: vscode.ExtensionContext) {
-        const extPackageJSON = context.extension.packageJSON;
-        
-        
+        vscode.workspace.onDidChangeWorkspaceFolders((e) => {
+            console.log(`onDidChangeWorkspaceFolders added: ${e.added}`);
+            console.log(`onDidChangeWorkspaceFolders removed: ${e.removed}`);
+        });
         this._onDidChanged = new vscode.EventEmitter<IMessageEvent>();
         this.configuration = vscode.workspace.getConfiguration();
-        this.appWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.applicationFolder);
-        this.rootWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.rootFolder);
-        ///    
-        this.loadFromGmaYaml();
-        ///
-        this.task = new ChangeFlavorTask(this.rootWorkspaceFolder);
+        const yamlTools = new YamlUtils();
+        this.gmaYaml = yamlTools.load();
+        this.apps = this.gmaYaml?.applications.map((value)=> value.asApp) ?? listOfApps;
+        const rootFolder = this.getRootFolder();
+        
+        this.task = new ChangeFlavorTask(rootFolder);
         this.task.onDidChanged((value) => {
-			console.log(`FlavorTasks: ${value.message} ${value.status} ${value.failed}`);
-			switch (value.status) {
-				case ProgressStatus.loading:
-					this.isChangeTriggerFromExtension = true;
+            console.log(`FlavorTasks: ${value.message} ${value.status} ${value.failed}`);
+            switch (value.status) {
+                case ProgressStatus.loading:
+                    this.isChangeTriggerFromExtension = true;
                     this.message(value);
-					break;
+                    break;
                 case ProgressStatus.failed:
                     this.updateWorkspace(value.value!);
                     this.message(value);
                     break;
-				case ProgressStatus.success:
+                case ProgressStatus.success:
                     this.isChangeTriggerFromExtension = false;
                     this.updateWorkspace(value.value!);
                     this.message(value);
-					break;
-			}
-		});
+                    break;
+            }
+        });
         this.runWatcher();
+
     }
+    
 
     get onDidChanged(): vscode.Event<IMessageEvent> {
         return this._onDidChanged.event;
     }
 
     private runWatcher() {
-        this.workspaceWatcher = vscode.workspace.createFileSystemWatcher(
-            '**/gma.code-workspace'
-            , false, false, false);
+        vscode.workspace.onDidChangeWorkspaceFolders(() => {
+            console.log('workspace folder changed');
+        });
+        this.workspaceWatcher = vscode.workspace.createFileSystemWatcher(Constants.workspaceFileName, false, false, false);
         this.workspaceWatcher.onDidChange(() => {
             if (!this.isChangeTriggerFromExtension) {
                 this.reload();
@@ -118,8 +129,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
 
     public reload() {
         this.configuration = vscode.workspace.getConfiguration();
-        this.appWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.applicationFolder);
-        this.rootWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.rootFolder);
+        // this.appWorkspaceFolder = vscode.workspace.workspaceFolders?.find((value) => value.name === Constants.applicationFolder);
     }
 
     public dispose() {
@@ -127,7 +137,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     }
     public async runCommand(state: IState) {
         this.isChangeTriggerFromExtension = true;
-        await this.task?.changeFlavor(state);
+        await this.task?.run(state);
     }
 
     /**
@@ -136,12 +146,18 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
      * @param state 
      */
     public async updateWorkspace(state: IState): Promise<void> {
-        await this.configuration.update(Constants.gmaBuildSelectedApplication, state.app?.key, this.target);
-        await this.configuration.update(Constants.gmaBuildSelectedCountry, state.country?.key, this.target);
-        await this.configuration.update(Constants.gmaBuildSelectedStage, state.stage?.key, this.target);
+        const inspector = vscode.workspace.getConfiguration().inspect<IBuildSettings>(Constants.gmatBuildSection);
+        await this.configuration.update(Constants.gmatBuildSection, {
+            selectedApplication: state.app?.key ?? inspector?.defaultValue?.selectedApplication ?? Constants.defaultAppKey,
+            selectedCountry: state.country?.key ?? inspector?.defaultValue?.selectedCountry ?? Constants.defaultCountryKey,
+            selectedStage: state.stage?.key ?? inspector?.defaultValue?.selectedStage ?? Constants.defaultStageKey
+        } as IBuildSettings, this.target);
         await this.updateLauncher(state);
         await this.updateAppFolder(state.app);
-        await this.updateExclude(state.app);
+        // await this.updateExclude(state.app);
+        await this.packages(state.app);
+        const inspector1 = vscode.workspace.getConfiguration().inspect(Constants.gmatBuildSection);
+        console.log(inspector1);
     }
 
     /**
@@ -165,18 +181,6 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     }
 
     /***
-     * Update excludes in workspace
-     * based on selected app
-     */
-    private async updateExclude(app: App | undefined) {
-        if (app === undefined) { return; }
-        let exclude: {} | undefined = this.configuration.get<{}>(Constants.settingsFilesExclude, {});
-        let appExclude = app.exclude ?? {};
-        const newValue = { ...exclude, ...appExclude };
-        await this.configuration.update(Constants.settingsFilesExclude, newValue, this.target);
-    }
-
-    /***
      * Override workspace Folder with Application
      * based on selected app
      */
@@ -184,17 +188,73 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         if (app === undefined) {
             return Promise.resolve(false);
         }
-        const folder = this.appWorkspaceFolder;
+        const folder = this.getRootFolder();
 
         if (!folder || !app) {
             return false;
         }
-        const updated = vscode.workspace.updateWorkspaceFolders(0, 1, {
-            uri: vscode.Uri.joinPath(folder.uri, `../${app.folder}`),
-            name: Constants.applicationFolder
-        });
+        // vscode.workspace.updateWorkspaceFolders(0, 1, {
+        //     uri: vscode.Uri.joinPath(folder, app.folder!),
+        //     name: Constants.applicationFolder
+        // });
 
     }
+
+    private async packages(app: App | undefined) {
+        if (app === undefined) { return; }
+        const rootFolder = this.getRootFolder();
+        if (rootFolder  === undefined|| app === undefined) {
+            return;
+        }
+        const exclude: string[] = [];
+        app.exclude?.forEach((value, key) => {
+            if (value) {
+                exclude.push(`!${key}`);
+            }
+        });
+        const packagePattern = exclude.join(',');
+        const fullPattern = `packages/[${packagePattern}]**/pubspec.yaml`;
+
+        const pattern = new vscode.RelativePattern(rootFolder!, fullPattern);
+        const pubspecYamls = await vscode.workspace.findFiles(pattern, '**/example/**');
+        const folders = pubspecYamls.map((value) => { return this.getFileFolder(value); });
+        const mapped: { uri: Uri, name?: string }[] = folders.filter((value) => value !== undefined).map((value) => {
+            return {
+                uri: value!,
+            } as { uri: Uri, name?: string };
+        }).sort((obj1, obj2) => {
+            if (obj1.uri.path > obj2.uri.path) {
+                return 1;
+            }
+        
+            if (obj1.uri.path < obj2.uri.path) {
+                return -1;
+            }
+        
+            return 0;
+        });
+        const _customWorkspaceFolder = vscode.workspace.getConfiguration().get<string[]>(Constants.gmaConfigCustomWorkspaceFolders) ?? [];
+        const customWorkspaceFolder = _customWorkspaceFolder.map((value) => {
+            return {
+                uri: vscode.Uri.joinPath(rootFolder!, value),
+            };
+        });
+
+        const sorted = [
+         ...mapped,
+        ...customWorkspaceFolder];
+        const add = vscode.workspace.updateWorkspaceFolders(0, vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : null, ...sorted);
+        const _folders = vscode.workspace.workspaceFolders;
+        console.log(`${_folders?.length}`);
+        // vscode.workspace.applyEdit(new vscode.WorkspaceEdit());
+
+    }
+    private sort(nodes: { uri: Uri, name?: string }[]): { uri: Uri, name?: string }[] {
+		return nodes.sort((n1, n2) => {
+			return basename(n1.uri.fsPath).localeCompare(basename(n2.uri.fsPath));
+		});
+	}
+
 
     /**
      * Private messaging method

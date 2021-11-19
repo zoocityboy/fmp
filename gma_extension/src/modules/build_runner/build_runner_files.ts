@@ -15,6 +15,7 @@ const readYaml = async (uri: vscode.Uri) => {
 };
 
 export const scanFile = async (): Promise<TreeModel[]> => {
+    // const workspaceFolders = vscode.workspace.workspaceFolders;
 
     const workspaces = vscode.workspace.workspaceFolders ?? [];
 

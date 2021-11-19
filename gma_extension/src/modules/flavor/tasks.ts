@@ -1,14 +1,15 @@
 import * as vscode from 'vscode';
-import { IState } from '../../models/interfaces/IState';
-import { IMessageEvent } from '../../models/interfaces/IMessageEvent';
-import { ProgressStatus } from '../../models/dto/ProgressState';
-import { cachedDataVersionTag } from 'v8';
+import * as os from 'os';
+import { TaskScope } from 'vscode';
+import { IMessageEvent, IState, ProgressStatus } from '../../models';
+import pidtree = require('pidtree');
 export class ChangeFlavorTask {
-    private rootWorkspaceFolder: vscode.WorkspaceFolder | undefined;
+    private rootFolder: vscode.Uri | undefined;
     private _onDidChanged: vscode.EventEmitter<IMessageEvent>;
+    private readonly tasks: vscode.TaskExecution[] = [];
 
-    constructor(workspaceFolder: vscode.WorkspaceFolder | undefined) {
-        this.rootWorkspaceFolder = workspaceFolder;
+    constructor(rootFolder: vscode.Uri | undefined) {
+        this.rootFolder = rootFolder;
         this._onDidChanged = new vscode.EventEmitter<IMessageEvent>();
     }
     get onDidChanged(): vscode.Event<IMessageEvent> {
@@ -16,20 +17,29 @@ export class ChangeFlavorTask {
     }
 
     private inProgress: boolean = false;
-
-    public async changeFlavor(value: IState) {
+    private getArguments(value: IState): string[] {
         var appPackageName = value.app?.key ?? "";
         const shortTag = `${value.stage?.key ?? ''}${value.country?.key ?? ''}`;
+        return ['flavor', appPackageName, '--change', shortTag, '--from-extension', '-v'];
+    }
 
-        let task = new vscode.Task(
-            { type: 'gma.flavor', name: 'change_flavor'},
-            this.rootWorkspaceFolder!,
-            "flavor_update",
+    private prepareTask(value: IState): vscode.Task {
+        const args = this.getArguments(value);
+        const task = new vscode.Task(
+            { type: 'gma.build', name: 'Builder'},
+            TaskScope.Workspace,
+            "Builder",
             "gmat",
+            os.platform() === 'win32' ?
+            new vscode.ProcessExecution(
+                "gmat",
+                args,
+                { cwd: this.rootFolder?.path },
+            ) :
             new vscode.ShellExecution(
                 "gmat",
-                ['flavor', appPackageName, '--change', shortTag, '--from-extension', '-v'],
-                // { cwd: this.rootWorkspaceFolder?.uri.fsPath },
+                args,
+                { cwd: this.rootFolder?.path },
             ),
             "$dart-build_runner",
 
@@ -43,14 +53,13 @@ export class ChangeFlavorTask {
         } as vscode.TaskPresentationOptions;
         task.isBackground = true;
         task.group = vscode.TaskGroup.Build;
+        return task;
+    }
 
-
-        vscode.tasks.executeTask(task).then((value) => {
-            console.log(`executeTask success: %s`, value);
-        }, (reason) => {
-            console.log(`executeTask fauked: %s`, reason);
-        });
+    public async run(value: IState) {
+        const task = this.prepareTask(value);
         vscode.tasks.onDidStartTask((data) => {
+            data.execution;
             if (this.inProgress === true) { return; }
             this.inProgress = true;
             this.message({ message: "Change flavor started.", status: ProgressStatus.loading, value: value });
@@ -64,14 +73,21 @@ export class ChangeFlavorTask {
             this.inProgress = false;
             const _data = data;
             if (data.exitCode === 0) {
-                this.message({ message: "Change flavor failed.", status: ProgressStatus.success, value: value});
+                this.message({ message: "Change flavor success.", status: ProgressStatus.success, value: value});
             } else {
                 
-                this.message({ message: "Change flavor finished.", status: ProgressStatus.failed, value: value, error: data.execution  });
+                this.message({ message: "Change flavor failed.", status: ProgressStatus.failed, value: value, error: data.execution  });
             }
         });
+        const execution = await vscode.tasks.executeTask(task);
+        this.tasks.push(execution);
     }
-
+    public dispose() {
+        if (this.tasks.length > 0) { return; }
+        this.tasks.forEach((task) => {
+            task.terminate();
+        });
+    }
 
     private message(val: {
         status: ProgressStatus,

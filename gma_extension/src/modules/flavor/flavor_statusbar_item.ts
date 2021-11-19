@@ -1,16 +1,15 @@
 import * as vscode from 'vscode';
 import { Constants } from '../../models/constants';
-import { ProgressStatus } from '../../models/dto/ProgressState';
-import { IState } from '../../models/interfaces/IState';
+import { ProgressStatus, IState } from '../../models';
 export class FlavorStatusbarItem{
     private _disposable: vscode.Disposable;
     private _statusBarItem: vscode.StatusBarItem;   
     private _status: ProgressStatus|undefined;
     constructor(context: vscode.ExtensionContext, callback: (...args: any[]) => any){
-        this._statusBarItem = vscode.window.createStatusBarItem(Constants.changeFlavorCommandId, vscode.StatusBarAlignment.Left, 99);
-        this._statusBarItem.command = Constants.changeFlavorCommandId;
+        this._statusBarItem = vscode.window.createStatusBarItem(Constants.changeAppCommandId, vscode.StatusBarAlignment.Left, 99);
+        this._statusBarItem.command = Constants.changeAppCommandId;
         
-        this._disposable = vscode.commands.registerCommand(Constants.changeFlavorCommandId, () => {
+        this._disposable = vscode.commands.registerCommand(Constants.changeAppCommandId, () => {
             callback();
         });
     
@@ -34,19 +33,19 @@ export class FlavorStatusbarItem{
             break;
             
             case ProgressStatus.failed:
-                this._statusBarItem.command = Constants.changeFlavorCommandId;
+                this._statusBarItem.command = Constants.changeAppCommandId;
                 if (val.state !== undefined) {
-                    message = `$(globe) ${val.state.country?.icon ?? ''} ${val.state.app?.label ?? ''} app in ${val.state.stage?.label ?? ''}`;
+                    message = `${val.state.country?.icon ?? ''} ${val.state.app?.label ?? ''} app in ${val.state.stage?.label ?? ''}`;
                 } else {
-                    message = `$(globe) COUNTRY APP app in STAGE`;
+                    message = `COUNTRY APP app in STAGE`;
                 }
             break;
             case ProgressStatus.success:
-                this._statusBarItem.command = Constants.changeFlavorCommandId;
+                this._statusBarItem.command = Constants.changeAppCommandId;
                 if (val.state !== undefined) {
-                    message = `$(globe) ${val.state.country?.icon ?? ''} ${val.state.app?.label ?? ''} app in ${val.state.stage?.label ?? ''}`;
+                    message = `${val.state.country?.icon ?? ''} ${val.state.app?.label ?? ''} app in ${val.state.stage?.label ?? ''}`;
                 } else {
-                    message = `$(globe) COUNTRY APP app in STAGE`;
+                    message = `COUNTRY APP app in STAGE`;
                 }
                 
             break;

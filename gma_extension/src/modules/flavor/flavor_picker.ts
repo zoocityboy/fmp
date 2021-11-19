@@ -1,12 +1,8 @@
+import { IState, BuildFlow, Country, IQuickPickParameters, App, Stage } from '../../models';
 import { WorkspaceConfigurator } from './worksapce_configurator';
-import { IQuickPickParameters } from '../../models/interfaces/IQuickPickParameters';
-import { IState } from '../../models/interfaces/IState';
-import { App } from '../../models/dto/app';
-import { BuildFlow } from '../../models/dto/BuildFlow';
-import { Country } from '../../models/dto/country';
-import { Stage } from '../../models/dto/stage';
 
-export async function buildFlowInputs( flavorConfig: WorkspaceConfigurator) {
+
+export default async function buildFlowInputs(flavorConfig: WorkspaceConfigurator) {
     const title = 'Pick application variant';
     /** 
      * Collect all tesps for the build flow
@@ -67,7 +63,7 @@ export async function buildFlowInputs( flavorConfig: WorkspaceConfigurator) {
 
         return (input: BuildFlow) => pickStage(input, state);
     }
-    
+
     /** 
      * Pick stage
      * 
@@ -86,8 +82,5 @@ export async function buildFlowInputs( flavorConfig: WorkspaceConfigurator) {
     }
 
     const state = await collectInputs();
-    console.log('FLAVOR PICKED');
-    console.log(`Picked app ${state.app?.key} ${state.country?.key} ${state.stage?.key} ${state.step} ${state.totalSteps}`);
-    
     return state;
 }

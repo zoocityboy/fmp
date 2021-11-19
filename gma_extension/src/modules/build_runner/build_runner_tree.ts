@@ -48,5 +48,5 @@ export class NestTreeItem extends vscode.TreeItem {
             }
             : undefined;
 
-    readonly tooltip = `${this.resourceUri.path}`;
+    readonly tooltip = `${this.resourceUri?.path}`;
 }

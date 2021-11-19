@@ -7,14 +7,12 @@ export class App  implements IItem {
     detail?: string | undefined;
     picked?: boolean | undefined;
     alwaysShow?: boolean | undefined;
-    ///
     key: string;
     icon?: string | undefined;
-    ///
     folder?: string | undefined;
-    exclude: Map<String,boolean>;
+    exclude?: Map<string,boolean> | undefined;
 
-    constructor(val: {key: string,icon?: string, title: string, detail?: string, picked?: boolean, alwaysShow?: boolean, folder?: string, exclude: Map<String,boolean>}) {
+    constructor(val: {key: string,icon?: string, title: string, detail?: string, picked?: boolean, alwaysShow?: boolean, folder?: string, exclude?: Map<string,boolean>,}) {
         this.key = val.key;
         this.icon = val.icon;
         this.title = val.title;
@@ -42,16 +40,20 @@ export class App  implements IItem {
     }
 }
 export const listOfApps: App[] = [
-    new App({key: "self_care", title: "Customer", detail: "Application used by Customers of HCI.",folder: "capp", exclude: new Map([
-        ["capp_*/", false,],
-          ["mapp_*/", true,],
-          ["koyal_*/", false]
-    ])}),
-    new App({key: "mapp", title: "Merchant", detail: "Application used by Merchants for managing POS.",folder: "mapp", exclude: new Map([
-        ["capp_*/", true,],
-          ["mapp_*/", false,],
-          ["koyal_*/", false]
-    ])}),
+    new App({key: "self_care", title: "Customer", detail: "Application used by Customers of HCI.",folder: "capp", 
+        exclude: new Map([
+            ["capp", false],
+            ["mapp", true],
+            ["koyal", false],
+        ])
+    },),
+    new App({key: "mapp", title: "Merchant", detail: "Application used by Merchants for managing POS.",folder: "mapp", 
+        exclude: new Map([
+            ["capp", true],
+            ["mapp", false],
+            ["koyal", false],
+        ])
+    }),
 ];
 
 export class GmaApp{

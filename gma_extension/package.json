@@ -1,13 +1,27 @@
 {
-	"publisher": "aol27cuew27wkrbzzq6djpcii6wqib6ejy3y56y2lfp2yspeiyyq",
+	"publisher": "hci",
 	"private": true,
 	"name": "gma",
 	"displayName": "GMA Extensions",
 	"description": "Settings for GMA Extension. Extension works with GMAT",
-	"repository": "http://github.com/zoocityboy/fmp",
 	"version": "1.0.0",
-	"icon": "media/images/gma_color.png",
-	"author": "Zoocityboy",
+	"icon": "https://github.com/zoocityboy/fmp/blob/main/gma_extension/media/images/gma_light.png",
+	"author": {
+		"name": "Lukas Svoboda",
+		"email": "e-lukas.svoboda@homecredit.eu"
+	},
+	"bugs": {
+		"url": "http://github.com/zoocityboy/fmp/issues",
+		"email": "sean@contoso.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git@github.com:zoocityboy/fmp.git"
+	},
+	"homepage": "https://github.com/zoocityboy/fmp/blob/main/gma_extension/README.md",
+	"extensionKind": [
+		"ui"
+	],
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -24,15 +38,16 @@
 	],
 	"categories": [
 		"Other",
-		"Azure","Debuggers"
+		"Azure",
+		"Debuggers"
 	],
 	"activationEvents": [
 		"workspaceContains:gma.yaml",
-		"workspaceContains:**/gma.yaml"
+		"onStartupFinished"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
-		"taskDefinitions": [
+		"disabled-taskDefinitions": [
 			{
 				"type": "dart",
 				"required": [
@@ -51,7 +66,7 @@
 				}
 			}
 		],
-		"walkthroughs": [
+		"disabled-walkthroughs": [
 			{
 				"id": "gma_walkthrough",
 				"title": "Getting started with GMA Project",
@@ -148,9 +163,21 @@
 		],
 		"configuration": [
 			{
-				"title": "Flavor configuration",
-				"description": "This is a sample configuration",
+				"title": "GMA",
+				"description": "Select current flavor for running.",
+				"type": "object",
 				"properties": {
+					"gma.custom.workspaceFolders": {
+						"type": "array",
+						"description": "Workspace folders to be added after app flaver changed.",
+						"items": {
+							"type": "string"
+						}
+					},
+					"gma.build": {
+						"type": "object",
+						"description": "Gma Settings placeholder"
+					},
 					"gma.build.selectedApplication": {
 						"type": "string",
 						"description": "Apps to show in the flavor",
@@ -162,8 +189,7 @@
 						"enumDescription": [
 							"Customer application well known as CAPP",
 							"Merchant application well known as MAPP"
-						],
-						"scope": "application"
+						]
 					},
 					"gma.build.selectedStage": {
 						"type": "string",
@@ -176,8 +202,7 @@
 						"enumDescription": [
 							"Production will be connected to the public APIs.",
 							"Fake will work offline, with mocked API responses."
-						],
-						"scope": "application"
+						]
 					},
 					"gma.build.selectedCountry": {
 						"type": "string",
@@ -194,8 +219,7 @@
 							"Vietnam",
 							"Philippines",
 							"Indonesia"
-						],
-						"scope": "application"
+						]
 					}
 				},
 				"default": {
@@ -207,46 +231,69 @@
 		],
 		"commands": [
 			{
-				"title": "Show Widget Catalog",
-				"shortTitle": "WidgetCatalog",
-				"command": "gma.flavor.showCatalog",
-				"category": "GMA"
+				"category": "GMA",
+				"command": "gma.commands.buildRunner.build",
+				"title": "Re-build package",
+				"description": "Build the project",
+				"icon": "$(debug-restart-frame)"
 			},
 			{
-				"title": "Show Dynamic Forms Playground",
-				"shortTitle": "Dynamic Playground",
-				"command": "gma.flavor.showDynamicPlayground",
-				"category": "GMA"
-			},
-			{
-				"category": "gma.build-runner",
-				"command": "gma.build_runner.build",
-				"title": "build",
-				"icon": "$(extensions-refresh)"
-			},
-			{
-				"category": "gma.build-runner",
-				"command": "gma.build_runner.watch",
+				"category": "GMA",
+				"command": "gma.commands.buildRunner.watch",
 				"title": "watch",
-				"icon": "$(variables-view-icon)"
+				"enablement": "false",
+				"icon": "$(wand)"
 			},
 			{
-				"category": "gma.build-runner",
-				"command": "gma.build_runner.terminate",
+				"category": "GMA",
+				"command": "gma.commands.buildRunner.terminate",
 				"title": "terminate",
+				"enablement": "false",
 				"icon": "$(debug-stop)"
 			},
 			{
-				"category": "gma.server-runner",
-				"command": "gma.server_runner.run",
-				"title": "watch",
+				"category": "GMA",
+				"command": "gma.commands.server.start",
+				"title": "Start server",
+				"enablement": "false",
 				"icon": "$(debug-start)"
 			},
 			{
-				"category": "gma.server-runner",
-				"command": "gma.server_runner.stop",
-				"title": "terminate",
+				"category": "GMA",
+				"command": "gma.commands.server.stop",
+				"title": "Stop server",
+				"enablement": "false",
 				"icon": "$(debug-stop)"
+			},
+			{
+				"category": "GMA",
+				"command": "gma.commands.explorer.addToFolders",
+				"title": "Add to workspace folders",
+				"enablement": "true",
+				"icon": "$(pencil)"
+			},
+			{
+				"category": "GMA",
+				"command": "gma.commands.explorer.addRootToFolders",
+				"title": "Add Project to workspace folders",
+				"enablement": "true",
+				"icon": "$(pencil)"
+			},
+			{
+				"category": "GMA",
+				"command": "gma.commands.commandRunner",
+				"title": "Run predefined commands",
+				"description": "Run predefined commands",
+				"enablement": "true",
+				"icon": "$(pencil)"
+			},
+			{
+				"category": "GMA",
+				"command": "dart.createProject",
+				"title": "Create new package",
+				"description": "Create new package",
+				"enablement": "true",
+				"icon": "$(settings-add)"
 			}
 		],
 		"viewsContainers": {
@@ -269,46 +316,59 @@
 		"views": {
 			"gma-activity": [
 				{
-					"id": "gma_web_servers_view1",
+					"id": "gma:views:servers",
 					"name": "Flutter Web App",
 					"contextualTitle": "Flutter Web App",
-					"type": "tree"
+					"type": "tree",
+					"order": 1
 				},
 				{
-					"id": "gma_build_runner_view",
+					"id": "gma:views:buildrunner",
 					"name": "Project build runners",
-					"type": "tree"
+					"type": "tree",
+					"order": 2
 				}
 			],
 			"explorer": [
+				
 				{
-					"id": "outline-view",
-					"name": "OUTLINE",
-					"visibility": "hidden"
+					"id": "gma:views:plugins",
+					"name": "Plugins",
+					"contextualTitle": "Plugins folder of GMA Project",
+					"type": "tree",
+					"visibility": "collapsed",
+					"order": 0
 				},
-
 				{
-					"id": "gma_documentation_view",
-					"name": "Documentation",
-					"contextualTitle": "GMA Documentation",
+					"id": "gma:views:project",
+					"name": "Project",
+					"contextualTitle": "Root folder of GMA Project",
 					"type": "tree",
 					"visibility": "collapsed",
 					"order": 1
 				},
 				{
-					"id": "gma_cicd_view",
-					"name": "CI/CD",
-					"contextualTitle": "Shared Azure Pipelines",
+					"id": "gma:views:documentation",
+					"name": "Documentation",
+					"contextualTitle": "GMA Documentation",
 					"type": "tree",
 					"visibility": "collapsed",
 					"order": 2
 				},
 				{
-					"id": "gma_help_quicklinks_view",
+					"id": "gma:views:cicd",
+					"name": "CI/CD",
+					"contextualTitle": "Shared Azure Pipelines",
+					"type": "tree",
+					"visibility": "collapsed",
+					"order": 3
+				},
+				{
+					"id": "gma:views:help",
 					"name": "Help & Quick links",
 					"contextualTitle": "Help & Quick links",
 					"type": "tree",
-					"order": 3,
+					"order": 6,
 					"visibility": "visible"
 				}
 			]
@@ -316,53 +376,88 @@
 		"menus": {
 			"commandPalette": [
 				{
-					"command": "gma.build_runner.watch",
+					"command": "gma.commands.buildRunner.watch",
+					"when": "false",
+					"group": "gma.build-runner"
+				},
+				{
+					"command": "gma.commands.buildRunner.build",
 					"when": "false",
 					"group": "gma.build-runner",
 					"visibility": "hidden"
-
 				},
 				{
-					"command": "gma.build_runner.build",
-					"when": "false",
-					"group": "gma.build-runner",
-					"visibility": "hidden"
-				},
-				{
-					"command": "gma.build_runner.terminate",
+					"command": "gma.commands.buildRunner.terminate",
 					"when": "false",
 					"group": "gma.build-runner",
 					"visibility": "hidden"
 				}
 			],
+			"touchBar": [
+				{
+					"command": "gma.commands.buildRunner.build",
+					"group": "gma",
+					"when": "resourceScheme == file && resourceFilename == pubspec.yaml",
+					"alt": ""
+				}
+			],
+			"view/title": [
+				{
+					"command": "dart.createProject",
+					"when": "view == gma:views:plugins",
+					"group": "navigation"
+				},{
+					"command": "gma.commands.explorer.addRootToFolders",
+					"when": "view == gma:views:project",
+					"group": "navigation"
+				}
+			],
+			"explorer/context": [
+				{
+					"command": "gma.commands.buildRunner.build",
+					"group": "z_commands",
+					"when": "resourceFilename == pubspec.yaml"
+				}
+			],
 			"view/item/context": [
 				{
-					"command": "gma.build_runner.watch",
-					"when": "viewItem == folder",
+					"command": "gma.commands.explorer.addToFolders",
+					"group": "gma",
+					"when": "view == gma:views:plugins && viewItem == directory"
+				},
+				{
+					"command": "gma.commands.explorer.addToFolders",
+					"group": "inline",
+					"when": "view == gma:views:plugins && viewItem == directory"
+				},
+				{
+					"command": "gma.commands.server.run",
+					"when": "view == gma:views:servers",
 					"group": "inline"
 				},
 				{
-					"command": "gma.build_runner.watch",
-					"when": "view == gma_build_runner_view && viewItem == file",
+					"command": "gma.commands.server.stop",
+					"when": "view == gma:views:servers",
 					"group": "inline"
 				},
 				{
-					"command": "gma.build_runner.build",
-					"when": "view == gma_build_runner_view && viewItem == file",
+					"command": "gma.commands.buildRunner.watch",
+					"when": "viewItem == folder && view == gma_",
 					"group": "inline"
 				},
 				{
-					"command": "gma.server_runner.run",
-					"when": "view == gma_web_servers_view",
+					"command": "gma.commands.buildRunner.watch",
+					"when": "view == gma:views:buildrunner && viewItem == file",
 					"group": "inline"
 				},
 				{
-					"command": "gma.server_runner.stop",
-					"when": "view == gma_web_servers_view",
+					"command": "gma.commands.buildRunner.build",
+					"when": "view == gma:views:buildrunner && viewItem == file",
 					"group": "inline"
 				}
 			]
-		}
+		},
+		"submenus": []
 	},
 	"scripts": {
 		"publish": "vsce publish",
@@ -375,10 +470,15 @@
 		"test": "node ./out/test/runTest.js"
 	},
 	"devDependencies": {
+		"@types/content-type": "^1.1.5",
+		"@types/follow-redirects": "^1.13.1",
 		"@types/glob": "^7.2.0",
+		"@types/mkdirp": "^1.0.2",
 		"@types/mocha": "^9.0.0",
 		"@types/node": "^16.11.7",
+		"@types/rimraf": "^3.0.2",
 		"@types/vscode": "^1.62.0",
+		"@types/yaml": "^1.9.7",
 		"@typescript-eslint/eslint-plugin": "^5.3.1",
 		"@typescript-eslint/parser": "^5.3.1",
 		"@vscode/codicons": "0.0.26",
@@ -391,7 +491,13 @@
 		"vscode-test": "^1.6.1"
 	},
 	"dependencies": {
+		"content-type": "^1.0.4",
+		"follow-redirects": "^1.14.5",
+		"glob-tree-list": "^1.0.13",
+		"mkdirp": "^1.0.4",
+		"path-list-to-tree": "^1.1.1",
 		"pidtree": "^0.5.0",
+		"rimraf": "^3.0.2",
 		"yaml": "^1.10.2"
 	}
 }
