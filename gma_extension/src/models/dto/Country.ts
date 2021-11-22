@@ -1,6 +1,11 @@
 import { QuickPickItem } from "vscode";
-import { IItem } from "../interfaces/IItem";
-
+import { IItem } from "../interfaces/i_item";
+/**
+ * QuickPickItem extension for `IItem` used by multistep selector
+ * keeps data about country item
+ * 
+ * @class Country 
+ */
 export class Country implements IItem {
     title: string;
     description?: string;

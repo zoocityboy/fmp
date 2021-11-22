@@ -1,5 +1,8 @@
 import * as vscode from "vscode";
-
+/**
+ * The pubspec.yaml file.
+ * contains only necessary keys for the extension.
+ */
 export interface PubspecModel {
     name: string;
     dependencies: {

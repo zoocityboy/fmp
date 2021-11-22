@@ -12,16 +12,18 @@ GMA Studio is not distributed throught Visual Studio Marketplace.
 
 uninstall previous version
 ```bash
-code --unistall-extension gma-studio
+code --unistall-extension hci.gma.studio
 ```
 install from command line
 ```bash
-code --install-extension gma-studio.vsix
+code --install-extension hci.gma.studio
 ```
 ### VS Code extensions
-right click on the extension and select "Install"
+right click on the extension and select "Install" and reload VSCode.
 
 ## Flavor
+You can choose between the flavors defined per applicaiont in `gma.yaml` in the root of your project.
+
 ## Explorer panel
 
 #### Flavors
@@ -41,5 +43,3 @@ Selected application is accessible from the explorer panel.
 ## Build-in Design system
 
 ## Build-in web apps
-
-

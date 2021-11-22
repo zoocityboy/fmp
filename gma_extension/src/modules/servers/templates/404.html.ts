@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 export default function(val: {webview: vscode.Webview, extensionUri: vscode.Uri, url: vscode.Uri},) {
     // Local path to css styles
-    const styleResetPath = vscode.Uri.joinPath(val.extensionUri, 'media', 'reset.css');
-    const stylesPathMainPath = vscode.Uri.joinPath(val.extensionUri, 'media', 'webview.css');
-    const scriptUriPath = vscode.Uri.joinPath(val.extensionUri, 'media', 'script.js');
+    const styleResetPath = vscode.Uri.joinPath(val.extensionUri, 'resources', 'webview', 'reset.css');
+    const stylesPathMainPath = vscode.Uri.joinPath(val.extensionUri, 'resources', 'webview', 'webview.css');
+    const scriptUriPath = vscode.Uri.joinPath(val.extensionUri, 'resources', 'webview', 'script.js');
     // Uri to load styles into webview
     const stylesResetUri = val.webview.asWebviewUri(styleResetPath);
     const stylesMainUri = val.webview.asWebviewUri(stylesPathMainPath);

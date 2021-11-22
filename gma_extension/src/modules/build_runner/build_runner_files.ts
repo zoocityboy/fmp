@@ -19,7 +19,7 @@ export const scanFile = async (): Promise<TreeModel[]> => {
 
     const workspaces = vscode.workspace.workspaceFolders ?? [];
 
-    const filtred = workspaces.filter(value => [Constants.pluginsFolder, Constants.packagesFolder].includes(value.name));
+    const filtred = workspaces.filter(value => value.name);
 
     const effectListPromises = filtred.map(async (workspace) => {
 

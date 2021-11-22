@@ -8,11 +8,7 @@ export class FlavorStatusbarItem{
     constructor(context: vscode.ExtensionContext, callback: (...args: any[]) => any){
         this._statusBarItem = vscode.window.createStatusBarItem(Constants.changeAppCommandId, vscode.StatusBarAlignment.Left, 99);
         this._statusBarItem.command = Constants.changeAppCommandId;
-        
-        this._disposable = vscode.commands.registerCommand(Constants.changeAppCommandId, () => {
-            callback();
-        });
-    
+        this._disposable = vscode.commands.registerCommand(Constants.changeAppCommandId, () => callback());
         context.subscriptions.push(this._disposable);
         
     } 

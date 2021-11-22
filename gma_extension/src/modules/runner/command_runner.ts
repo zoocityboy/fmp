@@ -1,36 +1,44 @@
-import { GmaConfigurationFile } from "../../models/dto/YamlFile";
+import { GmaConfigurationFile } from "../../models/dto/yaml_file";
 import { commands, Disposable, ExtensionContext, MessageItem, QuickPickItem, Uri, window, workspace } from "vscode";
-import { cp } from "fs";
+import * as fs from "fs";
 import path = require("node:path");
 import { Constants } from "../../models/constants";
-import { YamlUtils } from "../../core/YamlUtils";
+import { YamlUtils } from "../../core/yaml_utils";
+import * as cp from 'child_process';
 export class CommandRunner {
   private _config: GmaConfigurationFile;
   private items: RunnerPickItem[] = [];
-  static async register(context: ExtensionContext, config: GmaConfigurationFile) : Promise<CommandRunner> {
-    const runner = new CommandRunner({config: config});
-    commands.registerCommand(Constants.gmaCommandPicker, () => {
-      runner.showQuickPick();
-		});
+  private rgs: cp.ChildProcess[] = [];
+  static async register(context: ExtensionContext, config: GmaConfigurationFile): Promise<CommandRunner> {
+    const runner = new CommandRunner({ config: config });
+    context.subscriptions.push(
+      commands.registerCommand(Constants.gmaCommandPicker, () => runner.showQuickPick()),
+      // commands.registerCommand(Constants.gmaCommandTouchBarPicker, () => runner.showQuickPick()),
+    );
     return runner;
   }
-  constructor(val: {config: GmaConfigurationFile}){
+  constructor(val: { config: GmaConfigurationFile }) {
     this._config = val.config;
-    console.log(this._config.runners);
+    console.log(this._config.platformSupportedRunners);
     this.loadCommands();
   }
-  private loadCommands(){
-    try{
-    const yaml:GmaConfigurationFile | undefined = new YamlUtils().load();
-    this.items = this._config.runners?.map(runner => {
-      return {
-        label: `$(diff-added) ${runner.name}`,
-        detail: runner.run,
-        description: runner.description,
-        alwaysShow: true,
-        run: runner.run.split(" ") ?? [],
-      } as RunnerPickItem;}) ??[];
-    } catch (e){
+  private loadCommands() {
+    try {
+      const yaml: GmaConfigurationFile | undefined = new YamlUtils().load();
+      if (yaml !== undefined) {
+        this._config = yaml!;
+      }
+
+      this.items = this._config.platformSupportedRunners?.map(runner => {
+        return {
+          label: runner.name,
+          detail: `$(chevron-right) ${runner.run}`,
+          description: runner.description,
+          alwaysShow: true,
+          run: runner.run.split(" ") ?? [],
+        } as RunnerPickItem;
+      }) ?? [];
+    } catch (e) {
       window.showErrorMessage(`${e}`);
     }
 
@@ -43,7 +51,7 @@ export class CommandRunner {
         const input = window.createQuickPick<RunnerPickItem>();
         input.title = "Run predefined command";
         input.items = this.items;
-        // let rgs: cp.ChildProcess[] = [];
+        // let 
         disposables.push(
           input.onDidChangeSelection(items => {
             const item = items[0];
@@ -51,11 +59,9 @@ export class CommandRunner {
             input.hide();
           }),
           input.onDidHide(() => {
-						(async () => {
-							reject();
-						})()
-							.catch(reject);
-					}),
+            resolve(undefined);
+            input.dispose();
+          }),
           input.onDidChangeValue(value => {
             input.busy = true;
             setTimeout(() => {
@@ -120,7 +126,7 @@ export class CommandRunner {
     }
   }
 }
-interface RunnerPickItem extends QuickPickItem{
+interface RunnerPickItem extends QuickPickItem {
   label: string;
   description?: string | undefined;
   detail?: string | undefined;

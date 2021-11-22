@@ -16,7 +16,7 @@ export class LocalhostBrowserPanel {
         return {
             enableScripts: true,
             enableCommandUris: true,
-            localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')]
+            localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'resources','webview')]
         };
     }
 

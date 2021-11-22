@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as path from 'path';
 import { Constants } from "../../models/constants";
 import { GlobSync } from "glob";
-import { GlobToTree, NestTreePathItem, TreePathNode } from "../../core/GlobToTree";
+import { GlobToTree, NestTreePathItem, TreePathNode } from "../../core/glob_to_tree";
 type EventEmitterTreeItem = NestTreePathItem | undefined | void;
 class GlobTreeProvider implements vscode.TreeDataProvider<NestTreePathItem>{
     viewId: string = Constants.gmaDocumentationView;

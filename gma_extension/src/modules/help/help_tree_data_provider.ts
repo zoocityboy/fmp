@@ -8,7 +8,7 @@ export class HelpTreeProvider implements vscode.TreeDataProvider<HelpTreeItem>{
     private items: HelpTreeItem[] = [];
     private constructor(extensionUri: vscode.Uri) { 
         this._extensionUri = extensionUri;
-        const dataPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'data','help.json');
+        const dataPath = vscode.Uri.joinPath(this._extensionUri, 'resources', 'data','help.json');
         const data = fs.readFileSync(dataPath.fsPath, 'utf8');
         this.items = this.parseJson(data);
     }

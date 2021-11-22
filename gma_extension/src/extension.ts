@@ -4,16 +4,17 @@ import { LocalhostBrowserPanel } from './modules/servers/server_browser';
 import { Constants } from './models/constants';
 import buildFlowInputs from './modules/flavor/flavor_picker';
 import { registerBuildRunner } from './modules/build_runner/build_runner';
-import { ProgressStatus } from './models/dto/ProgressState';
-import { IState } from './models/interfaces/IState';
+import { ProgressStatus } from './models/dto/progress_state';
+import { IState } from './models/interfaces/i_state';
 import { FlavorStatusbarItem } from './modules/flavor/flavor_statusbar_item';
 import { HelpTreeProvider } from './modules/help/help_tree_data_provider';
 import { FileExplorer, GlobExplorer } from './modules/explorer';
 import { ServerTreeProvider } from './modules/servers/server_runner';
 import {  GmaConfigurationFile } from './models';
-import { YamlUtils } from './core/YamlUtils';
+import { YamlUtils } from './core/yaml_utils';
 import { CommandRunner } from './modules/runner/command_runner';
 import { CommandBuildTaskProvider } from './modules/runner/command_definition';
+import { CommentsService } from './modules/comments/comments';
 let flavorStatusBarItem: FlavorStatusbarItem | undefined;
 let flavorConfig: WorkspaceConfigurator;
 let isGmaWorkspace: boolean = false;
@@ -48,20 +49,7 @@ export function activate(context: vscode.ExtensionContext): void {
 			console.log(e);
 		}
 
-		registerServers(context);
-		registerBuildRunner(context);
-		registerChangeFlavorMultiStep(context);
-
-		HelpTreeProvider.register(context);
-		new GlobExplorer(context, {viewId: Constants.gmaCiCdView, pattern: Constants.gmaGlobPatternPipelines});
-		new GlobExplorer(context, {viewId: Constants.gmaDocumentationView, pattern: Constants.gmaGlobPatternDocumentation});
-		
-		ServerTreeProvider.register(context);
-		CommandRunner.register(context, configuration!);
-		tasksProvider = CommandBuildTaskProvider.register(context, flavorConfig.getRootFolder()!);
-
-		new FileExplorer(context, Constants.gmaPluginsView, 'plugins');
-		new FileExplorer(context, Constants.gmaProjectView);
+		initialization(context);
 		
 	} else {
 		console.log('Cant use GMA Studio without correct gma.code-workspace.');
@@ -69,6 +57,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	}
 
 }
+
 
 export function deactivate() {
 	if (isGmaWorkspace === true) {
@@ -80,6 +69,27 @@ export function deactivate() {
 		flavorConfig.dispose();
 
 	}
+}
+export async function initialization(context: vscode.ExtensionContext): Promise<void> {
+	try{
+		await registerServers(context);
+		await registerBuildRunner(context);
+		await registerChangeFlavorMultiStep(context);
+
+		HelpTreeProvider.register(context);
+		new GlobExplorer(context, {viewId: Constants.gmaCiCdView, pattern: Constants.gmaGlobPatternPipelines});
+		new GlobExplorer(context, {viewId: Constants.gmaDocumentationView, pattern: Constants.gmaGlobPatternDocumentation});
+		
+		ServerTreeProvider.register(context);
+		CommandRunner.register(context, configuration!);
+		tasksProvider = CommandBuildTaskProvider.register(context, flavorConfig.getRootFolder()!);
+
+		const plugins = new FileExplorer(context, Constants.gmaPluginsView, 'plugins');
+		const project = new FileExplorer(context, Constants.gmaProjectView);
+		await plugins.registerCommands(context);
+		await project.registerCommands(context);
+		// new CommentsService(context);
+	} catch (e) {}
 }
 
 export async function registerServers(context: vscode.ExtensionContext) {

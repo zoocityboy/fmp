@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import {  YamlUtils } from "../../core/YamlUtils";
+import {  YamlUtils } from "../../core/yaml_utils";
 import { Constants } from "../../models/constants";
 import {GmaAppConfiguration, GmaConfigurationFile} from "../../models";
 export class ServerTreeItem extends vscode.TreeItem{

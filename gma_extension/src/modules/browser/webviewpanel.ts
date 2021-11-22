@@ -42,7 +42,7 @@ export default class WebviewPanel {
         retainContextWhenHidden: true,
         // And restrict the webview to only loading content from our extension's `media` directory.
         localResourceRoots: [
-          vscode.Uri.file(path.join(extensionPath, 'media/'))
+          vscode.Uri.file(path.join(extensionPath, 'resources/'))
         ]
       }
     );
@@ -145,7 +145,7 @@ export default class WebviewPanel {
     // Local path to main script run in the webview
     const resourceRoot =
       webview
-        .asWebviewUri(vscode.Uri.file(path.join(this._extensionPath, 'media','browser')))
+        .asWebviewUri(vscode.Uri.file(path.join(this._extensionPath, 'resources','browser')))
         .toString() + '/';
 
     return homePage(resourceRoot, proxyUrl());

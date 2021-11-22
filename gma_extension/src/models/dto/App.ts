@@ -1,6 +1,11 @@
 import { QuickPickItem } from "vscode";
-import { IItem } from "../interfaces/IItem";
-
+import { IItem } from "../interfaces/i_item";
+/**
+ * QuickPickItem extension for `IItem` used by multistep selector
+ * keeps data about application item
+ * 
+ * @class App 
+ */
 export class App  implements IItem {
     title: string;
     description?: string;
@@ -39,6 +44,8 @@ export class App  implements IItem {
         return listOfApps.find(value => value.key === key) || listOfApps[0];
     }
 }
+
+// @Deprecated - obsolete usage, use definition from gma.yaml
 export const listOfApps: App[] = [
     new App({key: "self_care", title: "Customer", detail: "Application used by Customers of HCI.",folder: "capp", 
         exclude: new Map([

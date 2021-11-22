@@ -4,7 +4,6 @@ import * as fs from 'fs';
 import * as mkdirp from 'mkdirp';
 import * as rimraf from 'rimraf';
 import { Constants } from '../../models/constants';
-
 //#region Utilities
 
 namespace _ {
@@ -289,6 +288,7 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 			
 			return [];
 		}
+		
 		const wrkspc = this.getFileFolder(vscode.workspace.workspaceFile!);
 		const workspaceFolder = this.subfolder === undefined ? wrkspc : vscode.Uri.file(path.join(wrkspc.path, this.subfolder)); 
 		
@@ -323,34 +323,33 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 }
 
 export class FileExplorer {
+	private treeDataProvider: FileSystemProvider;
 	constructor(context: vscode.ExtensionContext, view: string, subFolderName?: string | undefined) {
-		
-		const registerCommand = (command: string, callback: (...args: any[]) => any, thisArg?: any) => {
-			vscode.commands.getCommands().then(commands => {
-				console.log(commands);
-				const collapse = commands.filter(c => c.includes('collapseAll'));	
-				const pobox = commands.filter(c => c===command);
-				const isFound = commands.find(c => c===command);
-				if (isFound === undefined) {
-					try{
-						return context.subscriptions.push(vscode.commands.registerCommand(command, callback, thisArg));
-					} catch(e) {
-						console.log(e);
-						console.log(`command: ${command} - pobox: ${pobox} isFound: ${isFound}`);
-					}
-				}
-			});
-		};
-
-		const treeDataProvider = new FileSystemProvider(subFolderName);
+		this.treeDataProvider = new FileSystemProvider(subFolderName);
 		context.subscriptions.push(
-			vscode.window.createTreeView(view, { treeDataProvider , showCollapseAll: true , canSelectMany: true }));
-
-		registerCommand(Constants.gmaCommandExplorerOpenFile, (resource) => this.openResource(resource));
-		registerCommand(Constants.gmaCommandExplorerAddToFolders, (resource) => this.addToFolders(resource.uri));
-		registerCommand(Constants.gmaCommandExplorerAddRootToFolders, (resource) => this.addRootToFolders());
-		registerCommand(Constants.gmaCommandExplorerRefresh, (resource) => treeDataProvider.refresh());
+			vscode.window.createTreeView(view, { treeDataProvider: this.treeDataProvider , showCollapseAll: true , canSelectMany: true }));
 		
+		
+	}
+	public async registerCommands(context: vscode.ExtensionContext) : Promise<void> {
+		const registerCommand = async (command: string, callback: (...args: any[]) => any, thisArg?: any) => {
+			
+			const commands = await vscode.commands.getCommands();
+			const isFound = commands.find(c => c === command);
+			if (isFound === undefined) {
+				try{
+					return context.subscriptions.push(vscode.commands.registerCommand(command, callback, thisArg));
+				} catch(e) {
+					console.log(e);
+				}
+			}
+			
+		};
+		await registerCommand(Constants.gmaCommandExplorerOpenFile, (resource) => this.openResource(resource));
+		await registerCommand(Constants.gmaCommandExplorerAddToFolders, (resource) => this.addToFolders(resource.uri));
+		await registerCommand(Constants.gmaCommandExplorerAddRootToFolders, (_) => this.addRootToFolders());
+		await registerCommand(Constants.gmaCommandExplorerRefresh, (_) => this.treeDataProvider.refresh());
+
 	}
 	
 	private openResource(resource: vscode.Uri): void {
@@ -358,35 +357,16 @@ export class FileExplorer {
 	}
 	private addToFolders(resource: vscode.Uri){
 		const stats = fs.statSync(resource.fsPath);
-		console.log(`stats: ${stats} isDirectory: ${stats.isDirectory()}`);
 		if (stats.isDirectory()) {
 			vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders!.length, 0, { uri: resource });
-			const items = vscode.workspace.getConfiguration().get<string[]>(Constants.gmaConfigCustomWorkspaceFolders) ?? [];
-			if (!items.includes(resource.fsPath)) {
-				const rootPath = path.dirname(vscode.workspace.workspaceFile!.fsPath);
-				const relative = path.relative(rootPath, resource.fsPath);
-				items.push(relative);
-				vscode.workspace.getConfiguration().update(Constants.gmaConfigCustomWorkspaceFolders, items, vscode.ConfigurationTarget.Global);
-			}
-		} else {
-			vscode.window.showErrorMessage('Please select a folder');
 		}
 	}
 	private addRootToFolders(){
 		const resource = vscode.Uri.file( path.dirname(vscode.workspace.workspaceFile!.fsPath));
 		const stats = fs.statSync(resource.fsPath);
-		console.log(`stats: ${stats} isDirectory: ${stats.isDirectory()}`);
 		if (stats.isDirectory()) {
 			vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders!.length, 0, { uri: resource });
-			const items = vscode.workspace.getConfiguration().get<string[]>(Constants.gmaConfigCustomWorkspaceFolders) ?? [];
-			if (!items.includes(resource.fsPath)) {
-				const rootPath = path.dirname(vscode.workspace.workspaceFile!.fsPath);
-				const relative = path.relative(rootPath, resource.fsPath);
-				items.push(relative);
-				vscode.workspace.getConfiguration().update(Constants.gmaConfigCustomWorkspaceFolders, items, vscode.ConfigurationTarget.Global);
-			}
-		} else {
-			vscode.window.showErrorMessage('Please select a folder');
-		}
+			
+		} 
 	}
 }

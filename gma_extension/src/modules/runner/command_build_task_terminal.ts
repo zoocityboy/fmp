@@ -1,7 +1,6 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-
 export class CustomBuildTaskTerminal implements vscode.Pseudoterminal {
 	private writeEmitter = new vscode.EventEmitter<string>();
 	onDidWrite: vscode.Event<string> = this.writeEmitter.event;

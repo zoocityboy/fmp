@@ -1,6 +1,9 @@
-import { Stage,IState } from ".";
+import { Stage,IState, GmaAppConfiguration, App } from ".";
 
-
+/**
+ * Set of constants used by the extensions.
+ * 
+ */
 export class Constants {
     /// Static files required for the app to run
     static workspaceFileName: string = 'gma.code-workspace';
@@ -49,11 +52,13 @@ export class Constants {
     static defaultCountryKey: string = "in";
 
     /// Build Configuration
-    static gmatBuildSection: string = "gma.build";
     static gmaSelectedApplication: string = "selectedApplication";
     static gmaSelectedCountry: string = "selectedCountry";
     static gmaSelectedStage: string = "selectedStage";
 
+    ///
+    static gmaConfigWorkspaceFoldersAdd: string = "gma.workspaceFolders.add";
+    static gmaConfigWorkspaceFoldersIgnore: string = "gma.workspaceFolders.ignore";
     ///
     static gmaConfigCustomWorkspaceFolders: string = "gma.custom.workspaceFolders";
     static gmaConfigBuildSelectedApplication: string = 'gma.build.selectedApplication';
@@ -73,6 +78,19 @@ export class Constants {
     }
 
     /// Glob patterns
+    static gmaGlobPatternPackages(app: App): string {
+        const exclude: string[] = [];
+        const excludeData: Map<string,boolean> = app.exclude ?? new Map<string,boolean>();
+        
+        excludeData.forEach((value, key) => {
+            if (value) {
+                exclude.push(`!${key}`);
+            }
+        });
+        const packagePattern = exclude.join(',');
+        const fullPattern = `packages/[${packagePattern}]**/pubspec.yaml`;
+        return fullPattern;
+    }
     static gmaGlobPatternDocumentation: string = '*(docs|capp|mapp|plugins)/**/*.{md,MD}';
     static gmaGlobPatternPipelines: string = '**!(dynamic_forms)/!(pubspec*|analysis_options|build).{yml,yaml}';
 }

@@ -36,7 +36,7 @@ export class BrowserPanel {
         return {
             enableScripts: true,
             enableCommandUris: true,
-            localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')]
+            localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'resources','browser')]
         };
     }
     private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
@@ -95,9 +95,9 @@ export class BrowserPanel {
 
     private _getHtmlForWebview(webview: vscode.Webview, uri: vscode.Uri) {
         // Local path to css styles
-        const styleResetPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css');
-        const stylesPathMainPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'webview.css');
-        const scriptUriPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'script.js');
+        const styleResetPath = vscode.Uri.joinPath(this._extensionUri, 'resources','browser', 'reset.css');
+        const stylesPathMainPath = vscode.Uri.joinPath(this._extensionUri, 'resources','browser', 'webview.css');
+        const scriptUriPath = vscode.Uri.joinPath(this._extensionUri, 'resources','browser', 'script.js');
         // Uri to load styles into webview
         const stylesResetUri = webview.asWebviewUri(styleResetPath);
         const stylesMainUri = webview.asWebviewUri(stylesPathMainPath);
