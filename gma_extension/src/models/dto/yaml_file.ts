@@ -96,6 +96,9 @@ export class GmaAppConfiguration {
     get commandId(): string {
         return `gma.commands.server.show.${this.packageName}`;
     }
+    get serverComandId(): string {
+        return `${this.packageName}:${this.port}`;
+    }
     get viewType(): string {
         return `gma.browser.viewType.${this.packageName}`;
     }

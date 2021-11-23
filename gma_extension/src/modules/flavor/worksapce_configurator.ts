@@ -5,10 +5,11 @@ import { Uri } from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { ChangeFlavorTask } from './tasks';
+// import { ChangeFlavorTask } from './tasks';
 import { YamlUtils } from '../../core/yaml_utils';
 import { IWorkspaceConfigurator, IMessageEvent, App, listOfApps, Stage, listOfStages, Country, listOfCountries, ProgressStatus, IState, ILaunchConfiguration, GmaConfigurationFile } from '../../models';
 import { GlobSync } from 'glob';
+import { Process } from '../../core';
 
 /**
  * Configuration class which works over the current Workspace
@@ -27,7 +28,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
     public stages: Stage[] = listOfStages;
     public countries: Country[] = listOfCountries;
 
-    private task: ChangeFlavorTask | undefined;
+    // private task: ChangeFlavorTask | undefined;
 
     public getApp(): App {
         const _key = vscode.workspace.getConfiguration().get<string>(Constants.gmaConfigBuildSelectedApplication);
@@ -78,6 +79,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
 
     constructor(context: vscode.ExtensionContext) {
         vscode.workspace.onDidChangeWorkspaceFolders((e) => {
+            console.log(`workspace folder changed added: ${e.added.length} remove: ${e.removed.length} ->  ${this.isChangeTriggerFromExtension}`);
             if (!this.isChangeTriggerFromExtension) {
                 if (e.added.length > 0) {
                     this.folderAdded(e.added as vscode.WorkspaceFolder[]);
@@ -92,30 +94,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
         const yamlTools = new YamlUtils();
         this.gmaYaml = yamlTools.load();
         this.apps = this.gmaYaml?.applications.map((value) => value.asApp) ?? listOfApps;
-        const rootFolder = this.getRootFolder();
-
-        this.task = new ChangeFlavorTask(rootFolder);
-        this.task.onDidChanged((value) => {
-            console.log(`FlavorTasks: ${value.message} ${value.status} ${value.failed}`);
-            switch (value.status) {
-                case ProgressStatus.loading:
-                    this.isChangeTriggerFromExtension = true;
-                    this.message(value);
-                    break;
-                case ProgressStatus.failed:
-                    this.updateWorkspace(value.value!);
-                    this.message(value);
-                    break;
-                case ProgressStatus.success:
-                    
-                    this.updateWorkspace(value.value!);
-                    this.isChangeTriggerFromExtension = false;
-                    this.message(value);
-                    break;
-            }
-        });
         this.runWatcher();
-
     }
 
     get onDidChanged(): vscode.Event<IMessageEvent> {
@@ -131,6 +110,7 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
             if (!this.isChangeTriggerFromExtension) {
                 this.reload();
                 this.message({ message: "success", status: ProgressStatus.success });
+                vscode.window.showInformationMessage('Workspace changed outside GMA Studio');
             }
             console.log(`workspace file did changed ${this.isChangeTriggerFromExtension}`);
         });
@@ -151,7 +131,14 @@ export class WorkspaceConfigurator implements IWorkspaceConfigurator {
      */
     public async runCommand(state: IState) {
         this.isChangeTriggerFromExtension = true;
-        await this.task?.run(state);
+        Process.instance.runChangeFlavor(state, (status) => {
+            if (status === ProgressStatus.success) {
+                this.updateWorkspace(state);
+                this.isChangeTriggerFromExtension = false;
+                this.message({ message: "Change flavor success.", status: ProgressStatus.success, value: state});
+            }
+        });
+        
     }
     /**
      * Update the workspace configuration with the new values

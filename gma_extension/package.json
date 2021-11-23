@@ -285,14 +285,12 @@
 				"category": "GMA",
 				"command": "gma.commands.server.start",
 				"title": "Start server",
-				"enablement": "false",
 				"icon": "$(debug-start)"
 			},
 			{
 				"category": "GMA",
 				"command": "gma.commands.server.stop",
 				"title": "Stop server",
-				"enablement": "false",
 				"icon": "$(debug-stop)"
 			},
 			{
@@ -455,25 +453,6 @@
 			]
 		},
 		"menus": {
-			"commandPalette": [
-				{
-					"command": "gma.commands.buildRunner.watch",
-					"when": "false",
-					"group": "gma.build-runner"
-				},
-				{
-					"command": "gma.commands.buildRunner.build",
-					"when": "false",
-					"group": "gma.build-runner",
-					"visibility": "hidden"
-				},
-				{
-					"command": "gma.commands.buildRunner.terminate",
-					"when": "false",
-					"group": "gma.build-runner",
-					"visibility": "hidden"
-				}
-			],
 			"view/title": [
 				{
 					"command": "dart.createProject",
@@ -491,6 +470,11 @@
 					"command": "gma.commands.buildRunner.build",
 					"group": "z_commands",
 					"when": "resourceFilename == pubspec.yaml"
+				},
+				{
+					"command": "gma.commands.buildRunner.watch",
+					"group": "z_commands",
+					"when": "resourceFilename == pubspec.yaml"
 				}
 			],
 			"view/item/context": [
@@ -505,18 +489,22 @@
 					"when": "view == gma:views:plugins || view == gma:views:project && viewItem == directory"
 				},
 				{
+					"command": "gma.commands.server.show",
+					"when": "view == gma:views:servers"
+				},
+				{
 					"command": "gma.commands.server.start",
-					"when": "view == gma:views:servers",
+					"when": "view == gma:views:servers && viewItem == server-stopped",
 					"group": "inline"
 				},
 				{
 					"command": "gma.commands.server.stop",
-					"when": "view == gma:views:servers",
+					"when": "view == gma:views:servers && viewItem == server-running",
 					"group": "inline"
 				},
 				{
 					"command": "gma.commands.buildRunner.watch",
-					"when": "viewItem == folder && view == gma_",
+					"when": "viewItem == folder && view == gma:views:buildrunner",
 					"group": "inline"
 				},
 				{
@@ -623,6 +611,7 @@
 	},
 	"dependencies": {
 		"content-type": "^1.0.4",
+		"crypto-js": "^4.1.1",
 		"follow-redirects": "^1.14.5",
 		"mkdirp": "^1.0.4",
 		"pidtree": "^0.5.0",

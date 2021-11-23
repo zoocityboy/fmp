@@ -34,6 +34,7 @@ export class Constants {
     static gmaCommandBuildRunnerTerminate: string = 'gma.commands.buildRunner.terminate';
     
     /// Server
+    static gmaCommandServerShow: string = 'gma.commands.server.show';
     static gmaCommandServerStart: string = 'gma.commands.server.start';
     static gmaCommandServerStop: string = 'gma.commands.server.stop';
 

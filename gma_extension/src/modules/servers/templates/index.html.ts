@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-export default function(val: {webview: vscode.Webview, extensionUri: vscode.Uri, url: vscode.Uri},) {
+import { GmaAppConfiguration } from '../../../models';
+export default function(val: {webview: vscode.Webview, extensionUri: vscode.Uri, url: vscode.Uri, app: GmaAppConfiguration},) {
     // Local path to css styles
     const styleResetPath = vscode.Uri.joinPath(val.extensionUri, 'resources','webview', 'reset.css');
     const stylesPathMainPath = vscode.Uri.joinPath(val.extensionUri, 'resources','webview', 'webview.css');
@@ -23,10 +24,7 @@ export default function(val: {webview: vscode.Webview, extensionUri: vscode.Uri,
                 style-src ${val.url} ${cspSource}; 
                 script-src ${val.url} 'nonce-${nonce}';"/>
             <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-            <meta http-equiv="cache-control" content="max-age=0" />
             <meta http-equiv="cache-control" content="no-cache" />
-            <meta http-equiv="expires" content="0" />
-            <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
             <meta http-equiv="pragma" content="no-cache" />
             <link href="${stylesResetUri}" rel="stylesheet"/>
             <link href="${stylesMainUri}" rel="stylesheet"/> 

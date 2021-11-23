@@ -2,6 +2,16 @@
 (function () {
 
     const vscode = acquireVsCodeApi();
+    function doBuild(){
+        vscode.postMessage({
+            command: 'build'
+        });
+    }
+    function doRun(){
+        vscode.postMessage({
+            command: 'run'
+        });
+    }
     window.onload = function () {
         console.log("####### iframe in webview loaded");
         document.getElementById('iframe-content').onload = (handler, event) => {

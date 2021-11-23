@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import {  YamlUtils } from "../../core/yaml_utils";
 import { Constants } from "../../models/constants";
 import {GmaAppConfiguration, GmaConfigurationFile} from "../../models";
+import { Process } from "../../core";
 export class ServerTreeItem extends vscode.TreeItem{
     public contextValue: string = 'server';
     
@@ -13,9 +14,9 @@ export class ServerTreeItem extends vscode.TreeItem{
         super(title, vscode.TreeItemCollapsibleState.None);
         this.iconPath = new vscode.ThemeIcon("globe");
         this.command = {
-            command: model.commandId,
+            command: Constants.gmaCommandServerShow,
             title: 'Open',
-            arguments: [model.url]
+            arguments: [model]
         } as vscode.Command;
     }
 }
@@ -47,6 +48,8 @@ export class ServerTreeProvider implements vscode.TreeDataProvider<ServerTreeIte
     readonly onDidChangeTreeData = this.eventEmitter.event;
 
     getTreeItem(element: ServerTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+        const isRunning = Process.instance.isServerRunning(element.model);
+        element.contextValue = isRunning ? 'server-running' : 'server-stopped';
         return Promise.resolve(element);
     }
     getChildren(element?: ServerTreeItem): vscode.ProviderResult<ServerTreeItem[]> {

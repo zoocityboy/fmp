@@ -113,3 +113,7 @@ iframe{
 	text-align: center;
 	justify-content: center;
 }
+.center{
+	margin: auto;
+	width: 50%;
+}

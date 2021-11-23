@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
+import indexPage from './modules/servers/templates/index.html';
+import errorPage from './modules/servers/templates/404.html';
 import { WorkspaceConfigurator } from './modules/flavor/worksapce_configurator';
-import { LocalhostBrowserPanel } from './modules/servers/server_browser';
 import { Constants } from './models/constants';
 import buildFlowInputs from './modules/flavor/flavor_picker';
 import { registerBuildRunner } from './modules/build_runner/build_runner';
@@ -9,17 +10,17 @@ import { IState } from './models/interfaces/i_state';
 import { FlavorStatusbarItem } from './modules/flavor/flavor_statusbar_item';
 import { HelpTreeProvider } from './modules/help/help_tree_data_provider';
 import { FileExplorer, GlobExplorer } from './modules/explorer';
-import { ServerTreeProvider } from './modules/servers/server_runner';
-import {  GmaConfigurationFile } from './models';
+import { ServerTreeItem, ServerTreeProvider } from './modules/servers/server_runner';
+import {  GmaAppConfiguration, GmaConfigurationFile } from './models';
 import { YamlUtils } from './core/yaml_utils';
 import { CommandRunner } from './modules/runner/command_runner';
-import { CommandBuildTaskProvider } from './modules/runner/command_definition';
-import { CommentsService } from './modules/comments/comments';
+import { Process } from './core';
+// import { CommandBuildTaskProvider } from './modules/runner/command_definition';
+// import { CommentsService } from './modules/comments/comments';
 let flavorStatusBarItem: FlavorStatusbarItem | undefined;
 let flavorConfig: WorkspaceConfigurator;
 let isGmaWorkspace: boolean = false;
-let tasksProvider: CommandBuildTaskProvider | undefined;
-const browsers: Map<String, LocalhostBrowserPanel> = new Map();
+const browsers: Map<String, vscode.WebviewPanel> = new Map();
 const wait = (ms: number) => new Promise(res => setTimeout(res, ms));
 let configuration: GmaConfigurationFile | undefined;
 export function activate(context: vscode.ExtensionContext): void {
@@ -31,24 +32,9 @@ export function activate(context: vscode.ExtensionContext): void {
 		console.log('Congratulations, your extension "GMA Studio" is now active!');
 		try {
 			flavorConfig = new WorkspaceConfigurator(context);
-			flavorConfig.onDidChanged((value) => {
-				console.log(value);
-				switch (value.status) {
-					case ProgressStatus.loading:
-						flavorStatusBarItem?.update({ status: value.status });
-						break;
-					case ProgressStatus.failed:
-						updateStatusBar(context);
-						break;
-					case ProgressStatus.success:
-						updateStatusBar(context, value.value);
-						break;
-				}
-			});
 		} catch (e) {
 			console.log(e);
 		}
-
 		initialization(context);
 		
 	} else {
@@ -61,7 +47,6 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export function deactivate() {
 	if (isGmaWorkspace === true) {
-		tasksProvider?.dispose();
 		browsers.forEach(browser => browser.dispose());
 		ServerTreeProvider.instance.dispose();
 		flavorStatusBarItem?.dispose();
@@ -82,41 +67,106 @@ export async function initialization(context: vscode.ExtensionContext): Promise<
 		
 		ServerTreeProvider.register(context);
 		CommandRunner.register(context, configuration!);
-		tasksProvider = CommandBuildTaskProvider.register(context, flavorConfig.getRootFolder()!);
-
 		const plugins = new FileExplorer(context, Constants.gmaPluginsView, 'plugins');
 		const project = new FileExplorer(context, Constants.gmaProjectView);
 		await plugins.registerCommands(context);
-		await project.registerCommands(context);
 		// new CommentsService(context);
 	} catch (e) {}
 }
 
 export async function registerServers(context: vscode.ExtensionContext) {
 	const servers = configuration?.apps.filter(app => app.port !== undefined) ?? [];
+	context.subscriptions.push(
+		vscode.commands.registerCommand(Constants.gmaCommandServerShow, (app) => openServer(context, app)),
+			vscode.commands.registerCommand(Constants.gmaCommandServerStart, (app) => operateServer(app, 'start')),
+			vscode.commands.registerCommand(Constants.gmaCommandServerStop, (app) => operateServer(app, 'stop')),
+	);
 	for (const app of servers) {
-		context.subscriptions.push(
-			vscode.commands.registerCommand(app.commandId, () => {
-				const exists = browsers.get(app.packageName);
-				if (exists !== undefined) {
-					exists.show();
-					return;
-				}
-				const sereverPanel = LocalhostBrowserPanel.register(context, app);
-				browsers.set(app.packageName, sereverPanel);
-			})
-		);
-		if (vscode.window.registerWebviewPanelSerializer) {
-			vscode.window.registerWebviewPanelSerializer(app.viewType, {
-				async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
-					webviewPanel.webview.options = LocalhostBrowserPanel.getWebviewOptions(context.extensionUri);
-					browsers.get(app.packageName)?.revive(webviewPanel, context.extensionUri);
-				}
-			});
-		}
+		// browsers.set(app.packageName, LocalhostBrowserPanel.register(context, app));
+		
+		// if (vscode.window.registerWebviewPanelSerializer) {
+		// 	vscode.window.registerWebviewPanelSerializer(app.viewType, {
+		// 		async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
+		// 			webviewPanel.webview.options = LocalhostBrowserPanel.getWebviewOptions(context.extensionUri);
+		// 			browsers.get(app.packageName)?.revive(webviewPanel, context.extensionUri, app);
+		// 		}
+		// 	});
+		// }
 	}
+	
 
 }
+export async function openServer(context: vscode.ExtensionContext, app: GmaAppConfiguration) {
+	const currentPanel = browsers.get(app.packageName);
+	const url = await vscode.env.asExternalUri(
+		vscode.Uri.parse(`http://localhost:${app.port}?time=${Date()}`)
+	);
+	if (currentPanel) {
+		const isRunning = Process.instance.isServerRunning(app);
+		currentPanel.webview.html = isRunning ? 
+			indexPage({webview: currentPanel.webview, extensionUri: context.extensionUri, url: url, app }) : 
+			errorPage({webview: currentPanel.webview, extensionUri: context.extensionUri, url: url , app}) ;
+		currentPanel.reveal();
+	} else {
+		const column = vscode.window.activeTextEditor
+			? vscode.window.activeTextEditor.viewColumn
+			: undefined;
+		const newPanel =vscode.window.createWebviewPanel(app.viewType, app.title, column || vscode.ViewColumn.Two, {
+            enableScripts: true,
+            enableCommandUris: true,
+            localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'resources','webview')]
+        });
+		
+		const isRunning = Process.instance.isServerRunning(app);
+		newPanel.webview.html = isRunning ? 
+			indexPage({webview: newPanel.webview, extensionUri: context.extensionUri, url: url, app }) : 
+			errorPage({webview: newPanel.webview, extensionUri: context.extensionUri, url: url, app }) ;
+		newPanel.onDidDispose(
+			() => {
+				browsers.get(app.packageName)?.dispose();
+				browsers.delete(app.packageName);
+			},
+			null,
+			context.subscriptions
+		  );
+		newPanel.onDidChangeViewState(e => {
+			if (e.webviewPanel.visible) {
+				const isRunning = Process.instance.isServerRunning(app);
+				const panel = browsers.get(app.packageName);
+				panel!.webview.html = isRunning ? 
+					indexPage({webview: panel!.webview, extensionUri: context.extensionUri, url: url, app }) : 
+					errorPage({webview: panel!.webview, extensionUri: context.extensionUri, url: url, app }) ;
+			}
+		});
+		newPanel.webview.onDidReceiveMessage(message => {
+			switch(message.command) {
+				case 'build':
+					console.log('build');
+					break;
+				case 'run':
+					console.log('run');
+					break;
+			}
+		});
+		browsers.set(app.packageName, newPanel);	
+	}
+	
+	
+}
+export async function operateServer(item: ServerTreeItem, status: 'stop' | 'start'){
+	if (status === 'stop') {
+		Process.instance.terminate(item.model.serverComandId).then(() => {
+			ServerTreeProvider.instance.refresh();
+		});
+	} else if (status === 'start') {
+		Process.instance.runServer(item.model, (_) => {
+			ServerTreeProvider.instance.refresh();
+		}, ()=> {
+			ServerTreeProvider.instance.refresh();
+		});
+	}
+}
+
 
 export async function registerChangeFlavorMultiStep(context: vscode.ExtensionContext) {
 	flavorStatusBarItem = FlavorStatusbarItem.register(context, () => {
