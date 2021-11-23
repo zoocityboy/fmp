@@ -23,19 +23,26 @@ let isGmaWorkspace: boolean = false;
 const browsers: Map<String, vscode.WebviewPanel> = new Map();
 const wait = (ms: number) => new Promise(res => setTimeout(res, ms));
 let configuration: GmaConfigurationFile | undefined;
+let isInitialized: boolean = false;
 export function activate(context: vscode.ExtensionContext): void {
 	console.log('Congratulations, activattion proces of "GMA Studio" started...');
 	isGmaWorkspace = vscode.workspace.workspaceFile?.path.endsWith(Constants.workspaceFileName) ?? false;
-	console.log(`Extension "isGmaWorkspace" ${isGmaWorkspace} is now active!`);
+	console.log(`Extension "isGmaWorkspace" ${isGmaWorkspace} is now active ${isInitialized}!`);
 	if (isGmaWorkspace) {
 		configuration = new YamlUtils().load();
-		console.log('Congratulations, your extension "GMA Studio" is now active!');
-		try {
-			flavorConfig = new WorkspaceConfigurator(context);
-		} catch (e) {
-			console.log(e);
+		if (!isInitialized){
+			console.log('Congratulations, your extension "GMA Studio" is now active!');
+			try {
+				flavorConfig = new WorkspaceConfigurator(context);
+				flavorConfig.onDidChanged((e) => {
+					console.log('Workspace configurator changed message: ${e}');
+				});
+			} catch (e) {
+				console.log(e);
+			}
+			initialization(context);
+			
 		}
-		initialization(context);
 		
 	} else {
 		console.log('Cant use GMA Studio without correct gma.code-workspace.');
@@ -70,8 +77,11 @@ export async function initialization(context: vscode.ExtensionContext): Promise<
 		const plugins = new FileExplorer(context, Constants.gmaPluginsView, 'plugins');
 		const project = new FileExplorer(context, Constants.gmaProjectView);
 		await plugins.registerCommands(context);
+		isInitialized = true;
 		// new CommentsService(context);
-	} catch (e) {}
+	} catch (e) {
+		console.log(e);
+	}
 }
 
 export async function registerServers(context: vscode.ExtensionContext) {
@@ -81,20 +91,6 @@ export async function registerServers(context: vscode.ExtensionContext) {
 			vscode.commands.registerCommand(Constants.gmaCommandServerStart, (app) => operateServer(app, 'start')),
 			vscode.commands.registerCommand(Constants.gmaCommandServerStop, (app) => operateServer(app, 'stop')),
 	);
-	for (const app of servers) {
-		// browsers.set(app.packageName, LocalhostBrowserPanel.register(context, app));
-		
-		// if (vscode.window.registerWebviewPanelSerializer) {
-		// 	vscode.window.registerWebviewPanelSerializer(app.viewType, {
-		// 		async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
-		// 			webviewPanel.webview.options = LocalhostBrowserPanel.getWebviewOptions(context.extensionUri);
-		// 			browsers.get(app.packageName)?.revive(webviewPanel, context.extensionUri, app);
-		// 		}
-		// 	});
-		// }
-	}
-	
-
 }
 export async function openServer(context: vscode.ExtensionContext, app: GmaAppConfiguration) {
 	const currentPanel = browsers.get(app.packageName);
@@ -173,16 +169,16 @@ export async function registerChangeFlavorMultiStep(context: vscode.ExtensionCon
 		console.log('flavorStatusBarItem clicked');
 		changeFlavorFlow(context);
 	});
-
+	context.subscriptions.push(
 	vscode.workspace.onDidChangeConfiguration((value) => {
 		if (value.affectsConfiguration(Constants.gmaConfigBuildSelectedApplication) || value.affectsConfiguration(Constants.gmaConfigBuildSelectedCountry) || value.affectsConfiguration(Constants.gmaConfigBuildSelectedStage)) {
 			console.log(`value: ${value}`);
 			updateStatusBar(context);
 		}
-	});
+	}));
 	updateStatusBar(context);
-	let defaultState = await getDefaultState(context);
-	runUpdateFlavor(defaultState);
+	// let defaultState = await getDefaultState(context);
+	// await runUpdateFlavor(defaultState);
 }
 
 async function getDefaultState(context: vscode.ExtensionContext): Promise<IState> {
@@ -204,7 +200,7 @@ export async function runUpdateFlavor(value?: IState | undefined) {
 	if (value === undefined) {
 		return;
 	}
-	flavorConfig.runCommand(value);
+	flavorConfig.runCommand(value);	
 
 }
 

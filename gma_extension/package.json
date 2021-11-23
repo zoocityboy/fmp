@@ -4,7 +4,7 @@
 	"name": "studio",
 	"displayName": "GMA Studio",
 	"description": "Settings for GMA Extension. Extension works with GMAT",
-	"version": "1.0.0",
+	"version": "1.0.2",
 	"icon": "resources/images/gma_light.png",
 	"author": {
 		"name": "Lukas Svoboda",
@@ -43,7 +43,8 @@
 	],
 	"activationEvents": [
 		"workspaceContains:gma.yaml",
-		"onStartupFinished"
+		"onStartupFinished",
+		"onView:gma:view:project"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -283,6 +284,13 @@
 			},
 			{
 				"category": "GMA",
+				"command": "gma.commands.server.show",
+				"title": "Show app",
+				"icon": "$(globe)",
+				"enablement": "false"
+			},
+			{
+				"category": "GMA",
 				"command": "gma.commands.server.start",
 				"title": "Start server",
 				"icon": "$(debug-start)"
@@ -401,11 +409,6 @@
 					"id": "gma:views:servers",
 					"name": "Flutter Web App",
 					"contextualTitle": "Flutter Web App",
-					"type": "tree"
-				},
-				{
-					"id": "gma:views:notes",
-					"name": "Notes",
 					"type": "tree"
 				}
 			],

@@ -43,9 +43,10 @@ export class Process {
     private getArguments(value: IState): string[] {
         var appPackageName = value.app?.key ?? "";
         const shortTag = `${value.stage?.key ?? ''}${value.country?.key ?? ''}`;
-        return ['flavor', appPackageName, '--change', shortTag, '--from-extension', '-v'];
+        return ['flavor', appPackageName, '--change', shortTag, '--no-from-extension', '-v'];
     }
-    private async processCommand(data: ProcessData, callback: (status: ProgressStatus) => void, started?:() => void) {
+    private async processCommand(data: ProcessData, callback: (status: ProgressStatus) => void, started?:() => void)  {
+    
         const command = data.command;
         const args = data.args;
         const cwd = data.commandId;
@@ -112,6 +113,7 @@ export class Process {
             await loading(message);
             output.write(message);
             callback(ProgressStatus.failed);
+            
         });
 
         process.stderr?.on('data', async (value) => {
@@ -125,17 +127,21 @@ export class Process {
             await loading(`exit ${code}`, true);
             output?.write(`exit ${code}`);
             output?.invalidate();
+            console.log('this.processes[cwd]=' + this.processes[cwd]);
             delete this.processes[cwd];
             console.log('this.processes[cwd]=' + this.processes[cwd]);
             callback(code === 0 ? ProgressStatus.success : ProgressStatus.failed);
+
         });
+        
+    
     }
 
     async runChangeFlavor(data: IState, callback: (status: ProgressStatus) => void) {
         const command = 'gmat';
         const args = this.getArguments(data);
         const commandId = 'change:flavor';
-        await this.processCommand({ name: 'changeflavor', command, args, commandId, path: this.rootPath }, callback);
+        await this.processCommand({ name: commandId, command, args, commandId, path: this.rootPath }, callback);
     }
 
     async runCommand(data: RunnerPickItem, callback: (status: ProgressStatus) => void) {
@@ -159,6 +165,7 @@ export class Process {
         const args = ['-p',data.port!.toString(), '-r', serverBuildPath];
         const commandId = data.serverComandId;
         await this.processCommand({ name: commandId, command, args, commandId , path: this.rootPath}, callback, started);
+        return;
     }
     isServerRunning(data: GmaAppConfiguration): boolean {
         return this.processes[data.serverComandId] !== undefined;
