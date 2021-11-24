@@ -1,0 +1,4 @@
+{
+    "entryPoints": ["./src/extension.ts"],
+    "out": "doc"
+}

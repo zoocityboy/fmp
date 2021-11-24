@@ -1,0 +1,44 @@
+[
+    {
+        "id": "0",
+        "name": "Mobile guilde",
+        "url": "https://teams.microsoft.com/l/channel/19%3a4d593f36c363462f9eea00a7e1f83891%40thread.tacv2/Obecn%25C3%25A9?groupId=c694b6be-4e3c-40fa-9d83-07453da3cde8&tenantId=5675d321-19d1-4c95-9684-2c28ac8f80a4",
+        "iconName": "symbol-method"
+    },
+    {
+        "id": "1",
+        "name": "External services admin contacts",
+        "url": "https://dev.azure.com/hci-iap/koyal/_wiki/wikis/GMA/293/Mobile-Apps",
+        "iconName": "symbol-property"
+    },
+    {
+        "id": "10",
+        "name": "Wiki on Azure",
+        "url": "https://dev.azure.com/hci-iap/koyal/_wiki/wikis/GMA/4/Project-dashboard",
+        "iconName": "question"
+    },
+    {
+        "id": "20",
+        "name": "Flutter developers guide book",
+        "url": "https://dev.azure.com/hci-iap/koyal/_wiki/wikis/GMA/426/FE-Chapter",
+        "iconName": "rocket"
+    },
+    {
+        "id": "40",
+        "name": "Check currently opened bugs",
+        "url": "https://dev.azure.com/hci-iap/koyal/_wiki/wikis/GMA/72/Bugs-Overview",
+        "iconName": "debug"
+    },
+    {
+        "id": "41",
+        "name": "Review pull requests",
+        "url": "https://dev.azure.com/hci-iap/koyal/_git/self-care-mobile/pullrequests?_a=mine",
+        "iconName": "issue-opened"
+    },
+    {
+        "id": "42",
+        "name": "Report bug in Azure Board",
+        "url": "https://dev.azure.com/hci-iap/koyal/_workitems/create/Bug",
+        "iconName": "report"
+    }
+]

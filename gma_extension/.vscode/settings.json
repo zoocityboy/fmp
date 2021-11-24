@@ -5,5 +5,30 @@
     "search.exclude": {
         "out": true /// set this to false to include "out" folder in search results
     },
-    "typescript.tsc.autoDetect": "on"
+    "typescript.tsc.autoDetect": "off",
+    "cSpell.words": [
+        "capp",
+        "codicons",
+        "cpid",
+        "fakein",
+        "filtred",
+        "iframes",
+        "koyal",
+        "mapp",
+        "newworkspace",
+        "numid",
+        "Objs",
+        "pids",
+        "pidtree",
+        "prodvn",
+        "Pseudoterminal",
+        "pubspec",
+        "tskill",
+        "untrusted",
+        "uups",
+        "walkthrough",
+        "walkthroughs",
+        "widgetcatalog",
+        "Zoocityboy"
+    ]
 }

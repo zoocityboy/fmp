@@ -1,0 +1,103 @@
+name: GMA
+description: | 
+  Multi-package manager for GMA project.
+  
+apps:
+  - package_name: self_care
+    title: Customer  
+    description: Application used by Customers of HCI.
+    version: 0.2.22
+    folder: capp
+    stages:
+      - fake
+      - prod
+    countries:
+      - in
+      - vn
+      - ph
+      - id
+    exclude_packages:
+      capp: false
+      mapp: true
+      koyal: false
+    
+  - package_name: mapp
+    title: Merchant
+    description: Application used by Merchants for managing POS.
+    version: 1.0.11
+    folder: mapp
+    stages:
+      - fake
+      - prod
+    countries:
+      - in
+      - vn
+      - ph
+      - id
+    exclude_packages:
+      capp: true
+      mapp: false
+      koyal: false
+
+  - package_name: widget_catalog
+    title: Widget Catalog
+    description: Design system used by GMA Application.
+    version: 0.0.1
+    folder: widget_catalog
+    port: 9001
+
+  - package_name: dynamic_forms_playground
+    title: Dynamic Forms Playground
+    description: Dynamic forms playground
+    version: 0.0.1
+    folder: dynamic_forms_playground
+    port: 9002
+    
+packages:
+  - packages/**
+  - plugins/**
+
+runners:
+  - name: unix:install
+    run: dart compile exe plugins/gma_tooling/bin/gmat.dart -o /usr/local/bin/gmat && dart global deactivate gmat && chmod +x /usr/local/bin/gmat && gmat -h
+    description: |
+      Install as native executable.
+  - name: get:plugins
+    run: gmat pub get -f plugins/** -v
+    description: |
+      Get all plugins
+
+  - name: get:packages
+    run: gmat pub get -f packages/** -v
+    description: |
+      Get all packages
+
+  - name: get:capp_ad
+    run: gmat pub get -f packages/capp_[a-d]** -v
+    description: |
+      Run the command with filterd packages
+
+  - name: get:capp_eh
+    run: gmat pub get -f packages/capp_[e-h]** -v
+    description: |
+      Run the command with filterd packages
+
+  - name: get:capp_hz
+    run: gmat pub get -f packages/capp_[h-z]** -v
+    description: |
+      Run the command with filterd packages
+  
+  - name: capp:fakein
+    run: gmat flavor self_care --change fakein
+    description: |
+      Change Customer app flavor to fakein
+       
+  - name: capp:prodin
+    run: gmat flavor self_care --change prodin
+    description: |
+      Change Customer app flavor to prodin 
+
+  - name: refresh
+    run: gmat pub refresh
+    description: |
+      Run the command with all packages

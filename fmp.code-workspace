@@ -1,10 +1,13 @@
 {
 	"folders": [
 		{
-			"path": "gma_extension"
+			"path": "gma_tooling"
 		},
 		{
-			"path": "gma_tooling"
+			"path": "..\\y\\vschttpd"
+		},
+		{
+			"path": "gma_extension"
 		}
 	],
 	"settings": {
