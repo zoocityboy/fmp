@@ -92,6 +92,10 @@ export class Constants {
         const fullPattern = `packages/[${packagePattern}]**/pubspec.yaml`;
         return fullPattern;
     }
-    static gmaGlobPatternDocumentation: string = '*(docs|capp|mapp|plugins)/**/*.{md,MD}';
+    static gmaGlobPatternDocumentation: string = '*(docs|capp|mapp|plugins)/!(build)/*.{md,MD}';
     static gmaGlobPatternPipelines: string = '**!(dynamic_forms)/!(pubspec*|analysis_options|build).{yml,yaml}';
+
+    /// Server
+    static gmaServerRunning: string = 'gma.server-running';
+    static gmaStopedRunning: string = 'gma.server-stopped';
 }

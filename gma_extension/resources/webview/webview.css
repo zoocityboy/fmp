@@ -101,6 +101,7 @@ iframe{
   border: none;         /* Reset default border */
   height: 100vh;        /* Viewport-relative units */
   width: 100vw;
+  margin: 10%;
 }
 
 .vertical-center {
@@ -116,4 +117,5 @@ iframe{
 .center{
 	margin: auto;
 	width: 50%;
+	text-align: center;
 }

@@ -13,6 +13,7 @@ export class FlavorStatusbarItem{
         
     } 
     static register(context: vscode.ExtensionContext, callback: (...args: any[]) => any,): FlavorStatusbarItem {
+        // context.subscriptions.push(vscode.commands.registerCommand(Constants.changeAppCommandId, () => callback()));
         return new FlavorStatusbarItem(context, callback);
     }
     dispose(){

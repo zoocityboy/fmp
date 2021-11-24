@@ -15,11 +15,11 @@ export async function registerBuildRunner(context: vscode.ExtensionContext,) {
     register(Constants.gmaCommandBuildRunnerWatch, (args: NestTreeItem) => Process.instance.runBuildRunner({
         type: 'watch',
         uri: args.resourceUri,
-    },(_) => {}));
+    }));
     register(Constants.gmaCommandBuildRunnerBuild, (args: NestTreeItem) => Process.instance.runBuildRunner({
         type: 'build',
         uri: args.resourceUri,
-    },(_) => {}));
+    }));
     register(Constants.gmaCommandBuildRunnerTerminate, (args: NestTreeItem) => Process.instance.terminate(args.resourceUri.path));
 
     const nestList = await scanFilesystem();

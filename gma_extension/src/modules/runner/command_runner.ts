@@ -5,6 +5,7 @@ import { YamlUtils } from "../../core/yaml_utils";
 import { Process } from "../../core/processes";
 import { RunnerPickItem } from "../../models/interfaces/i_runner_picker";
 import { ProgressStatus } from "../../models";
+import { ServerTreeProvider } from "../servers/server_runner";
 export class CommandRunner {
   private _config: GmaConfigurationFile;
   private items: RunnerPickItem[] = [];
@@ -64,12 +65,20 @@ export class CommandRunner {
       input.show();
     }).then(item => {
       if (item !== undefined) {
-        Process.instance.runCommand(item, (status)=>{
+        Process.instance.runCommand(item).then(status => {
           if (status === ProgressStatus.success) {
             window.showInformationMessage("Command executed successfully");
           } else {
             window.showErrorMessage("Command failed");
           }
+          
+        }).catch(e => {
+          console.log(e);
+          window.showErrorMessage(`${e}`);
+
+        }).finally(() => {
+          console.log("finally");
+          ServerTreeProvider.instance.refresh();
         });
       }
       window.showInformationMessage(`${item?.run}`);

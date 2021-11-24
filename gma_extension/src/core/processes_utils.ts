@@ -28,7 +28,7 @@ export const createOutput = async (title: string, onDispose: () => void): Promis
             writeEmitter.dispose();
         },
     };
-    const terminal = vscode.window.createTerminal({ name: title, pty });
+    const terminal = vscode.window.createTerminal({ name: title, pty, color: new vscode.ThemeColor('button.background'),  });
     const id = await terminal.processId;
     const isShow = async () => {
         const activeId = await vscode.window.activeTerminal?.processId;
