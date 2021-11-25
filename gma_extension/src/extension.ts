@@ -9,34 +9,28 @@ import { IState } from './models/interfaces/i_state';
 import { FlavorStatusbarItem } from './modules/flavor/flavor_statusbar_item';
 import { HelpTreeProvider } from './modules/help/help_tree_data_provider';
 import { FileExplorer, GlobExplorer } from './modules/explorer';
-import { YamlUtils } from './core/yaml_utils';
 import { CommandRunner } from './modules/runner/command_runner';
-import { GmaConfigurationFile } from './models';
 import * as serverRunner from './modules/servers/server_runner';
+import { GmaConfig } from './modules/flavor/workspace_config';
 let flavorStatusBarItem: FlavorStatusbarItem | undefined;
 let flavorConfig: WorkspaceConfigurator;
-let isGmaWorkspace: boolean = false;
+let isGmaWorkspace = false;
 
 export const wait = (ms: number) => new Promise(res => setTimeout(res, ms));
-let configuration: GmaConfigurationFile | undefined;
-let isInitialized: boolean = false;
+let isInitialized = false;
 export function activate(context: vscode.ExtensionContext): void {
 	console.log('Congratulations, activattion proces of "GMA Studio" started...');
 	isGmaWorkspace = vscode.workspace.workspaceFile?.path.endsWith(Constants.workspaceFileName) ?? false;
 	console.log(`Extension "isGmaWorkspace" ${isGmaWorkspace} is now active ${isInitialized}!`);
 	if (isGmaWorkspace) {
-		configuration = new YamlUtils().load();
 		if (!isInitialized){
 			console.log('Congratulations, your extension "GMA Studio" is now active!');
 			try {
 				flavorConfig = new WorkspaceConfigurator(context);
-				flavorConfig.onDidChanged((e) => {
-					console.log('Workspace configurator changed message: ${e}');
-				});
 			} catch (e) {
 				console.log(e);
 			}
-			initialization(context);
+			void initialization(context);
 		}
 	} else {
 		console.log('Cant use GMA Studio without correct gma.code-workspace.');
@@ -54,21 +48,25 @@ export function deactivate() {
 
 	}
 }
-export async function initialization(context: vscode.ExtensionContext): Promise<void> {
+export async function initialization(this: any, context: vscode.ExtensionContext): Promise<void> {
 	try{
-		await registerServers(context);
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const _init = GmaConfig.instance;
 		await registerBuildRunner(context);
-		await registerChangeFlavorMultiStep(context);
+		registerChangeFlavorMultiStep(context);
 
 		HelpTreeProvider.register(context);
 		new GlobExplorer(context, {viewId: Constants.gmaCiCdView, pattern: Constants.gmaGlobPatternPipelines});
 		new GlobExplorer(context, {viewId: Constants.gmaDocumentationView, pattern: Constants.gmaGlobPatternDocumentation});
 		
 		serverRunner.activate(context);
-		CommandRunner.register(context, configuration!);
-		const plugins = new FileExplorer(context, Constants.gmaPluginsView, 'plugins');
-		const project = new FileExplorer(context, Constants.gmaProjectView);
-		await plugins.registerCommands(context);
+		
+		CommandRunner.register(context);
+		
+		FileExplorer.registerCommands(context);
+		new FileExplorer(context, Constants.gmaPluginsView, 'plugins');
+		new FileExplorer(context, Constants.gmaProjectView);
+		
 		isInitialized = true;
 		// new CommentsService(context);
 	} catch (e) {
@@ -76,35 +74,24 @@ export async function initialization(context: vscode.ExtensionContext): Promise<
 	}
 }
 
-export async function registerServers(context: vscode.ExtensionContext) {
-	// const servers = configuration?.apps.filter(app => app.port !== undefined) ?? [];
-	// context.subscriptions.push(
-	// 	vscode.commands.registerCommand(Constants.gmaCommandServerShow, (app) => openServer(context, app)),
-	// 		vscode.commands.registerCommand(Constants.gmaCommandServerStart, (app) => operateServer(app, 'start')),
-	// 		vscode.commands.registerCommand(Constants.gmaCommandServerStop, (app) => operateServer(app, 'stop')),
-	// );
-
-}
-
-export async function registerChangeFlavorMultiStep(context: vscode.ExtensionContext) {
+export function registerChangeFlavorMultiStep(context: vscode.ExtensionContext) {
 	flavorStatusBarItem = FlavorStatusbarItem.register(context, () => {
 		console.log('flavorStatusBarItem clicked');
-		changeFlavorFlow(context);
+		void changeFlavorFlow();
 	});
 	context.subscriptions.push(
-	vscode.workspace.onDidChangeConfiguration((value) => {
+	vscode.workspace.onDidChangeConfiguration( (value) => {
 		if (value.affectsConfiguration(Constants.gmaConfigBuildSelectedApplication) || value.affectsConfiguration(Constants.gmaConfigBuildSelectedCountry) || value.affectsConfiguration(Constants.gmaConfigBuildSelectedStage)) {
 			console.log(`value: ${value}`);
 			updateStatusBar(context);
-			
 		}
 	}));
 	updateStatusBar(context);
-	// let defaultState = await getDefaultState(context);
-	// await runUpdateFlavor(defaultState);
+	const defaultState = getDefaultState();
+	runUpdateFlavor(defaultState);
 }
 
-async function getDefaultState(context: vscode.ExtensionContext): Promise<IState> {
+function getDefaultState() {
 	return {
 		app: flavorConfig.getApp(),
 		country: flavorConfig.getCountry(),
@@ -114,20 +101,20 @@ async function getDefaultState(context: vscode.ExtensionContext): Promise<IState
 	} as IState;
 }
 
-export async function changeFlavorFlow(context: vscode.ExtensionContext) {
+export async function changeFlavorFlow() {
 	const result = await buildFlowInputs(flavorConfig);
-	await runUpdateFlavor(result);
+	runUpdateFlavor(result);
 }
 
-export async function runUpdateFlavor(value?: IState | undefined) {
+export function runUpdateFlavor(value?: IState | undefined) {
 	if (value === undefined) {
 		return;
 	}
-	flavorConfig.runCommand(value);	
+	void flavorConfig.runCommand(value);	
 
 }
 
-async function updateStatusBar(context: vscode.ExtensionContext, value?: IState | undefined) {
-	const defaultState = value ?? await getDefaultState(context);
+function updateStatusBar(context: vscode.ExtensionContext, value?: IState | undefined) {
+	const defaultState = value ?? getDefaultState();
 	flavorStatusBarItem?.update({ state: defaultState, status: ProgressStatus.success });
 }

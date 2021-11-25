@@ -13,10 +13,10 @@ export class HelpTreeProvider implements vscode.TreeDataProvider<HelpTreeItem>{
         this.items = this.parseJson(data);
     }
     private parseJson(json: string): HelpTreeItem[] {
-        let result: HelpTreeItem[] = [];
-        let jsonObj = JSON.parse(json);
+        const result: HelpTreeItem[] = [];
+        const jsonObj = JSON.parse(json) as HelpTreeItemData[];
         for (let i = 0; i < jsonObj.length; i++) {
-            let item:HelpTreeItemData = jsonObj[i];
+            const item: HelpTreeItemData = jsonObj[i];
             result.push(new HelpTreeItem(item.name, item));
         }
         return result;
@@ -24,10 +24,11 @@ export class HelpTreeProvider implements vscode.TreeDataProvider<HelpTreeItem>{
 
     onDidChangeTreeData?: vscode.Event<void | HelpTreeItem | null | undefined> | undefined;
     getTreeItem(element: HelpTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
-        return Promise.resolve(element);
+        return element;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getChildren(element?: HelpTreeItem): vscode.ProviderResult<HelpTreeItem[]> {
-        return Promise.resolve(this.items);
+        return this.items;
     }
     static register(context: vscode.ExtensionContext) {
         const treeDataProvider = new HelpTreeProvider(context.extensionUri);

@@ -89,7 +89,9 @@ export class BuildFlow{
 				this.current.show();
 			});
 		} finally {
-			disposables.forEach(d => d.dispose());
+			disposables.forEach(d =>{
+				d.dispose();
+			});
 		}
 	}
 }

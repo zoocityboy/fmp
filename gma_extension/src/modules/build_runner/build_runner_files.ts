@@ -1,13 +1,16 @@
 import * as vscode from 'vscode';
 import * as yaml from 'yaml';
-import { Constants } from '../../models/constants';
 import { PubspecModel, TreeModel } from '../../models/dto/pubspec';
-
+export interface IPubspecItem{
+    uri: vscode.Uri;
+    pubspec: PubspecModel | null;
+}
 const readYaml = async (uri: vscode.Uri) => {
     const uint8Array = await vscode.workspace.fs.readFile(uri);
     let json: PubspecModel | null;
     try {
-        json = yaml.parse(uint8Array.toString());
+        const data = uint8Array.toString();
+        json = yaml.parse(data) as PubspecModel;
     } catch (error) {
         json = null;
     }
@@ -15,32 +18,32 @@ const readYaml = async (uri: vscode.Uri) => {
 };
 
 export const scanFile = async (): Promise<TreeModel[]> => {
-    // const workspaceFolders = vscode.workspace.workspaceFolders;
-
     const workspaces = vscode.workspace.workspaceFolders ?? [];
 
     const filtred = workspaces.filter(value => value.name);
-
+    const getData = async (uris: vscode.Uri[]) => {
+        const pubspecObjsPromises = uris.map((uri) => readYaml(uri));
+        const pubspecObjs = await Promise.all(pubspecObjsPromises);
+        const pubspecObjs1: IPubspecItem[] = [];
+        pubspecObjs.forEach((value, index) => {
+            const data: IPubspecItem = {uri: uris[index], pubspec: value};
+            pubspecObjs1.push(data);
+        });
+        const _filtred = pubspecObjs1.filter(value => Object.keys(value.pubspec?.dev_dependencies ?? {}).includes('build_runner')).sort();
+        return _filtred;
+    };
     const effectListPromises = filtred.map(async (workspace) => {
-
         const relativePattern = new vscode.RelativePattern(workspace.uri, '**/pubspec.yaml');
         const pubspecUris = await vscode.workspace.findFiles(relativePattern);
-
-        const pubspecObjsPromises = pubspecUris.map((uri) => readYaml(uri));
-        const pubspecObjs = await Promise.all(pubspecObjsPromises);
-        const pubspecObjs1 = new Array();
-        pubspecObjs.forEach((value, index) => {
-            pubspecObjs1.push([pubspecUris[index], value]);
-        });
-        const _filtred = pubspecObjs1.filter(value => Object.keys(value[1]?.dev_dependencies ?? {}).includes('build_runner')).sort();
+        const _filtred = await getData(pubspecUris);
         const ret: TreeModel = {
             name: workspace.name,
             uri: workspace.uri,
-            children: _filtred.map((e, i) => {
+            children: _filtred.map((e) => {
                 return {
-                    name: e[1].name,
-                    uri: e[0],
-                };
+                    name: e.pubspec?.name,
+                    uri: e.uri,
+                } as TreeModel;
             }),
         };
         return ret;

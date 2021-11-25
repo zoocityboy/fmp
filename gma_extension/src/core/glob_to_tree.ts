@@ -1,5 +1,5 @@
-
 import * as vscode from 'vscode';
+
 /**
  * Node for tree view
  */
@@ -39,12 +39,9 @@ export class NestTreePathItem extends vscode.TreeItem {
  * Convert glob to tree view
  */
 export class GlobToTree{
-    constructor() {
-        
-    }
     private createNode(path: string[], tree: TreePathNode[]) {
-        var name = path.shift();
-        var idx = tree.findIndex(function (e) {
+        const name = path.shift();
+        const idx = tree.findIndex(function (e) {
             return e.name === name;
         });
         if (idx < 0) {
@@ -61,10 +58,10 @@ export class GlobToTree{
         }
     }
     public parse(data: string[]) : TreePathNode[] {
-        var tree: TreePathNode[] = [];
-        for (var i = 0; i < data.length; i++) {
-            var path = data[i];
-            var split = path.split('/');
+        const tree: TreePathNode[] = [];
+        for (let i = 0; i < data.length; i++) {
+            const path = data[i];
+            const split = path.split('/');
             this.createNode(split, tree);
         }
         return tree;

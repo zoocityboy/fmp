@@ -1,5 +1,6 @@
 
 import * as vscode from "vscode";
+
 /**
  * Help tree item for a help topic.
  * used by HelpTreeDataProvider
@@ -15,7 +16,7 @@ export class HelpTreeItem extends vscode.TreeItem{
     name: string;
     uri: vscode.Uri;
     iconName: string;
-    public contextValue: string = 'help';
+    public contextValue = 'help';
     constructor(
         label: string,
         args: HelpTreeItemData

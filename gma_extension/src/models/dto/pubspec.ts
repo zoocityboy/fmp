@@ -6,11 +6,11 @@ import * as vscode from "vscode";
 export interface PubspecModel {
     name: string;
     dependencies: {
-        [key: string]: Object | string;
+        [key: string]: object | string;
     };
     // eslint-disable-next-line @typescript-eslint/naming-convention
     dev_dependencies: {
-        [key: string]: Object | string;
+        [key: string]: object | string;
     };
 }
 

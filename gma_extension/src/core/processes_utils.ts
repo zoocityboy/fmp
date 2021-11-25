@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { wait } from '../extension';
 
 export interface OutputTaskParams {
     title: string;
@@ -21,14 +22,18 @@ export const createOutput = async (title: string, onDispose: () => void): Promis
     const writeEmitter = new vscode.EventEmitter<string>();
     const pty: vscode.Pseudoterminal = {
         onDidWrite: writeEmitter.event,
-        open() { },
+        open() { 
+            ///
+        },
         handleInput: () => invalid && terminal.dispose(),
         close() {
             onDispose?.();
             writeEmitter.dispose();
         },
+        
     };
-    const terminal = vscode.window.createTerminal({ name: title, pty, color: new vscode.ThemeColor('button.background'),  });
+    const terminal = vscode.window.createTerminal({ name: "GMA", pty, color: new vscode.ThemeColor('button.background'),  });
+    
     const id = await terminal.processId;
     const isShow = async () => {
         const activeId = await vscode.window.activeTerminal?.processId;
@@ -37,15 +42,18 @@ export const createOutput = async (title: string, onDispose: () => void): Promis
 
     return {
         id: id,
-        show: terminal.show,
-        hide: terminal.hide,
+        show: ()=> terminal.show(),
+        hide: ()=> terminal.hide(),
         isShow,
         write: (value: string) => !invalid && writeEmitter.fire(value + '\r\n'),
         activate: () => (invalid = false),
 
-        invalidate: () => {
+        invalidate: async () => {
             writeEmitter.fire('\r\n\r\nTerminal will be reused by tasks, press any key to close it.\r\n');
             invalid = true;
+            await wait(3000);
+            terminal.dispose();
+            terminal.hide();
         },
     };
 };
@@ -59,14 +67,12 @@ export const createLoading = async (title: string) => {
             title,
             cancellable: false,
         };
-        vscode.window.withProgress(option, (progress) => {
-            return new Promise<void>((stop) => {
-                const report = (message: string) => progress.report({ message });
-                resolve({
-                    report,
-                    stop: () => stop(),
-                });
+        void vscode.window.withProgress(option, (progress) => new Promise<void>((stop) => {
+            const report = (message: string) => progress.report({ message });
+            resolve({
+                report,
+                stop: () => stop(),
             });
-        });
+        }));
     });
 };

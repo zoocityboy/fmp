@@ -5,18 +5,19 @@ import { GlobSync } from "glob";
 import { GlobToTree, NestTreePathItem, TreePathNode } from "../../core/glob_to_tree";
 type EventEmitterTreeItem = NestTreePathItem | undefined | void;
 class GlobTreeProvider implements vscode.TreeDataProvider<NestTreePathItem>{
-    viewId: string = Constants.gmaDocumentationView;
-    pattern: string = '*(docs|capp|mapp|plugins)/**/*.{md,MD}';
-    items: NestTreePathItem[] = [];
-    constructor(context: vscode.ExtensionContext ,args: {viewId: string, pattern: string}) {
+    public viewId: string = Constants.gmaDocumentationView;
+    private pattern = '*(docs|capp|mapp|plugins)/**/*.{md,MD}';
+    private items: NestTreePathItem[] = [];
+    
+    constructor(args: {viewId: string, pattern: string}) {
         this.viewId = args.viewId;
         this.pattern = args.pattern;
-        this.loadData();        
+        void this.loadData();        
     }
     private async loadData(){
         const nestList = await this.scanFile(this.pattern);
         const recurse = (data: TreePathNode, parentUri: vscode.Uri): NestTreePathItem => {
-            const uri = vscode.Uri.parse(path.join(parentUri.fsPath, data.name));
+            const uri = vscode.Uri.file(path.join(parentUri.fsPath, data.name));
             return new NestTreePathItem(
                 data.name,
                 parentUri,
@@ -24,7 +25,10 @@ class GlobTreeProvider implements vscode.TreeDataProvider<NestTreePathItem>{
                 data.children?.map((e) => recurse(e, uri)),
             );
         };
-        this.items = nestList.map((e) => recurse(e, vscode.Uri.parse(path.dirname(vscode.workspace.workspaceFile!.fsPath))));
+        const workspaceFile = vscode.workspace.workspaceFile;
+        if (workspaceFile !== undefined) {
+            this.items = nestList.map((e) => recurse(e, vscode.Uri.file(path.dirname(workspaceFile.fsPath))));
+        }
         this.refresh();
     }
 
@@ -43,7 +47,7 @@ class GlobTreeProvider implements vscode.TreeDataProvider<NestTreePathItem>{
             return Promise.resolve([]);
         }
     
-        const rootDir = path.dirname(vscode.workspace.workspaceFile!.fsPath);
+        const rootDir = path.dirname(vscode.workspace.workspaceFile.fsPath);
         const files = new GlobSync(pattern,{
             cwd: rootDir,
         });
@@ -61,7 +65,7 @@ class GlobTreeProvider implements vscode.TreeDataProvider<NestTreePathItem>{
 }   
 export class GlobExplorer {
     constructor(context: vscode.ExtensionContext, args: {viewId: string, pattern: string}) {
-        const treeDataProvider = new GlobTreeProvider(context, args);
+        const treeDataProvider = new GlobTreeProvider(args);
         context.subscriptions.push(
             vscode.window.createTreeView<NestTreePathItem>(treeDataProvider.viewId, {treeDataProvider: treeDataProvider, showCollapseAll:true})
             );

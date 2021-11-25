@@ -21,7 +21,7 @@ export class MessageHandler{
         value?: IState | undefined,
         error?: Error | unknown
     }) {
-        let _message = {
+        const _message = {
             message: val.message,
             failed: val.error,
             status: val.status,

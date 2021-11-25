@@ -1,14 +1,21 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable @typescript-eslint/no-misused-promises */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import * as vscode from 'vscode';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-import pidtree = require('pidtree');
 import { createLoading, createOutput, LoadingTask, OutputTask } from './processes_utils';
 import { RunnerPickItem } from '../models/interfaces/i_runner_picker';
 import { GmaAppConfiguration, IState, ProgressStatus } from '../models';
-
+import { SpawnOptionsWithoutStdio } from 'child_process';
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+// eslint-disable-next-line no-var
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const pidtree = require('pidtree');
 interface Processes {
     [key: string]: childProcess.ChildProcess;
 }
@@ -42,11 +49,16 @@ export class Process {
 
     private processes: Processes = {};
     private outputs: Outputs = {};
-    private get rootPath() {
-        return path.dirname(vscode.workspace.workspaceFile!.fsPath);
+    private get rootPath(): string | undefined {
+        if (vscode.workspace.workspaceFile !== undefined) {
+            return path.dirname(vscode.workspace.workspaceFile.fsPath);
+        } else {
+            return undefined;
+        }
+        
     }
     private getArguments(value: IState): string[] {
-        var appPackageName = value.app?.key ?? "";
+        const appPackageName = value.app?.key ?? "";
         const shortTag = `${value.stage?.key ?? ''}${value.country?.key ?? ''}`;
         return ['flavor', appPackageName, '--change', shortTag, '--from-extension', '-v'];
     }
@@ -58,6 +70,7 @@ export class Process {
             const folder = data.path;
             this.outputs[cwd] =
                 this.outputs[cwd] ??
+                // eslint-disable-next-line @typescript-eslint/require-await
                 (await createOutput(data.name, async () => {
                     delete this.outputs[cwd];
                 }));
@@ -102,10 +115,17 @@ export class Process {
             output.write([command, ...args].join(' '));
 
             await loading([command, ...args].join(' '));
-            process = childProcess.spawn(command, args, { cwd: folder, shell: os.platform() === 'win32', stdio: 'pipe', detached: true, windowsVerbatimArguments: true });
+            process = childProcess.spawn(command, args, { 
+                cwd: folder, 
+                shell: os.platform() === 'win32', 
+                stdio: 'pipe', 
+                detached: false, 
+                windowsVerbatimArguments: false 
+            } as SpawnOptionsWithoutStdio);
             this.processes[cwd] = process;
 
-            const getMessage = (value: any) => (value.toString() as string).split('\n').join(' ');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const getMessage = (value: any) => String(value).split('\n').join(' ');
             
             process.stdout?.on('data', async (value) => {
                 const message = getMessage(value);
@@ -130,8 +150,8 @@ export class Process {
                 console.log(`on:spawn Spawned`);
                 cb?.(ProgressStatus.loading);
             });
-            process.on('close', async (code) => {
-                console.log(`on:close ${code}`);
+            process.on('close', (code) => {
+                console.log(`on:close ${code ?? ''}`);
             });
             process.on('error', async (value) => {
                 const message = getMessage(value);
@@ -143,96 +163,107 @@ export class Process {
             });
             process.on('exit', async (code) => {
                 this.processes[cwd]?.kill();
-                await loading(`exit ${code}`, true);
-                output?.write(`exit ${code}`);
+                await loading(`exit ${code ?? ''}`, true);
+                output?.write(`exit ${code ?? ''}`);
                 output?.invalidate();
-                console.log(`on:exit ${code}`);
-
-                console.log('this.processes[cwd]=' + this.processes[cwd]);
+                console.log(`on:exit ${code ?? ''}`);
                 delete this.processes[cwd];
                 cb?.(code === 0 ? ProgressStatus.success : ProgressStatus.failed);
             });
         };
 
-    public runChangeFlavor = (data: IState ) => 
-        new Promise((resolve, reject) =>{
+    public runChangeFlavor = (data: IState ) => {
+        return new Promise((resolve, reject) => {
             const command = 'gmat';
             const args = this.getArguments(data);
             const commandId = 'change:flavor';
-            this.processCommand({ name: commandId, command, args, commandId, path: this.rootPath }, (value)=>{
+            void this.processCommand({ name: commandId, command, args, commandId, path: this.rootPath ?? '' }, (value)=>{
                 switch (value) {
                     case ProgressStatus.success:
                         resolve(value);
+                        break;
                     case ProgressStatus.failed:
-                        reject(value);  
+                        reject(value);
+                        break;  
                 }
             });
-    });
+        });
+    } 
+    
     
 
-    public runCommand = (data: RunnerPickItem) => 
-    new Promise((resolve, reject) =>{
+    public runCommand = (data: RunnerPickItem) => {
+    return new Promise((resolve, reject) => {
         const command = data.run[0];
         const args = data.run.slice(1);
         const commandId = data.label;
-        this.processCommand({ name: data.label, command, args, commandId, path: this.rootPath }, (value)=>{
+        void this.processCommand({ name: data.label, command, args, commandId, path: this.rootPath ?? '' }, (value)=>{
             switch (value) {
                 case ProgressStatus.success:
                     resolve(value);
+                    break;
                 case ProgressStatus.failed:
-                    reject(value);  
+                    reject(value);
+                    break;  
             }
         });
-    });
+    });}
 
     runBuildRunner = (data: {
         type: 'watch' | 'build', uri: vscode.Uri
-    }) => 
-    new Promise((resolve, reject) =>{
+    }) =>{ 
+    return new Promise((resolve, reject) => {
         const command = 'flutter';
         const args = ['pub', 'run', 'build_runner', data.type, '--delete-conflicting-outputs'];
         const commandId = `build:${path.dirname(data.uri.fsPath)}`;
-        this.processCommand({ name: 'build', command, args, commandId, path: path.dirname(data.uri.fsPath) }, (value)=>{
+        void this.processCommand({ name: 'build', command, args, commandId, path: path.dirname(data.uri.fsPath) }, (value)=>{
             switch (value) {
                 case ProgressStatus.success:
                     resolve(value);
+                    break;
                 case ProgressStatus.failed:
-                    reject(value);  
+                    reject(value);
+                    break;  
             }
         });
-    });
-    runServer = (data: GmaAppConfiguration) => 
-        new Promise((resolve, reject) => {
-            const serverBuildPath = path.join(this.rootPath, data.folder, 'build', 'web');
+    });}
+    runServer = (data: GmaAppConfiguration) => {
+    return new Promise((resolve, reject) => {
+            const serverBuildPath = path.join(this.rootPath ??'', data.folder, 'build', 'web');
             const command = 'vschttpd';
-            const args = ['-p', data.port!.toString(), '-r', serverBuildPath];
+            const args = ['-p', data.port?.toString() ?? '', '-r', serverBuildPath];
             const commandId = data.serverComandId;
-            this.processCommand({ name: commandId, command, args, commandId, path: this.rootPath }, (value)=>{
+            void this.processCommand({ name: commandId, command, args, commandId, path: this.rootPath ?? '' }, (value)=>{
                 console.log(`default: ${ProgressStatus.default} loading: ${ProgressStatus.loading} failed: ${ProgressStatus.failed}  success: ${ProgressStatus.success}`);
                 console.log(`server ${commandId} value: ${value}`);
                 switch (value) {
                     case ProgressStatus.loading:
                         resolve(value);
+                        break;
                     case ProgressStatus.success:
                         resolve(value);
+                        break;
                     case ProgressStatus.failed:
-                        reject(value);  
+                        reject(value);
+                        break;  
                 }
             });
         
-    });
+    });}
     isServerRunning(data: GmaAppConfiguration): boolean {
         return this.processes[data.serverComandId] !== undefined;
     }
 
     async terminate(commandId: string) {
-        let cwd: string = commandId;
+        const cwd: string = commandId;
         const process = this.processes[cwd];
         if (process?.pid) {
             const isWindow = os.platform() === 'win32';
             const kill = isWindow ? 'tskill' : 'kill';
+           
             const pids = await pidtree(process.pid);
-            pids?.forEach((cpid) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            pids?.forEach((cpid:number) => {
                 childProcess.exec(`${kill} ${cpid}`);
             });
         }

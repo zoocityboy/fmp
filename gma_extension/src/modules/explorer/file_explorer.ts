@@ -1,14 +1,15 @@
+/* eslint-disable @typescript-eslint/no-namespace */
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as mkdirp from 'mkdirp';
 import * as rimraf from 'rimraf';
 import { Constants } from '../../models/constants';
+import { NestTreePathItem } from '../../core';
 //#region Utilities
 
 namespace _ {
 
-	function handleResult<T>(resolve: (result: T) => void, reject: (error: Error) => void, error: Error | null | undefined, result: T): void {
+	export function handleResult<T>(resolve: (result: T) => void, reject: (error: Error) => void, error: Error | null | undefined, result: T): void {
 		if (error) {
 			reject(massageError(error));
 		} else {
@@ -16,7 +17,7 @@ namespace _ {
 		}
 	}
 
-	function massageError(error: Error & { code?: string }): Error {
+	export function massageError(error: Error & { code?: string }): Error {
 		if (error.code === 'ENOENT') {
 			return vscode.FileSystemError.FileNotFound();
 		}
@@ -82,7 +83,7 @@ namespace _ {
 
 	export function exists(path: string): Promise<boolean> {
 		return new Promise<boolean>((resolve, reject) => {
-			fs.exists(path, exists => handleResult(resolve, reject, null, exists));
+			fs.access(path, error => handleResult(resolve, reject, error, !error));
 		});
 	}
 
@@ -94,8 +95,7 @@ namespace _ {
 
 	export function mkdir(path: string): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
-			const res = mkdirp(path);
-			// handleResult(resolve, reject, error, void 0)
+			fs.mkdir(path, error => handleResult(resolve, reject, error, void 0));
 		});
 	}
 
@@ -145,7 +145,7 @@ export class FileStat implements vscode.FileStat {
 	}
 }
 
-interface Entry {
+export interface Entry {
 	uri: vscode.Uri;
 	type: vscode.FileType;
 }
@@ -169,12 +169,16 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 	}
 
 	watch(uri: vscode.Uri, options: { recursive: boolean; excludes: string[]; }): vscode.Disposable {
+		// eslint-disable-next-line @typescript-eslint/no-misused-promises
 		const watcher = fs.watch(uri.fsPath, { recursive: options.recursive }, async (event: string, filename: string | Buffer) => {
 			const filepath = path.join(uri.fsPath, _.normalizeNFC(filename.toString()));
-			this._onDidChangeFile.fire([{
-				type: event === 'change' ? vscode.FileChangeType.Changed : await _.exists(filepath) ? vscode.FileChangeType.Created : vscode.FileChangeType.Deleted,
+			const fileExists = await _.exists(filepath) ? vscode.FileChangeType.Created : vscode.FileChangeType.Deleted;
+			const fileChangeType =  event === 'change' ? vscode.FileChangeType.Changed : fileExists;
+			const data = [{
+				type:fileChangeType,
 				uri: uri.with({ path: filepath })
-			} as vscode.FileChangeEvent]);
+			} as vscode.FileChangeEvent];
+			this._onDidChangeFile.fire(data);
 		});
 
 		return { dispose: () => watcher.close() };
@@ -282,14 +286,13 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 			const children = await this.readDirectory(element.uri);
 			return children.map(([name, type]) => ({ uri: vscode.Uri.file(path.join(element.uri.fsPath, name)), type }));
 		}
-		console.log(`fileExplorer: ${this.subfolder}`);
-		if (vscode.workspace.workspaceFile === undefined) {
-			console.log('No workspace opened');
-			
+		
+		const workspaceFile = vscode.workspace.workspaceFile;
+		if (workspaceFile === undefined) {
 			return [];
 		}
 		
-		const wrkspc = this.getFileFolder(vscode.workspace.workspaceFile!);
+		const wrkspc = this.getFileFolder(workspaceFile);
 		const workspaceFolder = this.subfolder === undefined ? wrkspc : vscode.Uri.file(path.join(wrkspc.path, this.subfolder)); 
 		
 		if (workspaceFolder) {
@@ -327,57 +330,70 @@ export class FileExplorer {
 	constructor(context: vscode.ExtensionContext, view: string, subFolderName?: string | undefined) {
 		this.treeDataProvider = new FileSystemProvider(subFolderName);
 		context.subscriptions.push(
-			vscode.window.createTreeView(view, { treeDataProvider: this.treeDataProvider , showCollapseAll: true , canSelectMany: true }));
+			vscode.window.createTreeView(view, { treeDataProvider: this.treeDataProvider , showCollapseAll: true , canSelectMany: true }),
+			vscode.commands.registerCommand(Constants.gmaCommandExplorerRefresh, (): void => this.treeDataProvider.refresh()),
+		);
 		
 		
 	}
-	public async registerCommands(context: vscode.ExtensionContext) : Promise<void> {
-		vscode.commands.executeCommand('setContext', 'gma:supportedFolders', [ '*capp*', '*mapp*','*koyal*' ]);
+	public static registerCommands(context: vscode.ExtensionContext) {
+		void vscode.commands.executeCommand('setContext', 'gma:supportedFolders', [ '*capp*', '*mapp*','*koyal*' ]);
 		try{
 			context.subscriptions.push(
-				vscode.commands.registerCommand(Constants.gmaCommandExplorerOpenFile, (resource) => this.openResource(resource)),
-				vscode.commands.registerCommand(Constants.gmaCommandExplorerAddToFolders, (resource) => this.addToFolders(resource.uri)),
-				vscode.commands.registerCommand(Constants.gmaCommandExplorerAddRootToFolders, (_) => this.addRootToFolders()),
-				vscode.commands.registerCommand(Constants.gmaCommandExplorerRefresh, (_) => this.treeDataProvider.refresh()),
+				vscode.commands.registerCommand(Constants.gmaCommandExplorerOpenFile, (resource) => {
+					void vscode.window.showTextDocument(resource as vscode.Uri);
+				}),
+				vscode.commands.registerCommand(Constants.gmaCommandExplorerAddToFolders, (resource) => {
+					void addToFolders(resource);
+				}),
+				vscode.commands.registerCommand(Constants.gmaCommandExplorerAddRootToFolders, () => {
+					addRootToFolders();
+				}),
 			);
 		} catch(e) {
 			console.log(e);
 		}
-	}
-	
-	private openResource(resource: vscode.Uri): void {
-		vscode.window.showTextDocument(resource);
-	}
-	private addToFolders(resource: vscode.Uri){
-		const stats = fs.statSync(resource.fsPath);
-		const isDir = stats.isDirectory();
-		if (isDir) {
-			const length = vscode.workspace.workspaceFolders!.length;
-			const result = vscode.workspace.updateWorkspaceFolders(length, 0, { uri: resource });
-			const dirName = path.dirname(resource.fsPath);
-			const name = path.basename(resource.fsPath);
-			console.log(`result count: ${length} ${result} ${name} ${dirName} ${resource}`);
-			if (result) {
-				vscode.window.showInformationMessage(`${name} added to workspace`, {
-					detail: `${dirName}`,
-				} as vscode.MessageOptions, 'Open Folder').then(value => {
-					if (value === 'Open Folder') {
-						vscode.commands.executeCommand('vscode.openFolder', resource);
-						
+
+		const addToFolders = async (resource: Entry) => {
+			const fsPath = resource.uri.fsPath;
+			const stats = fs.statSync(fsPath);
+			const isDir = stats.isDirectory();
+			if (isDir) {
+				const length = vscode.workspace.workspaceFolders?.length ?? 0;
+				const result = vscode.workspace.updateWorkspaceFolders(length, 0, { uri: resource.uri });
+				const dirName = path.dirname(fsPath);
+				const name = path.basename(fsPath);
+				console.log(`result count: ${length} ${result} ${name} ${dirName} ${resource}`);
+				if (result) {
+					const options: vscode.MessageOptions = {
+						detail: `${dirName}`,
 					}
-				});
-			} else {
-				vscode.window.showErrorMessage(`${name} can't be added to workspace`);
+					try{
+						const result = await vscode.window.showInformationMessage(`${name} added to workspace`, options, 'Open Folder');
+						if (result === 'Open Folder') {
+							void vscode.commands.executeCommand('vscode.openFolder', resource);
+						}
+					} catch(e) {
+						console.log(e);
+						void vscode.window.showErrorMessage(`${name} can't be added to workspace`);
+					}
+				} else {
+					void vscode.window.showErrorMessage(`${name} can't be added to workspace`);
+				}
+			}
+		}
+		const addRootToFolders = () => {
+			const workspaceFile = vscode.workspace.workspaceFile;
+			if (workspaceFile !== undefined) {
+				const resource = vscode.Uri.file( path.dirname(workspaceFile.fsPath));
+				const stats = fs.statSync(resource.fsPath);
+				if (stats.isDirectory()) {
+					vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders?.length ?? 0, 0, { uri: resource });
+				} 
 			}
 		}
 	}
 	
-	private addRootToFolders(){
-		const resource = vscode.Uri.file( path.dirname(vscode.workspace.workspaceFile!.fsPath));
-		const stats = fs.statSync(resource.fsPath);
-		if (stats.isDirectory()) {
-			vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders!.length, 0, { uri: resource });
-			
-		} 
-	}
+	
+	
 }

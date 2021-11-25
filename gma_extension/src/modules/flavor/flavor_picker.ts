@@ -22,7 +22,7 @@ export default async function buildFlowInputs(flavorConfig: WorkspaceConfigurato
 
 
     function shouldResume() {
-        return new Promise<boolean>((resolve, reject) => {
+        return new Promise<boolean>(() => {
             // noop
         });
     }

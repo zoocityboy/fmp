@@ -5,14 +5,14 @@ export class FlavorStatusbarItem{
     private _disposable: vscode.Disposable;
     private _statusBarItem: vscode.StatusBarItem;   
     private _status: ProgressStatus|undefined;
-    constructor(context: vscode.ExtensionContext, callback: (...args: any[]) => any){
+    constructor(context: vscode.ExtensionContext, callback: (...args: []) => void){
         this._statusBarItem = vscode.window.createStatusBarItem(Constants.changeAppCommandId, vscode.StatusBarAlignment.Left, 99);
         this._statusBarItem.command = Constants.changeAppCommandId;
         this._disposable = vscode.commands.registerCommand(Constants.changeAppCommandId, () => callback());
         context.subscriptions.push(this._disposable);
         
     } 
-    static register(context: vscode.ExtensionContext, callback: (...args: any[]) => any,): FlavorStatusbarItem {
+    static register(context: vscode.ExtensionContext, callback: (...args: []) => void,): FlavorStatusbarItem {
         // context.subscriptions.push(vscode.commands.registerCommand(Constants.changeAppCommandId, () => callback()));
         return new FlavorStatusbarItem(context, callback);
     }
@@ -22,7 +22,7 @@ export class FlavorStatusbarItem{
     }
     update(val: {state?: IState | undefined, status: ProgressStatus | undefined}){
         this._status = val.status;
-        var message: string = '';
+        let message = '';
         switch(val.status){
             case ProgressStatus.loading:
                 this._statusBarItem.command = undefined;

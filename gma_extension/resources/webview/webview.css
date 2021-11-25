@@ -42,7 +42,26 @@ a:active {
 code {
 	font-size: var(--vscode-editor-font-size);
 	font-family: var(--vscode-editor-font-family);
+	color: var(--vscode-editor-foreground);
+	background-color: var(--vscode-editor-background);
 }
+ .logo{
+	width: 16em;
+	height: 16em;
+	margin: 0px auto;
+	background-repeat:no-repeat;
+    background-position: center center;
+	background-size: 100% 100%;
+	max-width: 260px;
+	display: block;
+}
+body.vscode-dark .logo{
+	opacity: 0.5;
+}
+body.vscode-light .logo{
+	opacity: 0.2;
+}
+
 p{
 	color: var(--vscode-foreground);
 	font-size: var(--vscode-font-size);
@@ -101,7 +120,6 @@ iframe{
   border: none;         /* Reset default border */
   height: 100vh;        /* Viewport-relative units */
   width: 100vw;
-  margin: 10%;
 }
 
 .vertical-center {

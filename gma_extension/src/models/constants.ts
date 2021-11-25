@@ -1,4 +1,4 @@
-import { Stage,IState, GmaAppConfiguration, App } from ".";
+import { Stage,IState, App } from ".";
 
 /**
  * Set of constants used by the extensions.
@@ -6,75 +6,75 @@ import { Stage,IState, GmaAppConfiguration, App } from ".";
  */
 export class Constants {
     /// Static files required for the app to run
-    static workspaceFileName: string = 'gma.code-workspace';
-    static workspaceGmaYaml: string = 'gma.yaml';
+    static workspaceFileName = 'gma.code-workspace';
+    static workspaceGmaYaml = 'gma.yaml';
     
     /// Folders
-    static pluginsFolder: string = "Plugins";
-    static packagesFolder: string = "Packages";
-    static applicationFolder: string = "Application";
-    static rootFolder: string = "Root";
+    static pluginsFolder = "Plugins";
+    static packagesFolder = "Packages";
+    static applicationFolder = "Application";
+    static rootFolder = "Root";
     
     // Commands
-    static changeAppCommandId: string = 'gma.commands.changeApp';
+    static changeAppCommandId = 'gma.commands.changeApp';
     
     /// Explorer
-    static gmaCommandExplorerAddToFolders: string = 'gma.commands.explorer.addToFolders';
-    static gmaCommandExplorerAddRootToFolders: string = 'gma.commands.explorer.addRootToFolders';
-    static gmaCommandExplorerOpenFile: string = 'gma.commands.explorer.openFile';
-    static gmaCommandExplorerRefresh: string = 'gma.commands.explorer.refresh';
-    static gmaCommandExplorerCollapse: string = 'gma.commands.explorer.collapse';
+    static gmaCommandExplorerAddToFolders = 'gma.commands.explorer.addToFolders';
+    static gmaCommandExplorerAddRootToFolders = 'gma.commands.explorer.addRootToFolders';
+    static gmaCommandExplorerOpenFile = 'gma.commands.explorer.openFile';
+    static gmaCommandExplorerRefresh = 'gma.commands.explorer.refresh';
+    static gmaCommandExplorerCollapse = 'gma.commands.explorer.collapse';
 
     /// Runners
-    static gmaCommandPicker: string = 'gma.commands.commandRunner';
+    static gmaCommandPicker = 'gma.commands.commandRunner';
     
     /// Build runner
-    static gmaCommandBuildRunnerBuild: string = 'gma.commands.buildRunner.build';
-    static gmaCommandBuildRunnerWatch: string = 'gma.commands.buildRunner.watch';
-    static gmaCommandBuildRunnerTerminate: string = 'gma.commands.buildRunner.terminate';
+    static gmaCommandBuildRunnerBuild = 'gma.commands.buildRunner.build';
+    static gmaCommandBuildRunnerWatch = 'gma.commands.buildRunner.watch';
+    static gmaCommandBuildRunnerTerminate = 'gma.commands.buildRunner.terminate';
     
     /// Server
-    static gmaCommandServerShow: string = 'gma.commands.server.show';
-    static gmaCommandServerStart: string = 'gma.commands.server.start';
-    static gmaCommandServerStop: string = 'gma.commands.server.stop';
+    static gmaCommandServerShow = 'gma.commands.server.show';
+    static gmaCommandServerStart = 'gma.commands.server.start';
+    static gmaCommandServerStop = 'gma.commands.server.stop';
 
     /// Standard config keys
-    static gmaHelpQuicklinksView: string = 'gma:views:help';
-    static gmaCiCdView: string = 'gma:views:cicd';
-    static gmaDocumentationView: string = 'gma:views:documentation';
-    static gmaProjectView: string = 'gma:views:project';
-    static gmaServersView: string = 'gma:views:servers';
-    static gmaPluginsView: string = 'gma:views:plugins';
-    static gmaBuildRunnerView: string = 'gma:views:buildrunner';
+    static gmaHelpQuicklinksView = 'gma:views:help';
+    static gmaCiCdView = 'gma:views:cicd';
+    static gmaDocumentationView = 'gma:views:documentation';
+    static gmaProjectView = 'gma:views:project';
+    static gmaServersView = 'gma:views:servers';
+    static gmaPluginsView = 'gma:views:plugins';
+    static gmaBuildRunnerView = 'gma:views:buildrunner';
 
     /// Predefined Build Targets
-    static defaultAppKey: string = "self_care";
-    static defaultStageKey : string= "prod";
-    static defaultCountryKey: string = "in";
+    static defaultAppKey = "self_care";
+    static defaultStageKey = "prod";
+    static defaultCountryKey = "in";
 
     /// Build Configuration
-    static gmaSelectedApplication: string = "selectedApplication";
-    static gmaSelectedCountry: string = "selectedCountry";
-    static gmaSelectedStage: string = "selectedStage";
+    static gmaSelectedApplication = "selectedApplication";
+    static gmaSelectedCountry = "selectedCountry";
+    static gmaSelectedStage = "selectedStage";
 
     ///
-    static gmaConfigWorkspaceFoldersAdd: string = "gma.workspaceFolders.add";
-    static gmaConfigWorkspaceFoldersIgnore: string = "gma.workspaceFolders.ignore";
+    static gmaConfigWorkspaceFoldersAdd = "gma.workspaceFolders.add";
+    static gmaConfigWorkspaceFoldersIgnore = "gma.workspaceFolders.ignore";
     ///
-    static gmaConfigCustomWorkspaceFolders: string = "gma.custom.workspaceFolders";
-    static gmaConfigBuildSelectedApplication: string = 'gma.build.selectedApplication';
-    static gmaConfigBuildSelectedCountry: string = 'gma.build.selectedCountry';
-    static gmaConfigBuildSelectedStage: string = 'gma.build.selectedStage';
+    static gmaConfigCustomWorkspaceFolders = "gma.custom.workspaceFolders";
+    static gmaConfigBuildSelectedApplication = 'gma.build.selectedApplication';
+    static gmaConfigBuildSelectedCountry = 'gma.build.selectedCountry';
+    static gmaConfigBuildSelectedStage = 'gma.build.selectedStage';
 
     /// Standard config keys
-    static settingsLaunchConfigurations: string = 'launch.configurations';
-    static settingsFilesExclude: string = 'files.exclude';
+    static settingsLaunchConfigurations = 'launch.configurations';
+    static settingsFilesExclude = 'files.exclude';
     static launcherProgram(stage: Stage) {
         return `lib/main_${stage.key}.dart`;
     }
 
     static launcherArgs(state: IState) {
-        let shortTag: string = `${state.stage?.key}${state.country?.key}`;
+        const shortTag = `${state.stage?.key}${state.country?.key}`;
         return ["--flavor", shortTag];
     }
 
@@ -92,10 +92,10 @@ export class Constants {
         const fullPattern = `packages/[${packagePattern}]**/pubspec.yaml`;
         return fullPattern;
     }
-    static gmaGlobPatternDocumentation: string = '*(docs|capp|mapp|plugins)/!(build)/*.{md,MD}';
-    static gmaGlobPatternPipelines: string = '**!(dynamic_forms)/!(pubspec*|analysis_options|build).{yml,yaml}';
+    static gmaGlobPatternDocumentation = '*(docs|capp|mapp|plugins)/!(build)/*.{md,MD}';
+    static gmaGlobPatternPipelines = '**!(dynamic_forms)/!(pubspec*|analysis_options|build).{yml,yaml}';
 
     /// Server
-    static gmaServerRunning: string = 'gma.server-running';
-    static gmaStopedRunning: string = 'gma.server-stopped';
+    static gmaServerRunning = 'gma.server-running';
+    static gmaStopedRunning = 'gma.server-stopped';
 }

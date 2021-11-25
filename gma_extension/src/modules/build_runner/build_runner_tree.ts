@@ -3,8 +3,6 @@ import * as vscode from 'vscode';
 type EventEmitterTreeItem = NestTreeItem | undefined | void;
 
 export class NestTreeProvider implements vscode.TreeDataProvider<NestTreeItem> {
-    private constructor() { }
-
     private static _instance: NestTreeProvider;
     static get instance() {
         this._instance ??= new NestTreeProvider();
