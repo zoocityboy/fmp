@@ -10,4 +10,7 @@ export interface ILaunchConfiguration {
     request: string;
     type: string;
     cwd: string;
+    windows:object,
+    linux: object,
+    osx: object,
 }

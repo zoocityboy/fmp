@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -8,14 +7,18 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-import { createLoading, createOutput, LoadingTask, OutputTask } from './processes_utils';
+import { createOutput, OutputTask } from './processes_utils';
 import { RunnerPickItem } from '../models/interfaces/i_runner_picker';
 import { GmaAppConfiguration, IState, ProgressStatus } from '../models';
 import { SpawnOptionsWithoutStdio } from 'child_process';
+import { wait } from '../extension';
+import { UiProgress } from './progress';
+import { IGmaConfigurationFile } from '../models/dto/yaml_file';
+import { IAvailableExtension } from './update';
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 // eslint-disable-next-line no-var
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const pidtree = require('pidtree');
+
 interface Processes {
     [key: string]: childProcess.ChildProcess;
 }
@@ -25,6 +28,7 @@ interface ProcessData {
     args: string[];
     commandId: string;
     path: string;
+    location?: vscode.ProgressLocation
 }
 type Outputs = {
     [key: string]: OutputTask;
@@ -41,7 +45,7 @@ export class Process {
         this._instance = this._instance ?? new Process();
         return this._instance;
     }
-    private _onDidChanged: vscode.EventEmitter<ProgressStatus> = new vscode.EventEmitter<ProgressStatus>();
+    private pidtree = require('pidtree');
 
     getDirPath(uri: vscode.Uri) {
         return fs.statSync(uri.fsPath).isFile() ? vscode.Uri.joinPath(uri, '../').fsPath : uri.fsPath;
@@ -86,13 +90,13 @@ export class Process {
 
                 const option = await vscode.window.showWarningMessage(
                     `The task '${command} :(${data.name})' is already active.`,
-                    'Terminate Task',
-                    'Restart Task'
+                    'Terminate',
+                    'Restart'
                 );
 
-                if (option === 'Terminate Task') {
+                if (option === 'Terminate') {
                     return await this.terminate(data.commandId);
-                } else if (option === 'Restart Task') {
+                } else if (option === 'Restart') {
                     await this.terminate(data.commandId);
                 } else {
                     return;
@@ -100,21 +104,40 @@ export class Process {
             }
 
             output.activate();
-            let _loading: LoadingTask | undefined;
-            const loading = async (text: string, stop = false) => {
-                _loading = _loading ?? (await createLoading(data.name));
-                _loading.report(text);
-                if (stop) {
-                    _loading.stop();
-                    _loading = undefined;
+            if (data.location !== vscode.ProgressLocation.Notification) {
+                output.show();
+            }
+            
+            const writeMessage = (value: string) => {
+                output.write(value);
+            }
+            const writeLoadingMessage = async (value: any, exit?: boolean) => {
+                const text = String(value);
+                const finished = exit === undefined ? text.includes('SUCCESS') || text.includes('FAILED') ? true : false : exit;
+                const texts = text.split('\n') ?? [text];
+                for (const message of texts){
+                    /// remove time from message
+                    const _message = message.substring(message.length > 12 ? 13 : 0);
+                    /// remove special characters from output
+                    const fixed = _message.replace('⌙', '')
+                    .replace('⌾', '')
+                    .replace('⌘', '')
+                    .replace('⌞', '')
+                    .replace('○', '').trim();
+                    if (fixed.length > 0) {
+                        await wait(100);
+                        
+                            if (finished) {
+                                await UiProgress.instance.hideAfterDelay(data.commandId, fixed, data.location);
+                            } else {
+                                await UiProgress.instance.progress(data.commandId, fixed, finished, data.location);
+                            }
+                        
+                    }
                 }
             };
 
-            output.show();
-            output.write(`command: ${cwd}`);
-            output.write([command, ...args].join(' '));
-
-            await loading([command, ...args].join(' '));
+            await writeLoadingMessage([command, ...args].join(' '));
             process = childProcess.spawn(command, args, { 
                 cwd: folder, 
                 shell: os.platform() === 'win32', 
@@ -124,51 +147,51 @@ export class Process {
             } as SpawnOptionsWithoutStdio);
             this.processes[cwd] = process;
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const getMessage = (value: any) => String(value).split('\n').join(' ');
             
             process.stdout?.on('data', async (value) => {
-                const message = getMessage(value);
-                const finished = message.includes('Succeeded after') ? true : false;
-                await loading(message, finished);
-                output.write(message);
-                console.log(message);
-                console.log(`stdout:on:data ${message}`);
-                cb?.(ProgressStatus.loading);
+                writeMessage(value);
+                await writeLoadingMessage(value);
             });
 
             process.stderr?.on('data', async (value) => {
-                const message = getMessage(value);
-                await loading(message);
-                output.write(message);
-                console.log(`stderr:on:data ${message}`);
+                writeMessage(value);
+                await writeLoadingMessage(value);
             });
+
             process.on('spawn', async () => {
-                await loading('Spawned');
-                output.write('Spawned');
-                console.log('Spawned');
-                console.log(`on:spawn Spawned`);
+                const value = 'Running command ...';
+                writeMessage(value);                
                 cb?.(ProgressStatus.loading);
-            });
-            process.on('close', (code) => {
-                console.log(`on:close ${code ?? ''}`);
+                await writeLoadingMessage(value);
+                
             });
             process.on('error', async (value) => {
-                const message = getMessage(value);
-                await loading(message);
-                output.write(message);
-                console.log(`on:error ${message}`);
+                if (value instanceof Error) {
+                    writeMessage(value?.message);
+                } else if (typeof value === 'string') {
+                    writeMessage(value);
+                } else {
+                    writeMessage(`${value}`);
+                }
+                
                 cb?.(ProgressStatus.failed);
-
+                output?.show();
+                await writeLoadingMessage(value);
             });
             process.on('exit', async (code) => {
                 this.processes[cwd]?.kill();
-                await loading(`exit ${code ?? ''}`, true);
-                output?.write(`exit ${code ?? ''}`);
-                output?.invalidate();
-                console.log(`on:exit ${code ?? ''}`);
+                const status = code === 0 ? 'Successfully finished' : 'Failed';
+                
+                writeMessage(status);
+                // output?.invalidate();
+
                 delete this.processes[cwd];
                 cb?.(code === 0 ? ProgressStatus.success : ProgressStatus.failed);
+                if (code !== 0){
+                    output.show();
+                }
+                await writeLoadingMessage(status, true);
+                
             });
         };
 
@@ -190,14 +213,13 @@ export class Process {
         });
     } 
     
-    
-
     public runCommand = (data: RunnerPickItem) => {
     return new Promise((resolve, reject) => {
         const command = data.run[0];
         const args = data.run.slice(1);
         const commandId = data.label;
-        void this.processCommand({ name: data.label, command, args, commandId, path: this.rootPath ?? '' }, (value)=>{
+        // data.location = vscode.ProgressLocation.Window;
+        void this.processCommand({ name: data.label, command, args, commandId, path: this.rootPath ?? '',  location: vscode.ProgressLocation.Window } as ProcessData, (value)=>{
             switch (value) {
                 case ProgressStatus.success:
                     resolve(value);
@@ -233,7 +255,7 @@ export class Process {
             const command = 'vschttpd';
             const args = ['-p', data.port?.toString() ?? '', '-r', serverBuildPath];
             const commandId = data.serverComandId;
-            void this.processCommand({ name: commandId, command, args, commandId, path: this.rootPath ?? '' }, (value)=>{
+            void this.processCommand({ name: commandId, command, args, commandId, path: this.rootPath ?? '', location: vscode.ProgressLocation.Window }, (value)=>{
                 console.log(`default: ${ProgressStatus.default} loading: ${ProgressStatus.loading} failed: ${ProgressStatus.failed}  success: ${ProgressStatus.success}`);
                 console.log(`server ${commandId} value: ${value}`);
                 switch (value) {
@@ -250,8 +272,27 @@ export class Process {
             });
         
     });}
+
     isServerRunning(data: GmaAppConfiguration): boolean {
         return this.processes[data.serverComandId] !== undefined;
+    }
+
+    runUpdate = (data: IAvailableExtension) => {
+        return new Promise((resolve, reject) => {
+            const command = 'code';
+            const args = ['--install-extension',data.name, '--force'];
+            const commandId = `update:studio`;
+            void this.processCommand({ name: 'build', command, args, commandId, path: path.dirname(data.uri.fsPath), location: vscode.ProgressLocation.Window }, (value)=>{
+                switch (value) {
+                    case ProgressStatus.success:
+                        resolve(value);
+                        break;
+                    case ProgressStatus.failed:
+                        reject(value);
+                        break;  
+                }
+            });
+        });
     }
 
     async terminate(commandId: string) {
@@ -261,7 +302,7 @@ export class Process {
             const isWindow = os.platform() === 'win32';
             const kill = isWindow ? 'tskill' : 'kill';
            
-            const pids = await pidtree(process.pid);
+            const pids = await this.pidtree(process.pid);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             pids?.forEach((cpid:number) => {
                 childProcess.exec(`${kill} ${cpid}`);
@@ -276,4 +317,5 @@ export class Process {
             }, 100);
         });
     }
+    
 }

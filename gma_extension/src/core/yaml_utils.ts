@@ -44,7 +44,7 @@ export class YamlUtils{
             const value : IGmaConfigurationFile = jsyaml.load(yamlFile, {
                json: true
             } as jsyaml.LoadOptions) as IGmaConfigurationFile;
-            
+            console.log(value);
             // const value = tsyaml.parse(yamlFile, { 
             //     prettyErrors: true,
             //     mapAsMap: true,

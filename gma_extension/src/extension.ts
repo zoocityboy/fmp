@@ -1,5 +1,4 @@
-import * as vscode from 'vscode';
-
+import { ExtensionContext, workspace, window } from 'vscode';
 import { WorkspaceConfigurator } from './modules/flavor/worksapce_configurator';
 import { Constants } from './models/constants';
 import buildFlowInputs from './modules/flavor/flavor_picker';
@@ -12,26 +11,27 @@ import { FileExplorer, GlobExplorer } from './modules/explorer';
 import { CommandRunner } from './modules/runner/command_runner';
 import * as serverRunner from './modules/servers/server_runner';
 import { GmaConfig } from './modules/flavor/workspace_config';
+import { Update } from './core/update';
 let flavorStatusBarItem: FlavorStatusbarItem | undefined;
 let flavorConfig: WorkspaceConfigurator;
 let isGmaWorkspace = false;
 
 export const wait = (ms: number) => new Promise(res => setTimeout(res, ms));
-let isInitialized = false;
-export function activate(context: vscode.ExtensionContext): void {
+export function activate(context: ExtensionContext): void {
 	console.log('Congratulations, activattion proces of "GMA Studio" started...');
-	isGmaWorkspace = vscode.workspace.workspaceFile?.path.endsWith(Constants.workspaceFileName) ?? false;
-	console.log(`Extension "isGmaWorkspace" ${isGmaWorkspace} is now active ${isInitialized}!`);
+	isGmaWorkspace = workspace.workspaceFile?.path.endsWith(Constants.workspaceFileName) ?? false;
+	console.log(`Extension "isGmaWorkspace" ${isGmaWorkspace} is now active!`);
 	if (isGmaWorkspace) {
-		if (!isInitialized){
-			console.log('Congratulations, your extension "GMA Studio" is now active!');
-			try {
-				flavorConfig = new WorkspaceConfigurator(context);
-			} catch (e) {
-				console.log(e);
-			}
-			void initialization(context);
+		console.log('Congratulations, your extension "GMA Studio" is now active!');
+		try {
+			flavorConfig = new WorkspaceConfigurator(context);
+			flavorConfig.onDidChanged(() => {
+				updateStatusBar();
+			});
+		} catch (e) {
+			console.log(e);
 		}
+		void initialization(context);
 	} else {
 		console.log('Cant use GMA Studio without correct gma.code-workspace.');
 		flavorStatusBarItem?.hide();
@@ -48,47 +48,39 @@ export function deactivate() {
 
 	}
 }
-export async function initialization(this: any, context: vscode.ExtensionContext): Promise<void> {
+export async function initialization(this: any, context: ExtensionContext): Promise<void> {
 	try{
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const _init = GmaConfig.instance;
 		await registerBuildRunner(context);
-		registerChangeFlavorMultiStep(context);
-
 		HelpTreeProvider.register(context);
 		new GlobExplorer(context, {viewId: Constants.gmaCiCdView, pattern: Constants.gmaGlobPatternPipelines});
 		new GlobExplorer(context, {viewId: Constants.gmaDocumentationView, pattern: Constants.gmaGlobPatternDocumentation});
-		
 		serverRunner.activate(context);
-		
 		CommandRunner.register(context);
-		
 		FileExplorer.registerCommands(context);
-		new FileExplorer(context, Constants.gmaPluginsView, 'plugins');
-		new FileExplorer(context, Constants.gmaProjectView);
+		new FileExplorer(context, Constants.gmaPluginsView, Constants.gmaCommandExplorerPluginsRefresh, 'plugins');
+		new FileExplorer(context, Constants.gmaProjectView, Constants.gmaCommandExplorerProjectRefresh);
+		registerChangeFlavorMultiStep(context);
+		await worksapceInitWalkthrough(context);
 		
-		isInitialized = true;
-		// new CommentsService(context);
 	} catch (e) {
 		console.log(e);
 	}
 }
 
-export function registerChangeFlavorMultiStep(context: vscode.ExtensionContext) {
+export function registerChangeFlavorMultiStep(context: ExtensionContext) {
 	flavorStatusBarItem = FlavorStatusbarItem.register(context, () => {
 		console.log('flavorStatusBarItem clicked');
 		void changeFlavorFlow();
 	});
 	context.subscriptions.push(
-	vscode.workspace.onDidChangeConfiguration( (value) => {
-		if (value.affectsConfiguration(Constants.gmaConfigBuildSelectedApplication) || value.affectsConfiguration(Constants.gmaConfigBuildSelectedCountry) || value.affectsConfiguration(Constants.gmaConfigBuildSelectedStage)) {
-			console.log(`value: ${value}`);
-			updateStatusBar(context);
-		}
+	workspace.onDidChangeConfiguration( () => {
+		updateStatusBar();
 	}));
-	updateStatusBar(context);
-	const defaultState = getDefaultState();
-	runUpdateFlavor(defaultState);
+	updateStatusBar();
+	
+	
 }
 
 function getDefaultState() {
@@ -114,7 +106,37 @@ export function runUpdateFlavor(value?: IState | undefined) {
 
 }
 
-function updateStatusBar(context: vscode.ExtensionContext, value?: IState | undefined) {
+function updateStatusBar(value?: IState | undefined) {
 	const defaultState = value ?? getDefaultState();
 	flavorStatusBarItem?.update({ state: defaultState, status: ProgressStatus.success });
+}
+
+export async function worksapceInitWalkthrough(context: ExtensionContext){
+	const updater = new Update(context);
+	function updateWorksapce() {
+		// eslint-disable-next-line @typescript-eslint/no-floating-promises
+		window.showInformationMessage('Do you want update workspace?', 'No', 'Yes').then((value) => {
+			if (value === 'Yes') {
+				const defaultState = getDefaultState();
+				runUpdateFlavor(defaultState);
+			}
+		});
+	}
+	await updater.isUpdateAvailable().then(async update => {
+		if (update !== undefined) {
+			await window.showInformationMessage(`Please update GMA Studio extension. ${update.version}`, 'Not now.', 'Update').then(async (response) => {
+				if (response === 'Update') {
+					await updater.installUpdate(update);
+					updateWorksapce();
+				} else{
+					updater.postponeUpdate();
+					updateWorksapce();
+				} 
+			});
+		} else {
+			updateWorksapce();
+		}
+	}).catch(e => {
+		updateWorksapce();
+	});
 }

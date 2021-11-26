@@ -2,9 +2,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as rimraf from 'rimraf';
+import rimraf = require('rimraf');
 import { Constants } from '../../models/constants';
-import { NestTreePathItem } from '../../core';
+import { UiProgress } from '../../core/progress';
 //#region Utilities
 
 namespace _ {
@@ -284,7 +284,7 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 	async getChildren(element?: Entry): Promise<Entry[]> {
 		if (element) {
 			const children = await this.readDirectory(element.uri);
-			return children.map(([name, type]) => ({ uri: vscode.Uri.file(path.join(element.uri.fsPath, name)), type }));
+			return children.map(([name, type]) => ({ uri: vscode.Uri.file(path.join(element.uri.fsPath, name)), type } as Entry));
 		}
 		
 		const workspaceFile = vscode.workspace.workspaceFile;
@@ -292,8 +292,8 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 			return [];
 		}
 		
-		const wrkspc = this.getFileFolder(workspaceFile);
-		const workspaceFolder = this.subfolder === undefined ? wrkspc : vscode.Uri.file(path.join(wrkspc.path, this.subfolder)); 
+		const wrkspc = vscode.Uri.parse(path.dirname(workspaceFile.path));
+		const workspaceFolder = this.subfolder === undefined ? wrkspc : vscode.Uri.file(path.join( wrkspc.fsPath, this.subfolder)); 
 		
 		if (workspaceFolder) {
 			const children = await this.readDirectory(workspaceFolder);
@@ -303,7 +303,7 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 				}
 				return a[1] === vscode.FileType.Directory ? -1 : 1;
 			});
-			return children.map(([name, type]) => ({ uri: vscode.Uri.file(path.join(workspaceFolder.fsPath, name)), type }));
+			return children.map(([name, type]) => ({ uri: vscode.Uri.file(path.join(workspaceFolder.fsPath, name)), type } as Entry));
 		}
 
 		return [];
@@ -327,11 +327,11 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 export class FileExplorer {
 	private treeDataProvider: FileSystemProvider;
-	constructor(context: vscode.ExtensionContext, view: string, subFolderName?: string | undefined) {
+	constructor(context: vscode.ExtensionContext, view: string, refreshCommand: string, subFolderName?: string | undefined) {
 		this.treeDataProvider = new FileSystemProvider(subFolderName);
 		context.subscriptions.push(
+			vscode.commands.registerCommand(refreshCommand, (): void => this.treeDataProvider.refresh()),
 			vscode.window.createTreeView(view, { treeDataProvider: this.treeDataProvider , showCollapseAll: true , canSelectMany: true }),
-			vscode.commands.registerCommand(Constants.gmaCommandExplorerRefresh, (): void => this.treeDataProvider.refresh()),
 		);
 		
 		
@@ -339,7 +339,7 @@ export class FileExplorer {
 	public static registerCommands(context: vscode.ExtensionContext) {
 		void vscode.commands.executeCommand('setContext', 'gma:supportedFolders', [ '*capp*', '*mapp*','*koyal*' ]);
 		try{
-			context.subscriptions.push(
+			context.subscriptions.push(	
 				vscode.commands.registerCommand(Constants.gmaCommandExplorerOpenFile, (resource) => {
 					void vscode.window.showTextDocument(resource as vscode.Uri);
 				}),
@@ -354,31 +354,40 @@ export class FileExplorer {
 			console.log(e);
 		}
 
-		const addToFolders = async (resource: Entry) => {
+		const addToFolders = (resource: Entry) => {
+			const workspaceFile = vscode.workspace.workspaceFile;
+			if (workspaceFile === undefined) {
+				void vscode.window.showErrorMessage(`Workspace file not found.`);
+				return;
+			}
 			const fsPath = resource.uri.fsPath;
+			
 			const stats = fs.statSync(fsPath);
 			const isDir = stats.isDirectory();
+			
 			if (isDir) {
-				const length = vscode.workspace.workspaceFolders?.length ?? 0;
-				const result = vscode.workspace.updateWorkspaceFolders(length, 0, { uri: resource.uri });
-				const dirName = path.dirname(fsPath);
-				const name = path.basename(fsPath);
-				console.log(`result count: ${length} ${result} ${name} ${dirName} ${resource}`);
-				if (result) {
-					const options: vscode.MessageOptions = {
-						detail: `${dirName}`,
+				const directoryName = path.basename(fsPath);
+				const found = vscode.workspace.workspaceFolders?.find(folder => folder.name === directoryName) !== undefined;
+				if (found) {
+					void vscode.window.showErrorMessage(`Folder ${directoryName} already exists in workspace.`);
+					return;
+				}
+				try{
+					const uri = vscode.Uri.file(resource.uri.path);
+					const length = vscode.workspace.workspaceFolders?.length ?? 0;
+					const result = vscode.workspace.updateWorkspaceFolders(length, 0, { uri: uri });
+					const dirName = path.dirname(fsPath);
+					const name = path.basename(fsPath);
+					console.log(`Added updateWorkspaceFolders(${length}, 0, { uri: ${resource.uri}}) ${resource.uri} to workspace.`);
+					console.log(`result count: ${length} ${result} ${name} ${dirName} ${resource}`);
+					if (result) {
+						void UiProgress.instance.hideAfterDelay(uri.path,`Folder ${name} added to workspace`);
+						
+					} else {
+						void vscode.window.showErrorMessage(`Folder ${name} can't be added to workspace`);
 					}
-					try{
-						const result = await vscode.window.showInformationMessage(`${name} added to workspace`, options, 'Open Folder');
-						if (result === 'Open Folder') {
-							void vscode.commands.executeCommand('vscode.openFolder', resource);
-						}
-					} catch(e) {
-						console.log(e);
-						void vscode.window.showErrorMessage(`${name} can't be added to workspace`);
-					}
-				} else {
-					void vscode.window.showErrorMessage(`${name} can't be added to workspace`);
+				} catch(e) {
+					console.log(e);
 				}
 			}
 		}

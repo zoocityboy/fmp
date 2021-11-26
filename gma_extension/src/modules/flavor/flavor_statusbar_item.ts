@@ -2,26 +2,22 @@ import * as vscode from 'vscode';
 import { Constants } from '../../models/constants';
 import { ProgressStatus, IState } from '../../models';
 export class FlavorStatusbarItem{
-    private _disposable: vscode.Disposable;
     private _statusBarItem: vscode.StatusBarItem;   
-    private _status: ProgressStatus|undefined;
     constructor(context: vscode.ExtensionContext, callback: (...args: []) => void){
         this._statusBarItem = vscode.window.createStatusBarItem(Constants.changeAppCommandId, vscode.StatusBarAlignment.Left, 99);
         this._statusBarItem.command = Constants.changeAppCommandId;
-        this._disposable = vscode.commands.registerCommand(Constants.changeAppCommandId, () => callback());
-        context.subscriptions.push(this._disposable);
+        context.subscriptions.push(
+            this._statusBarItem,
+            vscode.commands.registerCommand(Constants.changeAppCommandId, () => callback()));
         
     } 
     static register(context: vscode.ExtensionContext, callback: (...args: []) => void,): FlavorStatusbarItem {
-        // context.subscriptions.push(vscode.commands.registerCommand(Constants.changeAppCommandId, () => callback()));
         return new FlavorStatusbarItem(context, callback);
     }
     dispose(){
         this.hide();
-        this._disposable.dispose();
     }
     update(val: {state?: IState | undefined, status: ProgressStatus | undefined}){
-        this._status = val.status;
         let message = '';
         switch(val.status){
             case ProgressStatus.loading:

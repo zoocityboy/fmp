@@ -1,14 +1,12 @@
 
-import { Constants } from '../../models/constants';
 import * as vscode from 'vscode';
-import { Uri } from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-
-import {  IMessageEvent, App, listOfApps, Stage, listOfStages, Country, listOfCountries, ProgressStatus, IState, ILaunchConfiguration, GmaConfigurationFile } from '../../models';
-import { GlobSync } from 'glob';
+import {  IMessageEvent, App, Constants, listOfApps, Stage, listOfStages, Country, listOfCountries, ProgressStatus, IState, ILaunchConfiguration } from '../../models';
 import { Process } from '../../core';
 import { GmaConfig } from './workspace_config';
+import { UiProgress } from '../../core/progress';
+import { wait } from '../../extension';
 
 /**
  * Configuration class which works over the current Workspace
@@ -16,7 +14,6 @@ import { GmaConfig } from './workspace_config';
  */
 export class WorkspaceConfigurator {
     private target: vscode.ConfigurationTarget = vscode.ConfigurationTarget.Workspace;
-    private gmaYaml: GmaConfigurationFile | undefined;
     private configuration: vscode.WorkspaceConfiguration;
     private workspaceWatcher: vscode.FileSystemWatcher | undefined;
     public isChangeTriggerFromExtension = false;
@@ -29,17 +26,17 @@ export class WorkspaceConfigurator {
     private waitForWorkspaceUpdate = false;
 
     public getApp(): App {
-        const _key = this.configuration.get<string>(Constants.gmaConfigBuildSelectedApplication);
+        const _key = vscode.workspace.getConfiguration().get<string>(Constants.gmaConfigBuildSelectedApplication);
         return App.fromKey(_key ?? Constants.defaultAppKey);
     }
 
     public getCountry(): Country {
-        const _key = this.configuration.get<string>(Constants.gmaConfigBuildSelectedCountry);
+        const _key = vscode.workspace.getConfiguration().get<string>(Constants.gmaConfigBuildSelectedCountry);
         return Country.fromKey(_key ?? Constants.defaultCountryKey);
     }
 
     public getStage(): Stage {
-        const _key = this.configuration.get<string>(Constants.gmaConfigBuildSelectedStage);
+        const _key = vscode.workspace.getConfiguration().get<string>(Constants.gmaConfigBuildSelectedStage);
         return Stage.fromKey(_key ?? Constants.defaultStageKey);
     }
 
@@ -67,7 +64,6 @@ export class WorkspaceConfigurator {
     }
 
     private loadConfiguration(){
-        this.gmaYaml = GmaConfig.instance.data;
         this.apps = GmaConfig.instance.appAsModelApp ?? listOfApps;
     }
 
@@ -89,14 +85,17 @@ export class WorkspaceConfigurator {
     }
 
     private runWatcher() {
-        this.workspaceWatcher = vscode.workspace.createFileSystemWatcher(Constants.workspaceFileName, false, false, false);
-        this.workspaceWatcher.onDidChange(() => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const workspaceFileUri = vscode.Uri.file(vscode.workspace.workspaceFile!.path);
+        const pattern = new vscode.RelativePattern(path.dirname(workspaceFileUri.fsPath), Constants.workspaceFileName);
+        this.workspaceWatcher = vscode.workspace.createFileSystemWatcher(pattern, false, false, false);
+        this.workspaceWatcher.onDidChange(async ()=> {
+            
             if (!this.isChangeTriggerFromExtension) {
+                await wait(1000)
                 this.reload();
                 this.message({ message: "success", status: ProgressStatus.success });
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-                void vscode.window.showInformationMessage('Workspace changed outside GMA Studio');
-                
+                void UiProgress.instance.hideAfterDelay('runwatcher','Workspace changed outside GMA Studio');
             }
             this.waitForWorkspaceUpdate = false;
         });
@@ -118,7 +117,7 @@ export class WorkspaceConfigurator {
      */
     public runCommand(state: IState) {
         if (this.waitForWorkspaceUpdate){
-            void vscode.window.showInformationMessage('Please wait for workspace update');
+            void UiProgress.instance.hideAfterDelay('update','Please wait for workspace update');
             return;
         }
         this.waitForWorkspaceUpdate = true;
@@ -211,7 +210,7 @@ export class WorkspaceConfigurator {
         const wait = (ms: number) => new Promise(res => setTimeout(res, ms));
         await wait(100);
         await this.updateLauncher(state);
-        this.packages(state.app);
+        await this.packages(state.app);
         await wait(100);
         this.reload();
         return;
@@ -229,12 +228,22 @@ export class WorkspaceConfigurator {
         const launchers: ILaunchConfiguration[] | undefined = this.configuration.get<ILaunchConfiguration[]>(Constants.settingsLaunchConfigurations, []);
         const program = Constants.launcherProgram(state.stage);
         const args = Constants.launcherArgs(state);
+        const workspaceFile = vscode.workspace.workspaceFile;
+        if (workspaceFile === undefined) {
+            return;
+        }
+        const rootPath = path.dirname(workspaceFile.fsPath);
         launchers.forEach((value) => {
+            try{
             value.args = args;
             value.program = program;
-            value.cwd = `\${fileDirname}\${pathSeparator}${state.app?.folder}`;
+            const _path = path.join(rootPath, state.app?.folder ?? '');
+            value.cwd = _path;
+            } catch (err) {
+                console.log(err);
+            }
         });
-        await this.configuration.update(Constants.settingsLaunchConfigurations, launchers, this.target);
+        await vscode.workspace.getConfiguration().update(Constants.settingsLaunchConfigurations, launchers, this.target);
 
     }
     /**
@@ -244,21 +253,22 @@ export class WorkspaceConfigurator {
      * @param app 
      * @returns void
      */
-    private packages(app: App | undefined) {
+    private async packages(app: App | undefined) {
         if (app === undefined || vscode.workspace.workspaceFile === undefined) { return; }
        
-        const fullPattern = this.gmaGlobPatternPackages(app);
+        const fullPattern = Constants.gmaGlobPatternPackages(app);
     
         const rootFolder = path.dirname(vscode.workspace.workspaceFile.fsPath);
         const rootUri = vscode.Uri.parse(rootFolder);
-        const folders = new GlobSync(fullPattern,{
-            cwd: rootFolder,
-        });
-
-        const mapped: { uri: Uri, name?: string }[] = folders.found.filter((value) => value !== undefined).map((value) => {
+        const pattern = new vscode.RelativePattern(rootUri, fullPattern);
+        
+        const folders = await vscode.workspace.findFiles(pattern);
+        const mapped: { uri: vscode.Uri, name?: string }[] = folders.filter((value) => value !== undefined).map((value) => {
+            const diranme = path.basename(value.fsPath);
             return {
-                uri: vscode.Uri.file(path.join(rootUri.path, value)),
-            } as { uri: Uri, name?: string };
+                uri: value,
+                name: diranme
+            } as { uri: vscode.Uri, name?: string };
         }).sort((obj1, obj2) => {
             if (obj1.uri.path > obj2.uri.path) {
                 return 1;
@@ -271,10 +281,10 @@ export class WorkspaceConfigurator {
             return 0;
         });
 
-        const _customWorkspaceFolder = this.configuration.get<string[]>(Constants.gmaConfigCustomWorkspaceFolders) ?? [];
+        const _customWorkspaceFolder = vscode.workspace.getConfiguration().get<string[]>(Constants.gmaConfigCustomWorkspaceFolders) ?? [];
         const customWorkspaceFolder = _customWorkspaceFolder.map((value) => {
             return {
-                uri: vscode.Uri.file(path.join(rootUri.path, value)),
+                uri: vscode.Uri.file(path.join(rootUri.fsPath, value)),
             };
         });
 
@@ -286,26 +296,6 @@ export class WorkspaceConfigurator {
         console.log(`${app}`);
         console.log(`add: ${add} ${_folders?.length} folders`);
         return;
-    }
-    /**
-     * Prepare glob pattern for packages from selected app
-     * 
-     * @param app 
-     * @returns full glob pattern
-     */
-    private gmaGlobPatternPackages(app: App): string {
-        const exclude: string[] = [];
-        const excludeData: Map<string,boolean> = app.exclude ?? new Map<string,boolean>();
-        
-        excludeData.forEach((value, key) => {
-            if (value) {
-                exclude.push(`!${key}`);
-            }
-        });
-        exclude.push(`!.DS_Store`);
-        const packagePattern = exclude.join(',');
-        const fullPattern = `packages/[${packagePattern}]*/`;
-        return fullPattern;
     }
 
     /**

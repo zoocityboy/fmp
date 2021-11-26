@@ -16,7 +16,7 @@ export class BuildFlow{
 
     static async run(start: BuildStep) {
 		const input = new BuildFlow();
-		return input.stepThrough(start);
+		return await input.stepThrough(start);
 	}
 
 	private async stepThrough(start: BuildStep) {

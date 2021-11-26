@@ -5,6 +5,7 @@ import { Stage,IState, App } from ".";
  * 
  */
 export class Constants {
+    static hideAfterDelay = 3000; // in milliseconds
     /// Static files required for the app to run
     static workspaceFileName = 'gma.code-workspace';
     static workspaceGmaYaml = 'gma.yaml';
@@ -17,12 +18,15 @@ export class Constants {
     
     // Commands
     static changeAppCommandId = 'gma.commands.changeApp';
+    static gmaCommandUpdateStudio = 'gma.commands.update.studio';
     
     /// Explorer
     static gmaCommandExplorerAddToFolders = 'gma.commands.explorer.addToFolders';
     static gmaCommandExplorerAddRootToFolders = 'gma.commands.explorer.addRootToFolders';
     static gmaCommandExplorerOpenFile = 'gma.commands.explorer.openFile';
     static gmaCommandExplorerRefresh = 'gma.commands.explorer.refresh';
+    static gmaCommandExplorerPluginsRefresh = 'gma.commands.explorer.plugins.refresh';
+    static gmaCommandExplorerProjectRefresh = 'gma.commands.explorer.project.refresh';
     static gmaCommandExplorerCollapse = 'gma.commands.explorer.collapse';
 
     /// Runners
@@ -78,7 +82,12 @@ export class Constants {
         return ["--flavor", shortTag];
     }
 
-    /// Glob patterns
+   /**
+     * Prepare glob pattern for packages from selected app
+     * 
+     * @param app 
+     * @returns full glob pattern
+     */
     static gmaGlobPatternPackages(app: App): string {
         const exclude: string[] = [];
         const excludeData: Map<string,boolean> = app.exclude ?? new Map<string,boolean>();
@@ -88,14 +97,19 @@ export class Constants {
                 exclude.push(`!${key}`);
             }
         });
+        exclude.push(`!.DS_Store`);
         const packagePattern = exclude.join(',');
-        const fullPattern = `packages/[${packagePattern}]**/pubspec.yaml`;
+        const fullPattern = `packages/[${packagePattern}]*/`;
         return fullPattern;
     }
     static gmaGlobPatternDocumentation = '*(docs|capp|mapp|plugins)/!(build)/*.{md,MD}';
     static gmaGlobPatternPipelines = '**!(dynamic_forms)/!(pubspec*|analysis_options|build).{yml,yaml}';
+    static gmaGlobPatternToolingFiles = '**/studio-*.vsix';
 
     /// Server
-    static gmaServerRunning = 'gma.server-running';
-    static gmaStopedRunning = 'gma.server-stopped';
+    static gmaServerStart = 'gma.start';
+    static gmaServerStop = 'gma.stop';
+    static gmaServerRunning = 'gma-server-running';
+    static gmaStopedRunning = 'gma-server-stopped';
+    
 }

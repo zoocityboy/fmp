@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import { TreeItem, Uri, TreeItemCollapsibleState, ThemeIcon } from 'vscode';
 
 /**
  * Node for tree view
@@ -10,14 +10,14 @@ export interface TreePathNode {
 /**
  * Tree view node used by vscode.TreeDataProvider
  */
-export class NestTreePathItem extends vscode.TreeItem {
+export class NestTreePathItem extends TreeItem {
     constructor(
         public readonly title: string,
-        public readonly parentUri: vscode.Uri,
-        public readonly resourceUri: vscode.Uri,
+        public readonly parentUri: Uri,
+        public readonly resourceUri: Uri,
         public readonly children?: NestTreePathItem[],
     ) {
-        super(title, children ? vscode.TreeItemCollapsibleState.Expanded : undefined);
+        super(title, children ? TreeItemCollapsibleState.Expanded : undefined);
     }
     private isDir = this.children ? 'dir' : 'file';
 
@@ -29,7 +29,7 @@ export class NestTreePathItem extends vscode.TreeItem {
                 title: 'Open file',
                 command: 'vscode.open',
                 arguments: [this.resourceUri],
-                iconPath: new vscode.ThemeIcon('variables-view-icon')
+                iconPath: new ThemeIcon('variables-view-icon')
             }
             : undefined;
 

@@ -4,7 +4,7 @@
 	"name": "studio",
 	"displayName": "GMA Studio",
 	"description": "Settings for GMA Extension. Extension works with GMAT",
-	"version": "1.0.3",
+	"version": "0.0.5-beta.2",
 	"icon": "resources/images/gma_light.png",
 	"author": {
 		"name": "Lukas Svoboda",
@@ -44,7 +44,7 @@
 		"workspaceContains:gma.yaml",
 		"onStartupFinished"
 	],
-	"main": "./out/extension.js",
+	"main": "./dist/main.js",
 	"contributes": {
 		"taskDefinitions": [
 			{
@@ -258,7 +258,6 @@
 				}
 			}
 		],
-
 		"commands": [
 			{
 				"category": "GMA",
@@ -316,10 +315,28 @@
 				"icon": "$(pencil)"
 			},
 			{
+				"command": "gma.commands.explorer.plugins.refresh",
+				"category": "GMA",
+				"title": "Refresh plugins"
+			},
+			{
+				"command": "gma.commands.explorer.project.refresh",
+				"category": "GMA",
+				"title": "Refresh project"
+			},
+			{
 				"category": "GMA",
 				"command": "gma.commands.commandRunner",
 				"title": "Run pre-defined commands",
 				"description": "Comands are defined in gma.yaml as Runners.",
+				"enablement": "true",
+				"icon": "$(pencil)"
+			},
+			{
+				"category": "GMA",
+				"command": "gma.commands.update.studio",
+				"title": "Run update",
+				"description": "Update on the lastest version.",
 				"enablement": "true",
 				"icon": "$(pencil)"
 			},
@@ -409,30 +426,50 @@
 		"menus": {
 			"commandPalette": [
 				{
+					"command": "gma.commands.update.studio",
+					"when": "false"
+				},
+				{
 					"command": "gma.commands.buildRunner.build",
 					"when": "false"
-				},{
+				},
+				{
 					"command": "gma.commands.buildRunner.watch",
 					"when": "false"
-				},{
+				},
+				{
 					"command": "gma.commands.buildRunner.terminate",
 					"when": "false"
-				},{
+				},
+				{
 					"command": "gma.commands.server.show",
 					"when": "false"
-				},{
+				},
+				{
 					"command": "gma.commands.server.start",
 					"when": "false"
-				},{
+				},
+				{
 					"command": "gma.commands.server.stop",
 					"when": "false"
-				},{
+				},
+				{
 					"command": "gma.commands.explorer.addToFolders",
 					"when": "false"
-				},{
+				},
+				{
 					"command": "gma.commands.explorer.addRootToFolders",
 					"when": "false"
-				},{
+				},
+				{
+					"command": "gma.commands.explorer.plugins.refresh",
+					"when": "false"
+				},
+				{
+					"command": "gma.commands.explorer.project.refresh",
+					"when": "false"
+				},
+				{
 					"command": "dart.createProject",
 					"when": "false"
 				}
@@ -464,11 +501,6 @@
 			"view/item/context": [
 				{
 					"command": "gma.commands.explorer.addToFolders",
-					"group": "gma",
-					"when": "view == gma:views:plugins && viewItem == directory"
-				},
-				{
-					"command": "gma.commands.explorer.addToFolders",
 					"group": "inline",
 					"when": "view == gma:views:plugins || view == gma:views:project && viewItem == directory"
 				},
@@ -478,12 +510,12 @@
 				},
 				{
 					"command": "gma.commands.server.start",
-					"when": "view == gma:views:servers && viewItem == gma.server-stopped",
+					"when": "view == gma:views:servers && viewItem == server_stoped",
 					"group": "inline"
 				},
 				{
 					"command": "gma.commands.server.stop",
-					"when": "view == gma:views:servers && viewItem == gma.server-running",
+					"when": "view == gma:views:servers && viewItem == server_running",
 					"group": "inline"
 				},
 				{
@@ -506,9 +538,11 @@
 		"submenus": []
 	},
 	"scripts": {
-		"publish": "vsce publish",
-		"build": "vsce package",
-		"vscode:prepublish": "npm run compile",
+		"vscode:prepublish": "npm run esbuild-base -- --minify",
+		"esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
+		"esbuild": "npm run esbuild-base -- --sourcemap",
+		"esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+		"test-compile": "tsc -p ./",
 		"compile": "tsc -p ./",
 		"lint": "eslint src --ext .js,.jsx,.ts,.tsx",
 		"watch": "tsc -watch -p ./",
@@ -517,19 +551,21 @@
 		"doc": "./node_modules/.bin/typedoc --entryPointStrategy expand ./src --out docs src/index.ts"
 	},
 	"devDependencies": {
-		"@types/content-type": "^1.1.5",
-		"@types/follow-redirects": "^1.13.1",
-		"@types/glob": "^7.2.0",
+		"@types/js-yaml": "^4.0.5",
 		"@types/mkdirp": "^1.0.2",
 		"@types/mocha": "^9.0.0",
 		"@types/node": "^16.11.7",
 		"@types/rimraf": "^3.0.2",
+		"@types/semver": "^7.3.9",
 		"@types/vscode": "^1.62.0",
 		"@types/yaml": "^1.9.7",
 		"@typescript-eslint/eslint-plugin": "^5.4.0",
 		"@typescript-eslint/parser": "^5.4.0",
+		"@vscode/codicons": "0.0.26",
+		"esbuild": "^0.13.15",
 		"eslint": "^8.3.0",
 		"eslint-config-prettier": "^8.3.0",
+		"glob": "^7.2.0",
 		"mocha": "^9.1.3",
 		"typedoc": "^0.22.9",
 		"typedoc-plugin-markdown": "^3.11.7",
@@ -537,17 +573,15 @@
 		"vscode-test": "^1.6.1"
 	},
 	"dependencies": {
-		"@types/js-yaml": "^4.0.5",
-		"@vscode/codicons": "0.0.26",
-		"content-type": "^1.0.4",
-		"follow-redirects": "^1.14.5",
-		"glob": "^7.2.0",
 		"js-yaml": "^4.1.0",
 		"mkdirp": "^1.0.4",
 		"path": "^0.12.7",
 		"pidtree": "^0.5.0",
 		"prettier": "^2.4.1",
 		"rimraf": "^3.0.2",
+		"semver": "^7.3.5",
+		"semver-compare": "^1.0.0",
+		"tslib": "^2.3.1",
 		"yaml": "^1.10.2"
 	}
 }

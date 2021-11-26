@@ -5,13 +5,9 @@ export default function (val: {context: vscode.ExtensionContext, webview: vscode
     // Local path to css styles
     const styleResetPath = vscode.Uri.joinPath(val.context.extensionUri, 'resources', 'webview', 'reset.css');
     const stylesPathMainPath = vscode.Uri.joinPath(val.context.extensionUri, 'resources', 'webview', 'webview.css');
-    // const scriptUriPath = vscode.Uri.joinPath(val.extensionUri, 'resources', 'webview', '404.js');
-    const codiconsUri = val.webview.asWebviewUri(vscode.Uri.joinPath(val.context.extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
     // Uri to load styles into webview
     const stylesResetUri = val.webview.asWebviewUri(styleResetPath);
     const stylesMainUri = val.webview.asWebviewUri(stylesPathMainPath);
-    // const scriptUri = val.webview.asWebviewUri(scriptUriPath);
-    // const nonce = getNonce();
     const cspSource = val.webview.cspSource;
 
     const lightOnDiskPath = vscode.Uri.file(
@@ -28,7 +24,6 @@ export default function (val: {context: vscode.ExtensionContext, webview: vscode
                 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
                 <link href="${stylesResetUri}" rel="stylesheet"/>
 				<link href="${stylesMainUri}" rel="stylesheet"/> 
-                <link href="${codiconsUri}" rel="stylesheet" />
             </head>
             <body class="vscode.body">
                 <div class="editor-container">
@@ -37,7 +32,8 @@ export default function (val: {context: vscode.ExtensionContext, webview: vscode
                         <h2>App is not ready yet.</h2>
                         <p>&nbsp;</p>
                         <p>Run or Build & run your web app.</p>
-                        <p>&nbsp;</p>                    </div>
+                        <p>&nbsp;</p>                    
+                    </div>
                 </div> 
             </body>
         </html>

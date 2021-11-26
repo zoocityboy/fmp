@@ -1,13 +1,15 @@
 import * as vscode from "vscode";
-import {  YamlUtils } from "../../core/yaml_utils";
-import { Constants } from "../../models/constants";
-import {GmaAppConfiguration, GmaConfigurationFile} from "../../models";
 import { Process } from "../../core";
-import indexPage from '../../modules/servers/templates/index.html';
+import { YamlUtils } from "../../core/yaml_utils";
+import { GmaAppConfiguration, GmaConfigurationFile, ServerCommand, ServerStatus } from "../../models";
+import { Constants } from "../../models/constants";
 import errorPage from '../../modules/servers/templates/404.html';
-export enum ServerStatus {
-    running, stopped,
-}
+import indexPage from '../../modules/servers/templates/index.html';
+import * as os from 'os';
+import { OutputTask } from '../../core/processes_utils';
+import * as childProcess from 'child_process';
+import { kill } from "process";
+
 const browsers: Map<string, vscode.WebviewPanel> = new Map();
 export class ServerTreeItem extends vscode.TreeItem{
     public contextValue = 'server';
@@ -31,6 +33,9 @@ type EventEmitterServerTreeItem = ServerTreeItem | undefined | void;
 export class ServerTreeProvider implements vscode.TreeDataProvider<ServerTreeItem>{
     private data: GmaConfigurationFile | undefined;
     private items: ServerTreeItem[] = [];
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+	private pidtree = require('pidtree');
+
     private constructor() { 
         this.loadData();
     }
@@ -57,7 +62,7 @@ export class ServerTreeProvider implements vscode.TreeDataProvider<ServerTreeIte
     getTreeItem(element: ServerTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
         const isRunning = Process.instance.isServerRunning(element.model);
         console.log(`getTreeItem: ${element.model.serverComandId} ${isRunning.toString()}`);
-        element.contextValue = isRunning ? Constants.gmaServerRunning : Constants.gmaStopedRunning;
+        element.contextValue = isRunning ? ServerStatus.running : ServerStatus.stopped;
         return Promise.resolve(element);
     }
     getChildren(_element?: ServerTreeItem): vscode.ProviderResult<ServerTreeItem[]> {
@@ -67,17 +72,15 @@ export class ServerTreeProvider implements vscode.TreeDataProvider<ServerTreeIte
     static register(context: vscode.ExtensionContext) {
         context.subscriptions.push(vscode.window.registerTreeDataProvider(Constants.gmaServersView, ServerTreeProvider.instance));
     }
-    dispose() {
-     ///
-    }
+
 }
 
 export function activate(context: vscode.ExtensionContext){
     ServerTreeProvider.register(context);
 	context.subscriptions.push(
 		vscode.commands.registerCommand(Constants.gmaCommandServerShow, (app) => openServer(context, app)),
-			vscode.commands.registerCommand(Constants.gmaCommandServerStart, (app) => operateServer(app, 'start')),
-			vscode.commands.registerCommand(Constants.gmaCommandServerStop, (app) => operateServer(app, 'stop')),
+			vscode.commands.registerCommand(Constants.gmaCommandServerStart, (app) => operateServer(app, ServerCommand.start)),
+			vscode.commands.registerCommand(Constants.gmaCommandServerStop, (app) => operateServer(app, ServerCommand.stop)),
 	);
 }
 export function deactivate() {
@@ -136,36 +139,63 @@ async function openServer(context: vscode.ExtensionContext, app: GmaAppConfigura
 				}
 			}
 		});
-		// newPanel.webview.onDidReceiveMessage(message => {
-		// 	switch(message.command) {
-		// 		case 'build':
-		// 			console.log('build');
-		// 			break;
-		// 		case 'run':
-		// 			console.log('run');
-		// 			break;
-		// 	}
-		// });
 		browsers.set(app.packageName, newPanel);	
 	}
 	
 	
 }
-function operateServer(item: ServerTreeItem, status: 'stop' | 'start'){
-	if (status === 'stop') {
-		void Process.instance.terminate(item.model.serverComandId).then(() => {
-			ServerTreeProvider.instance.refresh();
-		});
-	} else if (status === 'start') {
-		Process.instance.runServer(item.model).then(() => {
-			console.log('runServer: ${data}');
-			ServerTreeProvider.instance.refresh();
-			void vscode.commands.executeCommand(Constants.gmaCommandServerShow, item.model);
-		}).catch(() => {
-			ServerTreeProvider.instance.refresh();
-		}).finally(() => {
-			ServerTreeProvider.instance.refresh();
-		});
-		
+function operateServer(item: ServerTreeItem, status: ServerCommand) {
+	switch (status) {
+		case ServerCommand.start:
+			Process.instance.runServer(item.model).then(() => {
+				console.log('runServer: ${data}');
+				ServerTreeProvider.instance.refresh();
+				void vscode.commands.executeCommand(Constants.gmaCommandServerShow, item.model);
+			}).catch(() => {
+				killServer();
+				ServerTreeProvider.instance.refresh();
+			}).finally(() => {
+				ServerTreeProvider.instance.refresh();
+			});
+			break;
+		case ServerCommand.stop:
+			void Process.instance.terminate(item.model.serverComandId).then(() => {
+				ServerTreeProvider.instance.refresh();
+			});
+			break;
 	}
+}
+
+
+function killServer() {
+	const isWindow = os.platform() === 'win32';
+	const command: string = isWindow ? 'taskkill' : 'killall';
+	const args: string[] = isWindow ? ['/F', '/IM', 'vschttpd'] : ['-9', 'vschttpd'];
+	// // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+	// const task = new vscode.Task({
+	// 	type: 'gma',
+	// } as vscode.TaskDefinition, vscode.TaskScope.Workspace, 'gma', 'gma', new vscode.ShellExecution(
+	// 	command, args,
+	// ),);
+	// await vscode.tasks.executeTask(task);
+	const process = childProcess.spawn(command, args, {
+		shell: os.platform() === 'win32', 
+		stdio: 'pipe', 
+		detached: false, 
+		windowsVerbatimArguments: false 
+	} as childProcess.SpawnOptionsWithoutStdio);
+	process.stdout?.on('data', (value) => {
+		console.log(`stdout: ${value}`);
+	});
+
+	process.stderr?.on('data', (value) => {
+		console.log(`stderr: ${value}`);
+	});
+	process.on('error', (err) => {
+		console.log(`error: ${err}`);
+	});
+	process.on('exit', (code) => {
+		console.log(`exit: ${code}`);
+	});
+
 }

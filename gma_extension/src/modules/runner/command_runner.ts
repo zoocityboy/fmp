@@ -5,6 +5,7 @@ import { RunnerPickItem } from "../../models/interfaces/i_runner_picker";
 import { ProgressStatus } from "../../models";
 import { ServerTreeProvider } from "../servers/server_runner";
 import { GmaConfig } from "../flavor/workspace_config";
+import { UiProgress } from '../../core/progress';
 export class CommandRunner {
   private items: RunnerPickItem[] = [];
   static register(context: ExtensionContext) {
@@ -20,6 +21,7 @@ export class CommandRunner {
   }
   private loadCommands() {
     try {
+      GmaConfig.instance.load();
       this.items =GmaConfig.instance.data?.platformSupportedRunners?.map(runner => {
         return {
           label: runner.name,
@@ -60,9 +62,9 @@ export class CommandRunner {
       if (item !== undefined) {
         Process.instance.runCommand(item).then(status => {
           if (status === ProgressStatus.success) {
-            void window.showInformationMessage("Command executed successfully");
+            void UiProgress.instance.hideAfterDelay(item.label, "Command executed successfully");
           } else {
-            void window.showErrorMessage("Command failed");
+            void UiProgress.instance.hideAfterDelay(item.label, "Command failed");
           }
           
         }).catch(e => {
@@ -81,5 +83,5 @@ export class CommandRunner {
         d.dispose();
       });
     });
-  }
+  }  
 }
