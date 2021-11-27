@@ -3,3 +3,5 @@ export * from "./processes";
 export * from "./processes_utils";
 export * from "./yaml_utils";
 export * from "./progress";
+export * from "./arrays";
+export * from "./decorator";

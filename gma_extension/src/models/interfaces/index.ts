@@ -5,3 +5,4 @@ export * from "./i_message_event";
 export * from "./i_quick_pick_parameters";
 export * from "./i_state";
 export * from "./i_server";
+export * from "./i_folder";

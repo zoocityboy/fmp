@@ -16,13 +16,13 @@ export class CommandRunner {
   }
   constructor() {
     
-    console.log(GmaConfig.instance.data?.platformSupportedRunners);
+    console.log(GmaConfig.i.data?.platformSupportedRunners);
     this.loadCommands();
   }
   private loadCommands() {
     try {
-      GmaConfig.instance.load();
-      this.items =GmaConfig.instance.data?.platformSupportedRunners?.map(runner => {
+      GmaConfig.i.load();
+      this.items =GmaConfig.i.data?.platformSupportedRunners?.map(runner => {
         return {
           label: runner.name,
           detail: `$(chevron-right) ${runner.run}`,

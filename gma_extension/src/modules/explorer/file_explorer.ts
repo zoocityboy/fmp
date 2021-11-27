@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import rimraf = require('rimraf');
 import { Constants } from '../../models/constants';
 import { UiProgress } from '../../core/progress';
+import { GmaConfig } from '../flavor/workspace_config';
 //#region Utilities
 
 namespace _ {
@@ -355,8 +356,7 @@ export class FileExplorer {
 		}
 
 		const addToFolders = (resource: Entry) => {
-			const workspaceFile = vscode.workspace.workspaceFile;
-			if (workspaceFile === undefined) {
+			if (!GmaConfig.i.isWorkspace) {
 				void vscode.window.showErrorMessage(`Workspace file not found.`);
 				return;
 			}
@@ -373,6 +373,7 @@ export class FileExplorer {
 					return;
 				}
 				try{
+					GmaConfig.i.enableAddingToCustomFolders();
 					const uri = vscode.Uri.file(resource.uri.path);
 					const length = vscode.workspace.workspaceFolders?.length ?? 0;
 					const result = vscode.workspace.updateWorkspaceFolders(length, 0, { uri: uri });
@@ -392,11 +393,12 @@ export class FileExplorer {
 			}
 		}
 		const addRootToFolders = () => {
-			const workspaceFile = vscode.workspace.workspaceFile;
-			if (workspaceFile !== undefined) {
-				const resource = vscode.Uri.file( path.dirname(workspaceFile.fsPath));
+			
+			if (GmaConfig.i.isWorkspace) {
+				const resource = GmaConfig.i.workspaceDirUri;
 				const stats = fs.statSync(resource.fsPath);
 				if (stats.isDirectory()) {
+					GmaConfig.i.enableAddingToCustomFolders();
 					vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders?.length ?? 0, 0, { uri: resource });
 				} 
 			}

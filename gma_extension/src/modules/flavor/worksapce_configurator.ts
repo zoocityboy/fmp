@@ -1,13 +1,13 @@
-
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 import * as path from 'path';
-import {  IMessageEvent, App, Constants, listOfApps, Stage, listOfStages, Country, listOfCountries, ProgressStatus, IState, ILaunchConfiguration } from '../../models';
+import { IMessageEvent, App, Constants, listOfApps, Stage, listOfStages, Country, listOfCountries, ProgressStatus, IState, ILaunchConfiguration } from '../../models';
 import { Process } from '../../core';
 import { GmaConfig } from './workspace_config';
 import { UiProgress } from '../../core/progress';
 import { wait } from '../../extension';
 import { GlobSync } from 'glob';
+import { IFolder } from '../../models/interfaces/i_folder';
+import { sortFolders } from '../../core/arrays';
 
 /**
  * Configuration class which works over the current Workspace
@@ -15,6 +15,7 @@ import { GlobSync } from 'glob';
  */
 export class WorkspaceConfigurator {
     private target: vscode.ConfigurationTarget = vscode.ConfigurationTarget.Workspace;
+    private userTarget: vscode.ConfigurationTarget = vscode.ConfigurationTarget.Global;
     private configuration: vscode.WorkspaceConfiguration;
     private workspaceWatcher: vscode.FileSystemWatcher | undefined;
     public isChangeTriggerFromExtension = false;
@@ -30,6 +31,7 @@ export class WorkspaceConfigurator {
         const _key = vscode.workspace.getConfiguration().get<string>(Constants.gmaConfigBuildSelectedApplication);
         return App.fromKey(_key ?? Constants.defaultAppKey);
     }
+    
 
     public getCountry(): Country {
         const _key = vscode.workspace.getConfiguration().get<string>(Constants.gmaConfigBuildSelectedCountry);
@@ -41,35 +43,64 @@ export class WorkspaceConfigurator {
         return Stage.fromKey(_key ?? Constants.defaultStageKey);
     }
 
-    getDirPath(uri: vscode.Uri) {
-        return fs.statSync(uri.fsPath).isFile() ? vscode.Uri.joinPath(uri, '../').fsPath : uri.fsPath;
-    }
-
-    getFileFolder(uri: vscode.Uri): vscode.Uri {
-        const stats = fs.statSync(uri.fsPath);
-        if (stats.isDirectory()) {
-            return uri;
-        } else if (stats.isFile()) {
-            const dirname = path.dirname(uri.fsPath);
-            return vscode.Uri.parse(dirname);
-        }
-        return uri;
-    }
-
     constructor(context: vscode.ExtensionContext) {
         this.configuration = vscode.workspace.getConfiguration();
         this._onDidChanged = new vscode.EventEmitter<IMessageEvent>();
-        context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders((e) => this.updateWorkspaces(e)));
+        context.subscriptions.push(
+            vscode.commands.registerCommand(Constants.gmaCommandOpenSettings, () => {
+                void vscode.commands.executeCommand(Constants.vscodeCommandOpenSettings, `@ext:${Constants.extensionName}`);
+            }),
+            vscode.commands.registerCommand(Constants.gmaCommandCreatePackage, () => {
+                void vscode.commands.executeCommand(Constants.vscodeCommandCreateDartProject);
+            }),
+            vscode.commands.registerCommand(Constants.gmaCommandWorkspaceSave, () => {
+                void this.saveAppWorkspace();
+            }),
+            vscode.commands.registerCommand(Constants.gmaCommandWorkspaceRestore, () => {
+                void this.restoreAppWorkspace();
+            }),
+            vscode.commands.registerCommand(Constants.gmaCommandWorkspaceLoadSaved, () => {
+                void this.loadAppWorkspace();
+            }),
+            vscode.commands.registerCommand(Constants.gmaCommandWorkspaceUseCustom, async (value) => {
+                await vscode.workspace.getConfiguration().update(Constants.gmaConfigWorkspaceUseCustom, value, this.target);
+                
+            }),
+            vscode.workspace.onDidChangeWorkspaceFolders((e) => this.updateWorkspaceFolders(e)),
+            // vscode.workspace.onDidChangeConfiguration((e) => this.updateWorkspaceConfig(e)),
+        );
         this.loadConfiguration();
         this.runWatcher();
     }
 
     private loadConfiguration(){
-        this.apps = GmaConfig.instance.appAsModelApp ?? listOfApps;
+        this.apps = GmaConfig.i.appAsModelApp ?? listOfApps;
+        const folders = vscode.workspace.workspaceFolders??[]
+        if (folders.length === 0) {
+            this.packages(this.getApp());
+        } 
     }
 
+    private async updateWorkspaceConfig(event: vscode.ConfigurationChangeEvent) {
+       
+        if (event.affectsConfiguration(Constants.gmaConfigWorkspaceUseCustom)) {
+            const value = vscode.workspace.getConfiguration().get<boolean>(Constants.gmaConfigWorkspaceUseCustom, false);
+            console.log(`workspace config changed ${value}`);
+        }
+        if (event.affectsConfiguration(Constants.gmaConfigBuildSelectedApplication)) {
+            //
+        }
+        await wait(100);
+        this.message({
+            status: ProgressStatus.success,
+        });
+    }
 
-    private async updateWorkspaces(e: vscode.WorkspaceFoldersChangeEvent): Promise<void>{
+    /**
+     * Function triggred by the workspace change event
+     * @param e 
+     */
+    private async updateWorkspaceFolders(e: vscode.WorkspaceFoldersChangeEvent): Promise<void>{
             console.log(`workspace folder changed added: ${e.added.length} remove: ${e.removed.length} ->  ${this.isChangeTriggerFromExtension}s `);
         if (!this.isChangeTriggerFromExtension) {
             if (e.added.length > 0) {
@@ -81,23 +112,22 @@ export class WorkspaceConfigurator {
         }
         this.waitForWorkspaceUpdate = false;
     }
+   
     get onDidChanged(): vscode.Event<IMessageEvent> {
         return this._onDidChanged.event;
     }
 
     private runWatcher() {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const workspaceFileUri = vscode.Uri.file(vscode.workspace.workspaceFile!.path);
-        const pattern = new vscode.RelativePattern(path.dirname(workspaceFileUri.fsPath), Constants.workspaceFileName);
+        const pattern = new vscode.RelativePattern(GmaConfig.i.workspaceDirFsPath, Constants.workspaceFileName);
         this.workspaceWatcher = vscode.workspace.createFileSystemWatcher(pattern, false, false, false);
         this.workspaceWatcher.onDidChange(async ()=> {
-            ///
             console.log('workspace file changed');
             if (!this.isChangeTriggerFromExtension) {
                 await wait(1000)
                 this.reload();
                 this.message({ message: "success", status: ProgressStatus.success });
-                void UiProgress.instance.hideAfterDelay('runwatcher','Workspace changed outside GMA Studio');
+                void UiProgress.instance.hideAfterDelay('runwatcher','Workspace was changed outside GMA Studio');
             }
             this.waitForWorkspaceUpdate = false;
         });
@@ -105,7 +135,7 @@ export class WorkspaceConfigurator {
 
     public reload() {
         this.configuration = vscode.workspace.getConfiguration();
-        void vscode.commands.executeCommand('workbench.files.action.refreshFilesExplorer');
+        void vscode.commands.executeCommand(Constants.vscodeCommandRefreshFileExplorer);
     }
 
     public dispose() {
@@ -135,13 +165,14 @@ export class WorkspaceConfigurator {
             this.message({ message: `${err}`, status: ProgressStatus.failed });
             
         }).finally(() => {
-            console.log('Change flavor: finally');
+            void this.checkOwnWorkspace()
             this.waitForWorkspaceUpdate = false;
         });
        
         
         
     }
+
     /**
      * Update the workspace configuration with the new values
      * and add the new values to persistant storage
@@ -149,21 +180,20 @@ export class WorkspaceConfigurator {
      * @param folders 
      */
     public async folderAdded(folders: vscode.WorkspaceFolder[]) {
-        const workspaceFile = vscode.workspace.workspaceFile;
-        if (workspaceFile === undefined) {
-            return;
-        }
+        if (!GmaConfig.i.isEnabledAddingToCustomFolders) return;
+
         const items = this.configuration.get<string[]>(Constants.gmaConfigCustomWorkspaceFolders) ?? [];
         const newItems = folders.map((value) => value.uri);
         newItems.forEach((value) => {
-            const rootPath = path.dirname(workspaceFile.fsPath);
-            const relative = path.relative(rootPath, value.fsPath);
+            const relative = path.relative(GmaConfig.i.workspaceDirFsPath, value.fsPath);
             if (!items.includes(relative) && relative.length > 0) {
                 items.push(relative);
             }
         });
         await this.configuration.update(Constants.gmaConfigCustomWorkspaceFolders, items, this.target);
+        GmaConfig.i.disableAddingToCustomFolders();
     }
+
     /**
      * Update the workspace configuration with the new values
      * and remove the old values from persistant storage
@@ -171,15 +201,10 @@ export class WorkspaceConfigurator {
      * @param folders 
      */
     private async folderRemoved(folders: vscode.WorkspaceFolder[]) {
-        const workspaceFile = vscode.workspace.workspaceFile;
-        if (workspaceFile === undefined) {
-            return;
-        }
         const items = this.configuration.get<string[]>(Constants.gmaConfigCustomWorkspaceFolders) ?? [];
         const newItems = folders.map((value) => value.uri);
         newItems.forEach((value) => {
-            const rootPath = path.dirname(workspaceFile.fsPath);
-            const relative = path.relative(rootPath, value.fsPath);
+            const relative = path.relative(GmaConfig.i.workspaceDirFsPath, value.fsPath);
             const index = items.indexOf(relative);
             if (index > -1) {
                 items.splice(index, 1);
@@ -229,16 +254,12 @@ export class WorkspaceConfigurator {
         const launchers: ILaunchConfiguration[] | undefined = this.configuration.get<ILaunchConfiguration[]>(Constants.settingsLaunchConfigurations, []);
         const program = Constants.launcherProgram(state.stage);
         const args = Constants.launcherArgs(state);
-        const workspaceFile = vscode.workspace.workspaceFile;
-        if (workspaceFile === undefined) {
-            return;
-        }
-        const rootPath = path.dirname(workspaceFile.fsPath);
+
         launchers.forEach((value) => {
             try{
                 value.args = args;
                 value.program = program;
-                const _path = path.join(rootPath, state.app?.folder ?? '');
+                const _path = path.join(GmaConfig.i.workspaceDirFsPath, state.app?.folder ?? '');
                 value.cwd = _path;
             } catch (err) {
                 console.log(err);
@@ -247,6 +268,8 @@ export class WorkspaceConfigurator {
         await vscode.workspace.getConfiguration().update(Constants.settingsLaunchConfigurations, launchers, this.target);
 
     }
+
+
     /**
      * Update workspace with selected packages from selected app
      * will exclude packages defined in gma.yaml
@@ -255,57 +278,94 @@ export class WorkspaceConfigurator {
      * @returns void
      */
     private packages(app: App | undefined) {
-        if (app === undefined || vscode.workspace.workspaceFile === undefined) { return; }
-       
-        const fullPattern = Constants.gmaGlobPatternPackages(app);
-        const rootFolder = path.dirname(vscode.workspace.workspaceFile.fsPath);
-        const rootUri = vscode.Uri.parse(rootFolder);
-        const folders = new GlobSync(fullPattern,{
-            cwd: rootFolder,
-        });
+        if (app === undefined || !GmaConfig.i.isWorkspace) { return; }
+        
+        const useCustom = vscode.workspace.getConfiguration().get<boolean>(Constants.gmaConfigWorkspaceUseCustom, false);
+        let showFolders: IFolder[] = [];
+        const custom = vscode.workspace.getConfiguration().get<string[]>(GmaConfig.i.worspaceCountryKey, []);
+        if (useCustom && custom.length > 0) {
+            showFolders = custom.map((value) =>GmaConfig.i.folderConverter(GmaConfig.i.workspaceDirUri, value));
+        } else {
+            const fullPattern = Constants.gmaGlobPatternPackages(app);   
+            const folders = new GlobSync(fullPattern,{
+                cwd: GmaConfig.i.workspaceDirFsPath,
+            });
+            const mapped: { uri: vscode.Uri, name?: string }[] = folders.found.filter((value) => value !== undefined).map((value) =>GmaConfig.i.folderConverter(GmaConfig.i.workspaceDirUri, value));
 
-        const mapped: { uri: vscode.Uri, name?: string }[] = folders.found.filter((value) => value !== undefined).map((value) => {
-            const uri = vscode.Uri.file(path.join(rootUri.path, value))
-            const diranme = path.basename(uri.fsPath);
-            return {
-                uri: uri,
-                name: diranme
-            } as { uri: vscode.Uri, name?: string };
-        }).sort((obj1, obj2) => {
-            if (obj1.uri.path > obj2.uri.path) {
-                return 1;
-            }
+            const _customWorkspaceFolder = vscode.workspace.getConfiguration().get<string[]>(Constants.gmaConfigCustomWorkspaceFolders) ?? [];
+            const customWorkspaceFolder = _customWorkspaceFolder.map((value) => {
+                return {
+                    uri: vscode.Uri.file(path.join(GmaConfig.i.workspaceDirFsPath, value)),
+                };
+            });
 
-            if (obj1.uri.path < obj2.uri.path) {
-                return -1;
-            }
-
-            return 0;
-        });
-
-        const _customWorkspaceFolder = vscode.workspace.getConfiguration().get<string[]>(Constants.gmaConfigCustomWorkspaceFolders) ?? [];
-        const customWorkspaceFolder = _customWorkspaceFolder.map((value) => {
-            return {
-                uri: vscode.Uri.file(path.join(rootUri.fsPath, value)),
-            };
-        });
-
-        const sorted = [
-            ...mapped,
-            ...customWorkspaceFolder];
-        const add = vscode.workspace.updateWorkspaceFolders(0, vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : null, ...sorted);
+            showFolders = [
+                ...mapped,
+                ...customWorkspaceFolder];
+        }
+        const output = showFolders.sort(sortFolders);
+        const count = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : null;
+        const updated = vscode.workspace.updateWorkspaceFolders(0, count, ...output);
         const _folders = vscode.workspace.workspaceFolders;
+        if (!updated){
+            void vscode.window.showErrorMessage(`Failed to update workspace folders`);
+        }
         console.log(`${app}`);
-        console.log(`add: ${add} ${_folders?.length} folders`);
+        console.log(`add: ${updated} ${_folders?.length} folders`);
         return;
     }
 
-
-    private async saveAppWorkspace(app: App | undefined) {
-        ///
+    private async saveAppWorkspace() {
+        this.isChangeTriggerFromExtension = true;
+        const folders = vscode.workspace.workspaceFolders?.map((value) => path.relative(GmaConfig.i.workspaceDirFsPath, value.uri.fsPath)) ?? [];
+        await vscode.workspace.getConfiguration().update( GmaConfig.i.worspaceCountryKey, folders, this.target);
+        this.isChangeTriggerFromExtension = false;
+        this.reload();
+        void UiProgress.instance.hideAfterDelay('wrkspace', 'Your workspace was saved', Constants.shortHideAfterDelay);
     }
-    private async restoreAppWorkspace(app: App | undefined) {
-        ///
+
+    private async restoreAppWorkspace() {
+        if (this.waitForWorkspaceUpdate){
+            void UiProgress.instance.hideAfterDelay('update','Please wait for workspace update');
+            return;
+        }
+        this.waitForWorkspaceUpdate = true;
+        this.isChangeTriggerFromExtension = true;
+        await vscode.workspace.getConfiguration().update( Constants.gmaConfigWorkspaceUseCustom, false, this.target);
+        const current = this.getApp();
+        this.packages(current);
+        this.reload();
+        this.isChangeTriggerFromExtension = false;
+        this.waitForWorkspaceUpdate = false;
+        void UiProgress.instance.hideAfterDelay('wrkspace', 'Your workspace was restored', Constants.shortHideAfterDelay);
+    }
+
+    private async loadAppWorkspace() {
+        if (this.waitForWorkspaceUpdate){
+            void UiProgress.instance.hideAfterDelay('update','Please wait for workspace update');
+            return;
+        }
+        this.waitForWorkspaceUpdate = true;
+        this.isChangeTriggerFromExtension = true;
+        await vscode.workspace.getConfiguration().update( Constants.gmaConfigWorkspaceUseCustom, true, this.target);
+        const current = this.getApp();
+        this.packages(current);
+        this.reload();
+        this.isChangeTriggerFromExtension = false;
+        this.waitForWorkspaceUpdate = false;
+        void UiProgress.instance.hideAfterDelay('wrkspace', 'Your workspace was restored', Constants.shortHideAfterDelay);
+    }
+
+    private checkOwnWorkspace(){
+        const isEnabled =  vscode.workspace.getConfiguration().get<boolean>(Constants.gmaConfigWorkspaceUseCustom, false);
+        const isAvailabale = vscode.workspace.getConfiguration().get<string[]>(GmaConfig.i.worspaceCountryKey, []).length > 0;
+        if (!isEnabled && isAvailabale) {
+            void vscode.window.showInformationMessage('Your custom workspace is not empty. Do you want to restore it?', 'Yes', 'No').then(async (value) => {
+                if (value === 'Yes') {
+                    await this.loadAppWorkspace();
+                }
+            });
+        }
     }
 
     /**

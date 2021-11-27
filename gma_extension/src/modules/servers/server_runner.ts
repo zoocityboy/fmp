@@ -6,9 +6,6 @@ import { Constants } from "../../models/constants";
 import errorPage from '../../modules/servers/templates/404.html';
 import indexPage from '../../modules/servers/templates/index.html';
 import * as os from 'os';
-import { OutputTask } from '../../core/processes_utils';
-import * as childProcess from 'child_process';
-import { kill } from "process";
 
 const browsers: Map<string, vscode.WebviewPanel> = new Map();
 export class ServerTreeItem extends vscode.TreeItem{
@@ -189,25 +186,5 @@ async function killServer(): Promise<void> {
 		// catch execution exceptions and show a message to the user
 		return Promise.reject(e);
 	}
-	
-	// const process = childProcess.spawn(command, args, {
-	// 	shell: os.platform() === 'win32', 
-	// 	stdio: 'pipe', 
-	// 	detached: false, 
-	// 	windowsVerbatimArguments: false 
-	// } as childProcess.SpawnOptionsWithoutStdio);
-	// process.stdout?.on('data', (value) => {
-	// 	console.log(`killServer: stdout: ${value}`);
-	// });
-
-	// process.stderr?.on('data', (value) => {
-	// 	console.error(`killServer: stderr: ${value}`);
-	// });
-	// process.on('error', (err) => {
-	// 	console.error(`killServer: error: ${err}`);
-	// });
-	// process.on('exit', (code) => {
-	// 	console.log(`killServer: exit: ${code}`);
-	// });
 
 }

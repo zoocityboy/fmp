@@ -52,7 +52,7 @@ export function deactivate() {
 export async function initialization(this: any, context: ExtensionContext): Promise<void> {
 	try{
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const _init = GmaConfig.instance;
+		const _init = GmaConfig.i;
 		await registerBuildRunner(context);
 		HelpTreeProvider.register(context);
 		new GlobExplorer(context, {viewId: Constants.gmaCiCdView, pattern: Constants.gmaGlobPatternPipelines});
@@ -138,6 +138,7 @@ export async function worksapceInitWalkthrough(context: ExtensionContext){
 			updateWorksapce();
 		}
 	}).catch(e => {
+		console.error(e);
 		updateWorksapce();
 	});
 }

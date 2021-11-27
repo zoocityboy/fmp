@@ -2,7 +2,7 @@
     "root": true,
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-        "ecmaVersion": 6,
+        "ecmaVersion": 10,
         "sourceType": "script",
         "project": "./tsconfig.json"
     },
@@ -21,6 +21,7 @@
         "@typescript-eslint/no-explicit-any": "off",
         "restrict-template-expressions": "off",
         "no-unsafe-argument": "off",
-        "no-explicit-any": "off"
+        "no-explicit-any": "off",
+        "no-unused-vars": "off"
     }
 }

@@ -5,8 +5,15 @@ import { Stage,IState, App } from ".";
  * 
  */
 export class Constants {
+    static vscodeCommandOpenSettings = 'workbench.action.openSettings';
+    static vscodeCommandCreateDartProject = 'dart.createProject';
+    static vscodeCommandRefreshFileExplorer = 'workbench.files.action.refreshFilesExplorer';
+
+
+    static extensionName = 'hci.gma.studio';
     //#region  Structure
     static hideAfterDelay = 3000; // in milliseconds
+    static shortHideAfterDelay = 1200;
     static gmaIsWorkspaceAvailable = 'gma.workspace.available';
     /// Static files required for the app to run
     static workspaceFileName = 'gma.code-workspace';
@@ -23,10 +30,14 @@ export class Constants {
     // Commands
     static changeAppCommandId = 'gma.commands.changeApp';
     static gmaCommandUpdateStudio = 'gma.commands.update.studio';
+    static gmaCommandOpenSettings = 'gma.commands.settings';
+    static gmaCommandCreatePackage = 'gma.commands.createDartPackage';
 
     /// Workspace
     static gmaCommandWorkspaceSave = 'gma.commands.workspace.save';
+    static gmaCommandWorkspaceLoadSaved = 'gma.commands.workspace.load';
     static gmaCommandWorkspaceRestore = 'gma.commands.workspace.restore';
+    static gmaCommandWorkspaceUseCustom = 'gma.commands.workspace.useCustom';
     
     /// Explorer
     static gmaCommandExplorerAddToFolders = 'gma.commands.explorer.addToFolders';
@@ -73,10 +84,10 @@ export class Constants {
     //#endregion
 
     //#region  Helpers
-    static gmaConfigWorkspaceFoldersAdd = "gma.workspaceFolders.add";
-    static gmaConfigWorkspaceFoldersIgnore = "gma.workspaceFolders.ignore";
-    ///
-    static gmaConfigCustomWorkspaceFolders = "gma.custom.workspaceFolders";
+    static gmaConfigWorkspaceFoldersPrefix = 'gma.workspace.folders.';
+    static gmaConfigCustomWorkspaceFolders = "gma.workspace.folders.added";
+    static gmaConfigWorkspaceUseCustom = 'gma.workspace.folders.useCustom';
+    /// build
     static gmaConfigBuildSelectedApplication = 'gma.build.selectedApplication';
     static gmaConfigBuildSelectedCountry = 'gma.build.selectedCountry';
     static gmaConfigBuildSelectedStage = 'gma.build.selectedStage';
