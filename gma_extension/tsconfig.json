@@ -2,20 +2,21 @@
 	"compilerOptions": {
 		"module": "commonjs",
 		"target": "es6",
-		"outDir": "out",
+		"outDir": "dist",
 		"lib": [
-			"es6"
+			"es2019"
 		],
 		"sourceMap": true,
 		"rootDir": "src",
 		"strict": true,
 		"importHelpers": true,
-		"forceConsistentCasingInFileNames": true
+		"forceConsistentCasingInFileNames": true,
+		
 	},
 	"exclude":[
 		".vscode",
 		".vscode-test",
 		"node_modules"
 	],
-	"include": ["src/**/*.ts", "test/**/*"],
+	"include": ["src/**/*", "test/**/*"],
 }

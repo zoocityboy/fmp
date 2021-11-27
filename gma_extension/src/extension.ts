@@ -1,4 +1,4 @@
-import { ExtensionContext, workspace, window } from 'vscode';
+import { ExtensionContext, workspace, window, commands } from 'vscode';
 import { WorkspaceConfigurator } from './modules/flavor/worksapce_configurator';
 import { Constants } from './models/constants';
 import buildFlowInputs from './modules/flavor/flavor_picker';
@@ -21,6 +21,7 @@ export function activate(context: ExtensionContext): void {
 	console.log('Congratulations, activattion proces of "GMA Studio" started...');
 	isGmaWorkspace = workspace.workspaceFile?.path.endsWith(Constants.workspaceFileName) ?? false;
 	console.log(`Extension "isGmaWorkspace" ${isGmaWorkspace} is now active!`);
+	void commands.executeCommand('setContext', Constants.gmaIsWorkspaceAvailable, isGmaWorkspace);
 	if (isGmaWorkspace) {
 		console.log('Congratulations, your extension "GMA Studio" is now active!');
 		try {

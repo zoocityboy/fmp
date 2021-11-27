@@ -3,8 +3,10 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as semver from 'semver';
+import * as fs from 'fs';
 import { Constants } from '../models';
 import { Process } from './processes';
+import { GlobSync } from 'glob';
 export interface IAvailableExtension {
     uri: vscode.Uri;
     name: string;
@@ -60,10 +62,12 @@ export class Update{
         this._currentVersion  = manifest?.version as string | undefined;
     }
 
-    private async loadAvailableVersions() {
+    private loadAvailableVersions() {
         const rootFolder = path.dirname(vscode.workspace.workspaceFile?.fsPath ?? ''); 
-        const pattern  = new vscode.RelativePattern(rootFolder, Constants.gmaGlobPatternToolingFiles);
-        const files = await vscode.workspace.findFiles(pattern, '');
+        const files = new GlobSync(Constants.gmaGlobPatternToolingFiles,{
+            cwd: rootFolder,
+        }).found.map(file => vscode.Uri.file(file));
+
         const mapped = files.map(file => {
            const semversion= path.basename(file.fsPath).replace('studio-','').replace('.vsix','');
         return {
@@ -78,8 +82,23 @@ export class Update{
 
     public runWatcher() {
         const rootFolder = path.join( path.dirname(vscode.workspace.workspaceFile?.fsPath ?? ''), 'plugins','gma_tooling' ); 
-        const pattern  = new vscode.RelativePattern(rootFolder, Constants.gmaGlobPatternToolingFiles);
-        const watcher = vscode.workspace.createFileSystemWatcher(pattern, false, false, false);
+        // const pattern  = new vscode.RelativePattern(rootFolder, Constants.gmaGlobPatternToolingFiles);
+        // const files = new GlobSync(Constants.gmaGlobPatternToolingFiles,{
+        //     cwd: rootFolder,
+        // }).found.map(file => vscode.Uri.file(file));
+        const fswatcher = fs.watch(rootFolder, (eventType, filename) => {
+            ///
+            console.log(`update: runWatcher ${eventType} ${filename}`);
+        });
+        fswatcher.on('change', (eventType, filename) => {
+            ///
+            console.log(`update: change ${eventType} ${filename}`);
+        });
+        fswatcher.on('error', (error) => {
+            //
+            console.error(`update: error ${error.message}`);
+        });
+        const watcher = vscode.workspace.createFileSystemWatcher(Constants.gmaGlobPatternToolingFiles, false, false, false);
         watcher.onDidChange(async () => {
             await this.isUpdateAvailable();
         });
@@ -99,7 +118,7 @@ export class Update{
     }
 
     public async isUpdateAvailable(): Promise<IAvailableExtension | undefined> {
-        await this.loadAvailableVersions();
+        this.loadAvailableVersions();
         return new Promise((resolve, reject) => {
             if (!this._currentVersion) {
                 reject(new Error('Current version is undefined'));
@@ -116,12 +135,9 @@ export class Update{
     public installUpdate = (update: IAvailableExtension) => {
         return new Promise((resolve, reject) => {
             Process.instance.runUpdate(update).then(async () => {
-                ///
                 await vscode.commands.executeCommand('workbench.action.reloadWindow');
                 resolve(true);
-
             }).catch((e) => {
-                ///
                 reject(e);
             });
         });

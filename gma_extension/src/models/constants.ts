@@ -5,7 +5,9 @@ import { Stage,IState, App } from ".";
  * 
  */
 export class Constants {
+    //#region  Structure
     static hideAfterDelay = 3000; // in milliseconds
+    static gmaIsWorkspaceAvailable = 'gma.workspace.available';
     /// Static files required for the app to run
     static workspaceFileName = 'gma.code-workspace';
     static workspaceGmaYaml = 'gma.yaml';
@@ -15,10 +17,16 @@ export class Constants {
     static packagesFolder = "Packages";
     static applicationFolder = "Application";
     static rootFolder = "Root";
+    //#endregion
     
+    //#region  Commands
     // Commands
     static changeAppCommandId = 'gma.commands.changeApp';
     static gmaCommandUpdateStudio = 'gma.commands.update.studio';
+
+    /// Workspace
+    static gmaCommandWorkspaceSave = 'gma.commands.workspace.save';
+    static gmaCommandWorkspaceRestore = 'gma.commands.workspace.restore';
     
     /// Explorer
     static gmaCommandExplorerAddToFolders = 'gma.commands.explorer.addToFolders';
@@ -41,7 +49,9 @@ export class Constants {
     static gmaCommandServerShow = 'gma.commands.server.show';
     static gmaCommandServerStart = 'gma.commands.server.start';
     static gmaCommandServerStop = 'gma.commands.server.stop';
+    //#endregion
 
+    //#region  Flavor
     /// Standard config keys
     static gmaHelpQuicklinksView = 'gma:views:help';
     static gmaCiCdView = 'gma:views:cicd';
@@ -60,8 +70,9 @@ export class Constants {
     static gmaSelectedApplication = "selectedApplication";
     static gmaSelectedCountry = "selectedCountry";
     static gmaSelectedStage = "selectedStage";
+    //#endregion
 
-    ///
+    //#region  Helpers
     static gmaConfigWorkspaceFoldersAdd = "gma.workspaceFolders.add";
     static gmaConfigWorkspaceFoldersIgnore = "gma.workspaceFolders.ignore";
     ///
@@ -69,7 +80,9 @@ export class Constants {
     static gmaConfigBuildSelectedApplication = 'gma.build.selectedApplication';
     static gmaConfigBuildSelectedCountry = 'gma.build.selectedCountry';
     static gmaConfigBuildSelectedStage = 'gma.build.selectedStage';
+    //#endregion
 
+    //#region Glob patterns
     /// Standard config keys
     static settingsLaunchConfigurations = 'launch.configurations';
     static settingsFilesExclude = 'files.exclude';
@@ -105,11 +118,14 @@ export class Constants {
     static gmaGlobPatternDocumentation = '*(docs|capp|mapp|plugins)/!(build)/*.{md,MD}';
     static gmaGlobPatternPipelines = '**!(dynamic_forms)/!(pubspec*|analysis_options|build).{yml,yaml}';
     static gmaGlobPatternToolingFiles = '**/studio-*.vsix';
+    //#endregion
 
-    /// Server
+    //#region Server
     static gmaServerStart = 'gma.start';
     static gmaServerStop = 'gma.stop';
     static gmaServerRunning = 'gma-server-running';
     static gmaStopedRunning = 'gma-server-stopped';
-    
+
+    static gmaServerName = 'vschttpd';
+    //#endregion
 }

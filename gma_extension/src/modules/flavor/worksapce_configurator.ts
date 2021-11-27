@@ -7,6 +7,7 @@ import { Process } from '../../core';
 import { GmaConfig } from './workspace_config';
 import { UiProgress } from '../../core/progress';
 import { wait } from '../../extension';
+import { GlobSync } from 'glob';
 
 /**
  * Configuration class which works over the current Workspace
@@ -90,7 +91,8 @@ export class WorkspaceConfigurator {
         const pattern = new vscode.RelativePattern(path.dirname(workspaceFileUri.fsPath), Constants.workspaceFileName);
         this.workspaceWatcher = vscode.workspace.createFileSystemWatcher(pattern, false, false, false);
         this.workspaceWatcher.onDidChange(async ()=> {
-            
+            ///
+            console.log('workspace file changed');
             if (!this.isChangeTriggerFromExtension) {
                 await wait(1000)
                 this.reload();
@@ -193,7 +195,6 @@ export class WorkspaceConfigurator {
      */
     public async updateWorkspace(state: IState): Promise<void> {
 
-        
         const appInspector = this.configuration.inspect<string>(Constants.gmaConfigBuildSelectedApplication);
         const countryInspector = this.configuration.inspect<string>(Constants.gmaConfigBuildSelectedCountry);
         const stageInspector = this.configuration.inspect<string>(Constants.gmaConfigBuildSelectedStage);
@@ -210,7 +211,7 @@ export class WorkspaceConfigurator {
         const wait = (ms: number) => new Promise(res => setTimeout(res, ms));
         await wait(100);
         await this.updateLauncher(state);
-        await this.packages(state.app);
+        this.packages(state.app);
         await wait(100);
         this.reload();
         return;
@@ -235,10 +236,10 @@ export class WorkspaceConfigurator {
         const rootPath = path.dirname(workspaceFile.fsPath);
         launchers.forEach((value) => {
             try{
-            value.args = args;
-            value.program = program;
-            const _path = path.join(rootPath, state.app?.folder ?? '');
-            value.cwd = _path;
+                value.args = args;
+                value.program = program;
+                const _path = path.join(rootPath, state.app?.folder ?? '');
+                value.cwd = _path;
             } catch (err) {
                 console.log(err);
             }
@@ -253,20 +254,21 @@ export class WorkspaceConfigurator {
      * @param app 
      * @returns void
      */
-    private async packages(app: App | undefined) {
+    private packages(app: App | undefined) {
         if (app === undefined || vscode.workspace.workspaceFile === undefined) { return; }
        
         const fullPattern = Constants.gmaGlobPatternPackages(app);
-    
         const rootFolder = path.dirname(vscode.workspace.workspaceFile.fsPath);
         const rootUri = vscode.Uri.parse(rootFolder);
-        const pattern = new vscode.RelativePattern(rootUri, fullPattern);
-        
-        const folders = await vscode.workspace.findFiles(pattern);
-        const mapped: { uri: vscode.Uri, name?: string }[] = folders.filter((value) => value !== undefined).map((value) => {
-            const diranme = path.basename(value.fsPath);
+        const folders = new GlobSync(fullPattern,{
+            cwd: rootFolder,
+        });
+
+        const mapped: { uri: vscode.Uri, name?: string }[] = folders.found.filter((value) => value !== undefined).map((value) => {
+            const uri = vscode.Uri.file(path.join(rootUri.path, value))
+            const diranme = path.basename(uri.fsPath);
             return {
-                uri: value,
+                uri: uri,
                 name: diranme
             } as { uri: vscode.Uri, name?: string };
         }).sort((obj1, obj2) => {
@@ -296,6 +298,14 @@ export class WorkspaceConfigurator {
         console.log(`${app}`);
         console.log(`add: ${add} ${_folders?.length} folders`);
         return;
+    }
+
+
+    private async saveAppWorkspace(app: App | undefined) {
+        ///
+    }
+    private async restoreAppWorkspace(app: App | undefined) {
+        ///
     }
 
     /**

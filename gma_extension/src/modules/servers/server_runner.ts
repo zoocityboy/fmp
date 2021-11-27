@@ -145,14 +145,15 @@ async function openServer(context: vscode.ExtensionContext, app: GmaAppConfigura
 	
 }
 function operateServer(item: ServerTreeItem, status: ServerCommand) {
+	
 	switch (status) {
 		case ServerCommand.start:
 			Process.instance.runServer(item.model).then(() => {
 				console.log('runServer: ${data}');
 				ServerTreeProvider.instance.refresh();
 				void vscode.commands.executeCommand(Constants.gmaCommandServerShow, item.model);
-			}).catch(() => {
-				killServer();
+			}).catch(async () => {
+				await killServer();
 				ServerTreeProvider.instance.refresh();
 			}).finally(() => {
 				ServerTreeProvider.instance.refresh();
@@ -167,35 +168,46 @@ function operateServer(item: ServerTreeItem, status: ServerCommand) {
 }
 
 
-function killServer() {
+async function killServer(): Promise<void> {
 	const isWindow = os.platform() === 'win32';
 	const command: string = isWindow ? 'taskkill' : 'killall';
-	const args: string[] = isWindow ? ['/F', '/IM', 'vschttpd'] : ['-9', 'vschttpd'];
+	const args: string[] = isWindow ? ['/F', '/IM', Constants.gmaServerName] : ['-9', Constants.gmaServerName];
 	// // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-	// const task = new vscode.Task({
-	// 	type: 'gma',
-	// } as vscode.TaskDefinition, vscode.TaskScope.Workspace, 'gma', 'gma', new vscode.ShellExecution(
-	// 	command, args,
-	// ),);
-	// await vscode.tasks.executeTask(task);
-	const process = childProcess.spawn(command, args, {
-		shell: os.platform() === 'win32', 
-		stdio: 'pipe', 
-		detached: false, 
-		windowsVerbatimArguments: false 
-	} as childProcess.SpawnOptionsWithoutStdio);
-	process.stdout?.on('data', (value) => {
-		console.log(`stdout: ${value}`);
-	});
+	const task = new vscode.Task({
+		type: 'gma',
+	} as vscode.TaskDefinition, vscode.TaskScope.Workspace, 'gma', 'gma', new vscode.ShellExecution(
+		command, args,
+	),);
 
-	process.stderr?.on('data', (value) => {
-		console.log(`stderr: ${value}`);
-	});
-	process.on('error', (err) => {
-		console.log(`error: ${err}`);
-	});
-	process.on('exit', (code) => {
-		console.log(`exit: ${code}`);
-	});
+	console.log(`${command} ${args.join(' ')}`);
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+	try {
+		const execution = await vscode.tasks.executeTask(task);
+		console.log(`${execution.task.name} ${execution.task.detail}`);
+	}
+	catch (e) {
+		// catch execution exceptions and show a message to the user
+		return Promise.reject(e);
+	}
+	
+	// const process = childProcess.spawn(command, args, {
+	// 	shell: os.platform() === 'win32', 
+	// 	stdio: 'pipe', 
+	// 	detached: false, 
+	// 	windowsVerbatimArguments: false 
+	// } as childProcess.SpawnOptionsWithoutStdio);
+	// process.stdout?.on('data', (value) => {
+	// 	console.log(`killServer: stdout: ${value}`);
+	// });
+
+	// process.stderr?.on('data', (value) => {
+	// 	console.error(`killServer: stderr: ${value}`);
+	// });
+	// process.on('error', (err) => {
+	// 	console.error(`killServer: error: ${err}`);
+	// });
+	// process.on('exit', (code) => {
+	// 	console.log(`killServer: exit: ${code}`);
+	// });
 
 }

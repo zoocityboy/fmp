@@ -19,7 +19,7 @@ void main(List<String> args) async {
 
   var builder = Process.runSync(
     'vsce',
-    ['package', '--no-yarn', '--pre-release'],
+    ['package', '--no-yarn'],
     runInShell: true,
     stderrEncoding: utf8,
     stdoutEncoding: utf8,

@@ -4,7 +4,7 @@
 	"name": "studio",
 	"displayName": "GMA Studio",
 	"description": "Settings for GMA Extension. Extension works with GMAT",
-	"version": "0.0.5-beta.2",
+	"version": "0.0.5-beta.1",
 	"icon": "resources/images/gma_light.png",
 	"author": {
 		"name": "Lukas Svoboda",
@@ -261,6 +261,20 @@
 		"commands": [
 			{
 				"category": "GMA",
+				"command": "gma.commands.workspace.save",
+				"title": "Save workspace",
+				"description": "Save your workspace for this app",
+				"icon": "$(save)"
+			},
+			{
+				"category": "GMA",
+				"command": "gma.commands.workspace.restore",
+				"title": "Restore workspace",
+				"description": "Restore default workspace for app",
+				"icon": "$(chrome-restore)"
+			},
+			{
+				"category": "GMA",
 				"command": "gma.commands.buildRunner.build",
 				"title": "Re-build package",
 				"description": "Build the project",
@@ -355,14 +369,16 @@
 					"id": "gma-activity",
 					"title": "GMA Tooling",
 					"icon": "resources/images/koyal_icon.svg",
-					"order": 1
+					"order": 1,
+					"when": "gma.workspace.available == true"
 				}
 			],
 			"panel": [
 				{
 					"id": "gma-panel",
 					"title": "GMA Tooling",
-					"icon": "resources/images/koyal_icon.svg"
+					"icon": "resources/images/koyal_icon.svg",
+					"when": "gma.workspace.available == true"
 				}
 			]
 		},
@@ -371,13 +387,15 @@
 				{
 					"id": "gma:views:buildrunner",
 					"name": "Project build runners",
-					"type": "tree"
+					"type": "tree",
+					"when": "gma.workspace.available == true"
 				},
 				{
 					"id": "gma:views:servers",
 					"name": "Flutter Web App",
 					"contextualTitle": "Flutter Web App",
-					"type": "tree"
+					"type": "tree",
+					"when": "gma.workspace.available == true"
 				}
 			],
 			"explorer": [
@@ -486,6 +504,7 @@
 					"group": "navigation"
 				}
 			],
+			
 			"explorer/context": [
 				{
 					"command": "gma.commands.buildRunner.build",
@@ -535,7 +554,9 @@
 				}
 			]
 		},
-		"submenus": []
+		"submenus": [
+			
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run esbuild-base -- --minify",
@@ -545,9 +566,10 @@
 		"test-compile": "tsc -p ./",
 		"compile": "tsc -p ./",
 		"lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+		"clean": "rimraf dist/ && rimraf out/ && rimraf node_modules/ && npm install",
 		"watch": "tsc -watch -p ./",
 		"pretest": "npm run compile && npm run lint",
-		"test": "node ./out/test/runTest.js",
+		"test": "node ./dist/test/runTest.js",
 		"doc": "./node_modules/.bin/typedoc --entryPointStrategy expand ./src --out docs src/index.ts"
 	},
 	"devDependencies": {

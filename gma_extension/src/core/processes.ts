@@ -9,15 +9,11 @@ import * as path from 'path';
 
 import { createOutput, OutputTask } from './processes_utils';
 import { RunnerPickItem } from '../models/interfaces/i_runner_picker';
-import { GmaAppConfiguration, IState, ProgressStatus } from '../models';
+import { Constants, GmaAppConfiguration, IState, ProgressStatus } from '../models';
 import { SpawnOptionsWithoutStdio } from 'child_process';
 import { wait } from '../extension';
 import { UiProgress } from './progress';
-import { IGmaConfigurationFile } from '../models/dto/yaml_file';
 import { IAvailableExtension } from './update';
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-// eslint-disable-next-line no-var
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 
 interface Processes {
     [key: string]: childProcess.ChildProcess;
@@ -117,16 +113,17 @@ export class Process {
                 const texts = text.split('\n') ?? [text];
                 for (const message of texts){
                     /// remove time from message
-                    const _message = message.substring(message.length > 12 ? 13 : 0);
+                    const position = message.indexOf(']') +1;
+                    const _message = position > -1 ? message.substring(position) : message;
                     /// remove special characters from output
                     const fixed = _message.replace('⌙', '')
                     .replace('⌾', '')
                     .replace('⌘', '')
                     .replace('⌞', '')
-                    .replace('○', '').trim();
+                    .replace('○', '')
+                    .replace(']','').trim();
                     if (fixed.length > 0) {
                         await wait(100);
-                        
                             if (finished) {
                                 await UiProgress.instance.hideAfterDelay(data.commandId, fixed, data.location);
                             } else {
@@ -252,7 +249,7 @@ export class Process {
     runServer = (data: GmaAppConfiguration) => {
     return new Promise((resolve, reject) => {
             const serverBuildPath = path.join(this.rootPath ??'', data.folder, 'build', 'web');
-            const command = 'vschttpd';
+            const command = Constants.gmaServerName;
             const args = ['-p', data.port?.toString() ?? '', '-r', serverBuildPath];
             const commandId = data.serverComandId;
             void this.processCommand({ name: commandId, command, args, commandId, path: this.rootPath ?? '', location: vscode.ProgressLocation.Window }, (value)=>{
