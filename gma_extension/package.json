@@ -4,8 +4,8 @@
 	"name": "studio",
 	"displayName": "GMA Studio",
 	"description": "Settings for GMA Extension. Extension works with GMAT",
-	"version": "0.0.5-beta.4",
-	"icon": "https://github.com/zoocityboy/fmp/blob/resources/images/gma_light.png",
+	"version": "0.0.5-beta.5",
+	"icon": "resources/images/gma_light.png",
 	"author": {
 		"name": "Lukas Svoboda",
 		"email": "e-lukas.svoboda@homecredit.eu"
@@ -271,11 +271,11 @@
 				},
 				"default": {
 					"gma.workspace.folders.useCustom": false,
-					"gma.workspace.folders.added":[],
-					"gma.workspace.folders.in":[],
-					"gma.workspace.folders.vn":[],
-					"gma.workspace.folders.ph":[],
-					"gma.workspace.folders.id":[],
+					"gma.workspace.folders.added": null,
+					"gma.workspace.folders.in": null,
+					"gma.workspace.folders.vn": null,
+					"gma.workspace.folders.ph": null,
+					"gma.workspace.folders.id": null,
 					"gma.build.selectedApplication": "self_care",
 					"gma.build.selectedStage": "prod",
 					"gma.build.selectedCountry": "in"
@@ -302,14 +302,16 @@
 				"command": "gma.commands.workspace.restore",
 				"title": "Restore workspace",
 				"description": "Restore default workspace for app",
-				"icon": "$(symbol-folder)"
+				"icon": "$(symbol-folder)",
+				"enablement": "gma.commands.workspace.useCustom == true"
 			},
 			{
 				"category": "GMA",
 				"command": "gma.commands.workspace.useCustom",
 				"title": "Toggle usege own workspace",
 				"description": "Toggle use of own workspace",
-				"icon": "$(symbol-folder)"
+				"icon": "$(symbol-folder)",
+				"enablement": "gma.context.customWorkspaceAvailable == true"
 			},
 		
 			{
@@ -317,7 +319,8 @@
 				"command": "gma.commands.workspace.load",
 				"title": "Load my workspace",
 				"description": "Load your saved workspace for app",
-				"icon": "$(symbol-folder)"
+				"icon": "$(symbol-folder)",
+				"enablement": "gma.context.customWorkspaceAvailable == true"
 			},
 			{
 				"category": "GMA",
@@ -603,8 +606,7 @@
 					"group": "inline"
 				}
 			]
-		},
-		"submenus": []
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run esbuild-base -- --minify",

@@ -13,4 +13,8 @@ export interface ILaunchConfiguration {
     windows:object,
     linux: object,
     osx: object,
+    presentation:{
+        group: string,
+        hidden: boolean
+    }
 }

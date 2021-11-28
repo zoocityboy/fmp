@@ -9,6 +9,8 @@ export class Constants {
     static vscodeCommandCreateDartProject = 'dart.createProject';
     static vscodeCommandRefreshFileExplorer = 'workbench.files.action.refreshFilesExplorer';
 
+    static gmaContextCustomWorkspaceAvailable = 'gma.context.customWorkspaceAvailable';
+
 
     static extensionName = 'hci.gma.studio';
     //#region  Structure
@@ -97,8 +99,16 @@ export class Constants {
     /// Standard config keys
     static settingsLaunchConfigurations = 'launch.configurations';
     static settingsFilesExclude = 'files.exclude';
+
+    static settingsAppLauncher = 'GMA_APP';
+    static settingsTestLauncher = 'GMA_TEST';
+    static settingsTestsLauncher = 'GMA_TESTS';
     static launcherProgram(stage: Stage) {
         return `lib/main_${stage.key}.dart`;
+    }
+    static integrationTestProgram(state: IState, isTests: boolean) {
+        //test_driver/integration_prod_in.dart
+        return `test_driver/integration${isTests ? '_tests': ''}_${state.stage?.key}_${state.country?.key}.dart`;
     }
 
     static launcherArgs(state: IState) {
@@ -127,7 +137,7 @@ export class Constants {
         return fullPattern;
     }
     static gmaGlobPatternDocumentation = '*(docs|capp|mapp|plugins)/!(build)/*.{md,MD}';
-    static gmaGlobPatternPipelines = '**!(dynamic_forms)/!(pubspec*|analysis_options|build).{yml,yaml}';
+    static gmaGlobPatternPipelines = '**!(dynamic_forms)/!(pubspec*|analysis_options|build).{yml,yaml,/**}';
     static gmaGlobPatternToolingFiles = '**/studio-*.vsix';
     //#endregion
 

@@ -71,3 +71,9 @@ export class GmaApp{
         this.path = val.path;
     }
 }
+
+export enum LauncherType{
+    app = "GMA_APP",
+    test = "GMA_TEST",	
+    tests = "GMA_TESTS"	
+}

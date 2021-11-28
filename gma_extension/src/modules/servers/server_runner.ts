@@ -45,7 +45,7 @@ export class ServerTreeProvider implements vscode.TreeDataProvider<ServerTreeIte
         
     }
     private static _instance: ServerTreeProvider;
-    static get instance() {
+    static get I() {
         this._instance ??= new ServerTreeProvider();
         return this._instance;
     }
@@ -57,7 +57,7 @@ export class ServerTreeProvider implements vscode.TreeDataProvider<ServerTreeIte
     readonly onDidChangeTreeData = this.eventEmitter.event;
 
     getTreeItem(element: ServerTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
-        const isRunning = Process.instance.isServerRunning(element.model);
+        const isRunning = Process.I.isServerRunning(element.model);
         console.log(`getTreeItem: ${element.model.serverComandId} ${isRunning.toString()}`);
         element.contextValue = isRunning ? ServerStatus.running : ServerStatus.stopped;
         return Promise.resolve(element);
@@ -67,7 +67,7 @@ export class ServerTreeProvider implements vscode.TreeDataProvider<ServerTreeIte
         return Promise.resolve(this.items);
     }
     static register(context: vscode.ExtensionContext) {
-        context.subscriptions.push(vscode.window.registerTreeDataProvider(Constants.gmaServersView, ServerTreeProvider.instance));
+        context.subscriptions.push(vscode.window.registerTreeDataProvider(Constants.gmaServersView, ServerTreeProvider.I));
     }
 
 }
@@ -93,7 +93,7 @@ async function openServer(context: vscode.ExtensionContext, app: GmaAppConfigura
 		vscode.Uri.parse(`http://localhost:${app.port}?time=${Date()}`)
 	);
 	if (currentPanel) {
-		const isRunning = Process.instance.isServerRunning(app);
+		const isRunning = Process.I.isServerRunning(app);
 		currentPanel.webview.html = isRunning ? 
 			indexPage({webview: currentPanel.webview, extensionUri: context.extensionUri, url: url, app }) : 
 			errorPage({webview: currentPanel.webview, context: context, url: url , app}) ;
@@ -113,7 +113,7 @@ async function openServer(context: vscode.ExtensionContext, app: GmaAppConfigura
 			]
         } as vscode.WebviewOptions);
 		
-		const isRunning = Process.instance.isServerRunning(app);
+		const isRunning = Process.I.isServerRunning(app);
 		newPanel.webview.html = isRunning ? 
 			indexPage({webview: newPanel.webview, extensionUri: context.extensionUri, url: url, app }) : 
 			errorPage({webview: newPanel.webview, context: context, url: url, app }) ;
@@ -127,7 +127,7 @@ async function openServer(context: vscode.ExtensionContext, app: GmaAppConfigura
 		  );
 		newPanel.onDidChangeViewState(e => {
 			if (e.webviewPanel.visible) {
-				const isRunning = Process.instance.isServerRunning(app);
+				const isRunning = Process.I.isServerRunning(app);
 				const panel = browsers.get(app.packageName);
 				if (panel){
 				panel.webview.html = isRunning ? 
@@ -145,20 +145,20 @@ function operateServer(item: ServerTreeItem, status: ServerCommand) {
 	
 	switch (status) {
 		case ServerCommand.start:
-			Process.instance.runServer(item.model).then(() => {
+			Process.I.runServer(item.model).then(() => {
 				console.log('runServer: ${data}');
-				ServerTreeProvider.instance.refresh();
+				ServerTreeProvider.I.refresh();
 				void vscode.commands.executeCommand(Constants.gmaCommandServerShow, item.model);
 			}).catch(async () => {
 				await killServer();
-				ServerTreeProvider.instance.refresh();
+				ServerTreeProvider.I.refresh();
 			}).finally(() => {
-				ServerTreeProvider.instance.refresh();
+				ServerTreeProvider.I.refresh();
 			});
 			break;
 		case ServerCommand.stop:
-			void Process.instance.terminate(item.model.serverComandId).then(() => {
-				ServerTreeProvider.instance.refresh();
+			void Process.I.terminate(item.model.serverComandId).then(() => {
+				ServerTreeProvider.I.refresh();
 			});
 			break;
 	}

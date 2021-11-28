@@ -60,7 +60,7 @@ export class CommandRunner {
       input.show();
     }).then(item => {
       if (item !== undefined) {
-        Process.instance.runCommand(item).then(status => {
+        Process.I.runCommand(item).then(status => {
           if (status === ProgressStatus.success) {
             void UiProgress.instance.hideAfterDelay(item.label, "Command executed successfully");
           } else {
@@ -73,7 +73,7 @@ export class CommandRunner {
 
         }).finally(() => {
           console.log("finally");
-          ServerTreeProvider.instance.refresh();
+          ServerTreeProvider.I.refresh();
         });
       }
     }).catch(e => {

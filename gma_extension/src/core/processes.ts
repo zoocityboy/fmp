@@ -37,7 +37,7 @@ export class ProcessesHandler{
 
 export class Process {
     private static _instance: Process;
-    public static get instance() {
+    public static get I() {
         this._instance = this._instance ?? new Process();
         return this._instance;
     }

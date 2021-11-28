@@ -1,4 +1,4 @@
-import { extension, YamlUtils } from "../../core";
+import { YamlUtils } from "../../core";
 import { App, Constants, GmaAppConfiguration, GmaConfigurationFile, GmaConfigurationRunner, IFolder } from "../../models";
 import * as vscode from 'vscode';
 import path = require("path");
@@ -60,9 +60,19 @@ export class GmaConfig{
         return path.dirname(this.workspaceFsPath ?? '');
     }
     get worspaceCountryKey(): string {
-        const currentCountry = vscode.workspace.getConfiguration().get<string>(Constants.gmaConfigBuildSelectedCountry);
-        return `${Constants.gmaConfigWorkspaceFoldersPrefix}${currentCountry}`;
+        const countryId = vscode.workspace.getConfiguration().get<string>(Constants.gmaConfigBuildSelectedCountry, Constants.defaultCountryKey);
+        return this.getWorkspaceCountryKey(countryId);
     }
+
+    public getWorkspaceCountryKey(countryId: string): string {
+        return `${Constants.gmaConfigWorkspaceFoldersPrefix}${countryId}`;
+    }
+
+    public isCustomWorkspaceAvailable(countryId?: string | undefined): boolean {
+        const countryKey = countryId !== undefined ? this.getWorkspaceCountryKey(countryId) : this.worspaceCountryKey;
+        return vscode.workspace.getConfiguration().get<string[]>(countryKey, []).length > 0;
+    }
+
     public folderConverter(rootUri: vscode.Uri, value: string): IFolder {
         const uri = vscode.Uri.file(path.join(rootUri.path, value))
         const diranme = path.basename(uri.fsPath);

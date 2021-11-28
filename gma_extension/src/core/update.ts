@@ -134,7 +134,7 @@ export class Update{
    
     public installUpdate = (update: IAvailableExtension) => {
         return new Promise((resolve, reject) => {
-            Process.instance.runUpdate(update).then(async () => {
+            Process.I.runUpdate(update).then(async () => {
                 await vscode.commands.executeCommand('workbench.action.reloadWindow');
                 resolve(true);
             }).catch((e) => {
