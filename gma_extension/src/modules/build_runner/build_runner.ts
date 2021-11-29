@@ -4,6 +4,7 @@ import { Process } from '../../core/processes';
 import { NestTreeItem, NestTreeProvider } from './build_runner_tree';
 import { TreeModel } from '../../models/dto/pubspec';
 import { Constants } from '../../models/constants';
+import path = require('path');
 export async function registerBuildRunner(context: vscode.ExtensionContext,) {
 
     vscode.window.registerTreeDataProvider(Constants.gmaBuildRunnerView, NestTreeProvider.instance);
@@ -17,15 +18,22 @@ export async function registerBuildRunner(context: vscode.ExtensionContext,) {
             type: 'watch',
             uri: args.resourceUri,
         });
+        NestTreeProvider.instance.refresh();
     });
+
     register(Constants.gmaCommandBuildRunnerBuild, (args: NestTreeItem) => { 
         void Process.I.runBuildRunner({
             type: 'build',
             uri: args.resourceUri,
         });
+        NestTreeProvider.instance.refresh();
     });
 
-    register(Constants.gmaCommandBuildRunnerTerminate, (args: NestTreeItem) => Process.I.terminate(args.resourceUri.path));
+    register(Constants.gmaCommandBuildRunnerTerminate, async (args: NestTreeItem) => {
+        const commandId = `build:${path.dirname(args.resourceUri.fsPath)}`;
+        await Process.I.terminate(commandId);
+        NestTreeProvider.instance.refresh();
+    });
 
     const nestList = await scanFilesystem();
 

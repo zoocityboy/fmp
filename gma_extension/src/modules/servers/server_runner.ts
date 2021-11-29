@@ -1,13 +1,18 @@
 import * as vscode from "vscode";
 import { Process } from "../../core";
 import { YamlUtils } from "../../core/yaml_utils";
-import { GmaAppConfiguration, GmaConfigurationFile, ServerCommand, ServerStatus } from "../../models";
+import { GmaAppConfiguration, GmaConfigurationFile, ProgressStatus, ServerCommand, ServerStatus } from "../../models";
 import { Constants } from "../../models/constants";
 import errorPage from '../../modules/servers/templates/404.html';
 import indexPage from '../../modules/servers/templates/index.html';
 import * as os from 'os';
+import { wait } from "../../extension";
 
 const browsers: Map<string, vscode.WebviewPanel> = new Map();
+export interface ServerStatusEvent {
+	status: ProgressStatus;
+	item: GmaAppConfiguration;
+}
 export class ServerTreeItem extends vscode.TreeItem{
     public contextValue = 'server';
     
@@ -26,10 +31,10 @@ export class ServerTreeItem extends vscode.TreeItem{
     }
 }
 type EventEmitterServerTreeItem = ServerTreeItem | undefined | void;
-
 export class ServerTreeProvider implements vscode.TreeDataProvider<ServerTreeItem>{
     private data: GmaConfigurationFile | undefined;
     private items: ServerTreeItem[] = [];
+	
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 	private pidtree = require('pidtree');
 
@@ -49,7 +54,6 @@ export class ServerTreeProvider implements vscode.TreeDataProvider<ServerTreeIte
         this._instance ??= new ServerTreeProvider();
         return this._instance;
     }
-
     private readonly eventEmitter = new vscode.EventEmitter<EventEmitterServerTreeItem>();
 
     readonly refresh = (): void => this.eventEmitter.fire();
@@ -58,8 +62,10 @@ export class ServerTreeProvider implements vscode.TreeDataProvider<ServerTreeIte
 
     getTreeItem(element: ServerTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
         const isRunning = Process.I.isServerRunning(element.model);
-        console.log(`getTreeItem: ${element.model.serverComandId} ${isRunning.toString()}`);
+        
         element.contextValue = isRunning ? ServerStatus.running : ServerStatus.stopped;
+
+		console.log(`getTreeItem: ${element.model.serverComandId} ${isRunning.toString()} context:${element.contextValue}`);
         return Promise.resolve(element);
     }
     getChildren(_element?: ServerTreeItem): vscode.ProviderResult<ServerTreeItem[]> {
@@ -71,7 +77,7 @@ export class ServerTreeProvider implements vscode.TreeDataProvider<ServerTreeIte
     }
 
 }
-
+const serverStatusEmitter = new vscode.EventEmitter<ServerStatusEvent>();
 export function activate(context: vscode.ExtensionContext){
     ServerTreeProvider.register(context);
 	context.subscriptions.push(
@@ -79,7 +85,18 @@ export function activate(context: vscode.ExtensionContext){
 			vscode.commands.registerCommand(Constants.gmaCommandServerStart, (app) => operateServer(app, ServerCommand.start)),
 			vscode.commands.registerCommand(Constants.gmaCommandServerStop, (app) => operateServer(app, ServerCommand.stop)),
 	);
+	serverStatusEmitter.event(async (result) => {
+		if (result.status === ProgressStatus.failed) {
+			await killServer();
+			ServerTreeProvider.I.refresh();
+		} else {
+			ServerTreeProvider.I.refresh();
+			await wait(150);
+			await vscode.commands.executeCommand(Constants.gmaCommandServerShow, result.item);
+		}
+	});
 }
+
 export function deactivate() {
     browsers.forEach((browser) => {
         browser?.dispose();
@@ -142,19 +159,9 @@ async function openServer(context: vscode.ExtensionContext, app: GmaAppConfigura
 	
 }
 function operateServer(item: ServerTreeItem, status: ServerCommand) {
-	
 	switch (status) {
 		case ServerCommand.start:
-			Process.I.runServer(item.model).then(() => {
-				console.log('runServer: ${data}');
-				ServerTreeProvider.I.refresh();
-				void vscode.commands.executeCommand(Constants.gmaCommandServerShow, item.model);
-			}).catch(async () => {
-				await killServer();
-				ServerTreeProvider.I.refresh();
-			}).finally(() => {
-				ServerTreeProvider.I.refresh();
-			});
+			Process.I.runServer(item.model, serverStatusEmitter);
 			break;
 		case ServerCommand.stop:
 			void Process.I.terminate(item.model.serverComandId).then(() => {
@@ -168,7 +175,8 @@ function operateServer(item: ServerTreeItem, status: ServerCommand) {
 async function killServer(): Promise<void> {
 	const isWindow = os.platform() === 'win32';
 	const command: string = isWindow ? 'taskkill' : 'killall';
-	const args: string[] = isWindow ? ['/F', '/IM', Constants.gmaServerName] : ['-9', Constants.gmaServerName];
+	// const args: string[] = isWindow ? ['/F', '/IM', Constants.gmaServerName] : ['-9', Constants.gmaServerName];
+	const args: string[] = isWindow ? ['/F', '/IM', 'dart.exe'] : ['-9', 'dart'];
 	// // eslint-disable-next-line @typescript-eslint/no-unsafe-call
 	const task = new vscode.Task({
 		type: 'gma',
@@ -181,10 +189,13 @@ async function killServer(): Promise<void> {
 	try {
 		const execution = await vscode.tasks.executeTask(task);
 		console.log(`${execution.task.name} ${execution.task.detail}`);
+		await vscode.commands.executeCommand('workbench.action.reloadWindow');
 	}
 	catch (e) {
+		await vscode.commands.executeCommand('workbench.action.reloadWindow');
 		// catch execution exceptions and show a message to the user
 		return Promise.reject(e);
 	}
+	
 
 }

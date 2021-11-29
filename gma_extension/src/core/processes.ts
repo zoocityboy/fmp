@@ -14,6 +14,7 @@ import { SpawnOptionsWithoutStdio } from 'child_process';
 import { wait } from '../extension';
 import { UiProgress } from './progress';
 import { IAvailableExtension } from './update';
+import { ServerStatusEvent } from '../modules/servers/server_runner';
 
 interface Processes {
     [key: string]: childProcess.ChildProcess;
@@ -97,6 +98,7 @@ export class Process {
                 } else {
                     return;
                 }
+
             }
 
             output.activate();
@@ -143,8 +145,7 @@ export class Process {
                 windowsVerbatimArguments: false 
             } as SpawnOptionsWithoutStdio);
             this.processes[cwd] = process;
-
-            
+            cb?.(ProgressStatus.loading);
             process.stdout?.on('data', async (value) => {
                 writeMessage(value);
                 await writeLoadingMessage(value);
@@ -183,8 +184,11 @@ export class Process {
                 // output?.invalidate();
 
                 delete this.processes[cwd];
-                cb?.(code === 0 ? ProgressStatus.success : ProgressStatus.failed);
-                if (code !== 0){
+                const exitCode = code ?? 0;
+                // exitCode 143 - killed by user
+                [0,143].includes(exitCode) ? cb?.(ProgressStatus.success) : cb?.(ProgressStatus.failed);
+                
+                if (![0,143].includes(exitCode)){
                     output.show();
                 }
                 await writeLoadingMessage(status, true);
@@ -246,32 +250,25 @@ export class Process {
             }
         });
     });}
-    runServer = (data: GmaAppConfiguration) => {
-    return new Promise((resolve, reject) => {
-            const serverBuildPath = path.join(this.rootPath ??'', data.folder, 'build', 'web');
-            const command = Constants.gmaServerName;
-            const args = ['-p', data.port?.toString() ?? '', '-r', serverBuildPath];
-            const commandId = data.serverComandId;
-            void this.processCommand({ name: commandId, command, args, commandId, path: this.rootPath ?? '', location: vscode.ProgressLocation.Window }, (value)=>{
-                console.log(`default: ${ProgressStatus.default} loading: ${ProgressStatus.loading} failed: ${ProgressStatus.failed}  success: ${ProgressStatus.success}`);
-                console.log(`server ${commandId} value: ${value}`);
-                switch (value) {
-                    case ProgressStatus.loading:
-                        resolve(value);
-                        break;
-                    case ProgressStatus.success:
-                        resolve(value);
-                        break;
-                    case ProgressStatus.failed:
-                        reject(value);
-                        break;  
-                }
-            });
-        
-    });}
+    runServer = (data: GmaAppConfiguration, results: vscode.EventEmitter<ServerStatusEvent> ) => {
+        const serverBuildPath = path.join(this.rootPath ??'', data.folder, 'build', 'web');
+        const command = Constants.gmaServerName;
+        const args = ['-p', data.port?.toString() ?? '', '-r', serverBuildPath];
+        const commandId = data.serverComandId;
+        void this.processCommand({ name: commandId, command, args, commandId, path: this.rootPath ?? '', location: vscode.ProgressLocation.Window },(value) => {
+            console.log(value);
+            results.fire({
+                status: value,
+                item: data
+            } as ServerStatusEvent);
+        });
+    }
 
     isServerRunning(data: GmaAppConfiguration): boolean {
-        return this.processes[data.serverComandId] !== undefined;
+        return this.isProcessRunning(data.serverComandId);
+    }
+    isProcessRunning(commandId: string): boolean {
+        return this.processes[commandId] !== undefined;
     }
 
     runUpdate = (data: IAvailableExtension) => {
@@ -298,7 +295,6 @@ export class Process {
         if (process?.pid) {
             const isWindow = os.platform() === 'win32';
             const kill = isWindow ? 'tskill' : 'kill';
-           
             const pids = await this.pidtree(process.pid);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             pids?.forEach((cpid:number) => {

@@ -10,6 +10,7 @@ export class Constants {
     static vscodeCommandRefreshFileExplorer = 'workbench.files.action.refreshFilesExplorer';
 
     static gmaContextCustomWorkspaceAvailable = 'gma.context.customWorkspaceAvailable';
+    static gmaContextBuildRunnerWatch = 'gma.context.watching';
 
 
     static extensionName = 'hci.gma.studio';

@@ -327,20 +327,18 @@
 				"command": "gma.commands.buildRunner.build",
 				"title": "Re-build package",
 				"description": "Build the project",
-				"icon": "$(debug-restart-frame)"
+				"icon": "$(run)"
 			},
 			{
 				"category": "GMA",
 				"command": "gma.commands.buildRunner.watch",
 				"title": "Watch re-builder",
-				"enablement": "false",
-				"icon": "$(wand)"
+				"icon": "$(symbol-event)"
 			},
 			{
 				"category": "GMA",
 				"command": "gma.commands.buildRunner.terminate",
 				"title": "terminate",
-				"enablement": "false",
 				"icon": "$(debug-stop)"
 			},
 			{
@@ -455,6 +453,8 @@
 					"type": "tree",
 					"visibility": "collapsed",
 					"order": 0
+					,
+					"when": "gma.workspace.available == true"
 				},
 				{
 					"id": "gma:views:project",
@@ -462,7 +462,8 @@
 					"contextualTitle": "Root folder of GMA Project",
 					"type": "tree",
 					"visibility": "collapsed",
-					"order": 1
+					"order": 1,
+					"when": "gma.workspace.available == true"
 				},
 				{
 					"id": "gma:views:documentation",
@@ -470,7 +471,8 @@
 					"contextualTitle": "GMA Documentation",
 					"type": "tree",
 					"visibility": "collapsed",
-					"order": 2
+					"order": 2,
+					"when": "gma.workspace.available == true"
 				},
 				{
 					"id": "gma:views:cicd",
@@ -478,7 +480,8 @@
 					"contextualTitle": "Shared Azure Pipelines",
 					"type": "tree",
 					"visibility": "collapsed",
-					"order": 3
+					"order": 3,
+					"when": "gma.workspace.available == true"
 				},
 				{
 					"id": "gma:views:help",
@@ -486,7 +489,8 @@
 					"contextualTitle": "Help & Quick links",
 					"type": "tree",
 					"order": 6,
-					"visibility": "visible"
+					"visibility": "visible",
+					"when": "gma.workspace.available == true"
 				}
 			]
 		},
@@ -592,12 +596,12 @@
 				},
 				{
 					"command": "gma.commands.buildRunner.watch",
-					"when": "viewItem == folder && view == gma:views:buildrunner",
+					"when": "view == gma:views:buildrunner && viewItem == file",
 					"group": "inline"
 				},
 				{
-					"command": "gma.commands.buildRunner.watch",
-					"when": "view == gma:views:buildrunner && viewItem == file",
+					"command": "gma.commands.buildRunner.terminate",
+					"when": "view == gma:views:buildrunner && viewItem == gma.context.watching",
 					"group": "inline"
 				},
 				{
@@ -616,7 +620,7 @@
 		"test-compile": "tsc -p ./",
 		"compile": "tsc -p ./",
 		"lint": "eslint src --ext .js,.jsx,.ts,.tsx",
-		"clean": "rimraf dist/ && rimraf out/ && rimraf node_modules/ && del *.vsix && npm install",
+		"clean": "rimraf dist/ && rimraf out/ && rimraf node_modules/ && rimraf *.vsix && npm install",
 		"watch": "tsc -watch -p ./",
 		"pretest": "npm run compile && npm run lint",
 		"test": "node ./dist/test/runTest.js",
@@ -631,7 +635,6 @@
 		"@types/rimraf": "^3.0.2",
 		"@types/semver": "^7.3.9",
 		"@types/vscode": "^1.62.0",
-		"@types/yaml": "^1.9.7",
 		"@typescript-eslint/eslint-plugin": "^5.4.0",
 		"@typescript-eslint/parser": "^5.4.0",
 		"@vscode/codicons": "0.0.26",

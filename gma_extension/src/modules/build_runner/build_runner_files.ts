@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
-import * as yaml from 'yaml';
+import * as jsyaml from 'js-yaml';
 import { PubspecModel, TreeModel } from '../../models/dto/pubspec';
+import path = require('path');
 export interface IPubspecItem{
     uri: vscode.Uri;
     pubspec: PubspecModel | null;
@@ -10,7 +11,7 @@ const readYaml = async (uri: vscode.Uri) => {
     let json: PubspecModel | null;
     try {
         const data = uint8Array.toString();
-        json = yaml.parse(data) as PubspecModel;
+        json = jsyaml.load(data) as PubspecModel;
     } catch (error) {
         json = null;
     }
@@ -41,7 +42,7 @@ export const scanFile = async (): Promise<TreeModel[]> => {
             uri: workspace.uri,
             children: _filtred.map((e) => {
                 return {
-                    name: e.pubspec?.name,
+                    name: path.basename(path.dirname(e.uri.fsPath)),
                     uri: e.uri,
                 } as TreeModel;
             }),
